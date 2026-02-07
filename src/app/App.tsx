@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase"; // Import the pre-configured Supabase client from our lib/supabase.ts file. This keeps our database configuration centralized and reusable across the app.
+import RouteButton from "../components/RouteButton"; // Import a reusable Button component for navigation. This is just an example of how we can build out our UI with shared components.
 
 // Lightweight type describing the instrument rows we expect from the DB.
 // Adding this helps TypeScript understand shapes used in the UI.
@@ -45,11 +46,15 @@ function App() {
   // Render the list of instruments. Use `id` as key when available, fall back
   // to `name` as a stable string key.
   return (
-    <ul>
-      {instruments.map((instrument) => (
-        <li key={instrument.id ?? instrument.name}>{instrument.name}</li>
-      ))}
-    </ul>
+    <div>
+      <h1>App Page</h1>
+      <RouteButton to="/about">Go to About</RouteButton>
+      <ul>
+        {instruments.map((instrument) => (
+          <li key={instrument.id ?? instrument.name}>{instrument.name}</li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
