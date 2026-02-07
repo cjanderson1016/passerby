@@ -1,15 +1,8 @@
 // This is the main App component for the Passerby application. It currently renders a simple header, but will be expanded in the future to include more functionality and components as the application is developed.
 
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-// Initialize Supabase client using Vite environment variables.
-// Note: We’re deliberately keeping the Supabase client untyped to avoid depending
-// on auto-generated database types, and we’ll manually type results where necessary.
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-);
+import { supabase } from "../lib/supabase"; // Import the pre-configured Supabase client from our lib/supabase.ts file. This keeps our database configuration centralized and reusable across the app.
+import RouteButton from "../components/RouteButton"; // Import a reusable Button component for navigation. This is just an example of how we can build out our UI with shared components.
 
 // Lightweight type describing the instrument rows we expect from the DB.
 // Adding this helps TypeScript understand shapes used in the UI.
@@ -53,11 +46,15 @@ function App() {
   // Render the list of instruments. Use `id` as key when available, fall back
   // to `name` as a stable string key.
   return (
-    <ul>
-      {instruments.map((instrument) => (
-        <li key={instrument.id ?? instrument.name}>{instrument.name}</li>
-      ))}
-    </ul>
+    <div>
+      <h1>App Page</h1>
+      <RouteButton to="/about">Go to About</RouteButton>
+      <ul>
+        {instruments.map((instrument) => (
+          <li key={instrument.id ?? instrument.name}>{instrument.name}</li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
