@@ -1,10 +1,63 @@
 // This is the main App component for the Passerby application. It currently renders a simple header, but will be expanded in the future to include more functionality and components as the application is developed.
 
+import { useEffect, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+// Initialize Supabase client using Vite environment variables.
+// Note: We’re deliberately keeping the Supabase client untyped to avoid depending
+// on auto-generated database types, and we’ll manually type results where necessary.
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+);
+
+// Lightweight type describing the instrument rows we expect from the DB.
+// Adding this helps TypeScript understand shapes used in the UI.
+type Instrument = {
+  id?: number;
+  name: string;
+};
+
 function App() {
+  // State holds the fetched instruments. Start with an empty array.
+  const [instruments, setInstruments] = useState<Instrument[]>([]);
+
+  useEffect(() => {
+    // `mounted` guard prevents calling `setInstruments` after unmount.
+    let mounted = true;
+
+    // Use an async IIFE (Immediately Invoked Function Expression) so we can await inside useEffect.
+    (async () => {
+      // NOTE: Supabase `from` in v2 typings can expect 2 generics depending on
+      // how the client is typed. To avoid the "Expected 2 type arguments"
+      // error we call `.from("instruments")` without generics and cast the
+      // returned `data` to `Instrument[]` when setting state.
+      const { data, error } = await supabase.from("instruments").select("*");
+
+      if (error) {
+        // Log and bail on error; don't update state.
+        console.error("Error fetching instruments:", error);
+        return;
+      }
+
+      // Only update state if component is still mounted. Cast `data` to the
+      // expected `Instrument[]` shape; `data` may be `null` if no rows exist.
+      if (mounted) setInstruments((data ?? []) as Instrument[]);
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Render the list of instruments. Use `id` as key when available, fall back
+  // to `name` as a stable string key.
   return (
-    <div>
-      <h1>Passerby</h1>
-    </div>
+    <ul>
+      {instruments.map((instrument) => (
+        <li key={instrument.id ?? instrument.name}>{instrument.name}</li>
+      ))}
+    </ul>
   );
 }
 
