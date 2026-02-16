@@ -15,6 +15,7 @@
 
   Author(s): Connor Anderson, Owen Berkholtz, Bryson Toubassi, Jacob Richards, Matthew Eagleman
 */
+import "./App.css";
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import type { User } from "@supabase/supabase-js";
@@ -49,16 +50,22 @@ function App() {
     return <div>Loading...</div>;
   }
 
+  if (user) {
+    return <Dashboard />;
+  }
+
   return (
-    <div>
-      <h1>App Page</h1>
-      {user ? (
-        <Dashboard />
-      ) : view === "login" ? (
-        <Login onSwitchToSignup={() => setView("signup")} />
-      ) : (
-        <Signup onSwitchToLogin={() => setView("login")} />
-      )}
+    <div className="auth-layout">
+      <div className="auth-left">
+        <h1>Passerby</h1>
+      </div>
+      <div className="auth-right">
+        {view === "login" ? (
+          <Login onSwitchToSignup={() => setView("signup")} />
+        ) : (
+          <Signup onSwitchToLogin={() => setView("login")} />
+        )}
+      </div>
     </div>
   );
 }
