@@ -59,7 +59,7 @@ function Signup({ onSwitchToLogin }: SignupProps) {
     <div
       style={{
         maxWidth: "400px",
-        margin: "2rem auto",
+        margin: "0",
         padding: "2rem",
         border: "1px solid #ccc",
         borderRadius: "8px",
