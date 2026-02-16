@@ -15,6 +15,8 @@ function Dashboard() {
   // State holds the fetched instruments. Start with an empty array.
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [signingOut, setSigningOut] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSignout = async () => {
     setSigningOut(true);
@@ -45,12 +47,18 @@ function Dashboard() {
       if (error) {
         // Log and bail on error; don't update state.
         console.error("Error fetching instruments:", error);
+        if (mounted) setError(`Error: ${error.message}`);
+        if (mounted) setLoading(false);
         return;
       }
 
       // Only update state if component is still mounted. Cast `data` to the
       // expected `Instrument[]` shape; `data` may be `null` if no rows exist.
-      if (mounted) setInstruments((data ?? []) as Instrument[]);
+      if (mounted) {
+        console.log("Instruments fetched:", data);
+        setInstruments((data ?? []) as Instrument[]);
+        setLoading(false);
+      }
     })();
 
     return () => {
@@ -87,11 +95,19 @@ function Dashboard() {
         </button>
       </div>
       <RouteButton to="/about">Go to About</RouteButton>
-      <ul>
+      {loading ? (
+        <p>Loading instruments...</p>
+      ) : error ? (
+        <p style={{ color: "red" }}>{error}</p>
+      ) : instruments.length === 0 ? (
+        <p>No instruments found. This may indicate a Row Level Security (RLS) issue.</p>
+      ) : (
+        <ul>
         {instruments.map((instrument) => (
           <li key={instrument.id ?? instrument.name}>{instrument.name}</li>
         ))}
       </ul>
+      )}
     </div>
   );
 }
