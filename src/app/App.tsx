@@ -1,59 +1,64 @@
-// This is the main App component for the Passerby application. It currently renders a simple header, but will be expanded in the future to include more functionality and components as the application is developed.
+/*
+  File Name: App.tsx
 
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase"; // Import the pre-configured Supabase client from our lib/supabase.ts file. This keeps our database configuration centralized and reusable across the app.
-import RouteButton from "../components/RouteButton"; // Import a reusable Button component for navigation. This is just an example of how we can build out our UI with shared components.
+  Description:
+  The main application component for the Passerby web application.
+  This file manages global authentication state using Supabase,
+  handles session persistence, and conditionally renders the
+  appropriate view (Dashboard, Login, or Signup) based on the
+  user’s authentication status.
 
-// Lightweight type describing the instrument rows we expect from the DB.
-// Adding this helps TypeScript understand shapes used in the UI.
-type Instrument = {
-  id?: number;
-  name: string;
-};
+  It also listens for authentication state changes and updates
+  the UI accordingly. This component serves as the root-level
+  controller for routing between authenticated and unauthenticated
+  user experiences.
+
+  Author(s): Connor Anderson, Owen Berkholtz, Bryson Toubassi, Jacob Richards, Matthew Eagleman
+*/
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
+import type { User } from "@supabase/supabase-js";
+import Dashboard from "../features/Dashboard";
+import Login from "../features/Login";
+import Signup from "../features/Signup";
 
 function App() {
-  // State holds the fetched instruments. Start with an empty array.
-  const [instruments, setInstruments] = useState<Instrument[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<"login" | "signup">("login");
 
   useEffect(() => {
-    // `mounted` guard prevents calling `setInstruments` after unmount.
-    let mounted = true;
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-    // Use an async IIFE (Immediately Invoked Function Expression) so we can await inside useEffect.
-    (async () => {
-      // NOTE: Supabase `from` in v2 typings can expect 2 generics depending on
-      // how the client is typed. To avoid the "Expected 2 type arguments"
-      // error we call `.from("instruments")` without generics and cast the
-      // returned `data` to `Instrument[]` when setting state.
-      const { data, error } = await supabase.from("instruments").select("*");
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-      if (error) {
-        // Log and bail on error; don't update state.
-        console.error("Error fetching instruments:", error);
-        return;
-      }
-
-      // Only update state if component is still mounted. Cast `data` to the
-      // expected `Instrument[]` shape; `data` may be `null` if no rows exist.
-      if (mounted) setInstruments((data ?? []) as Instrument[]);
-    })();
-
-    return () => {
-      mounted = false;
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Render the list of instruments. Use `id` as key when available, fall back
-  // to `name` as a stable string key.
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div>
       <h1>App Page</h1>
-      <RouteButton to="/about">Go to About</RouteButton>
-      <ul>
-        {instruments.map((instrument) => (
-          <li key={instrument.id ?? instrument.name}>{instrument.name}</li>
-        ))}
-      </ul>
+      {user ? (
+        <Dashboard />
+      ) : view === "login" ? (
+        <Login onSwitchToSignup={() => setView("signup")} />
+      ) : (
+        <Signup onSwitchToLogin={() => setView("login")} />
+      )}
     </div>
   );
 }
