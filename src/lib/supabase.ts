@@ -1,3 +1,13 @@
+/*
+  File Name: supabase.ts
+
+  Description: Initializes and exports the Supabase client for the Passerby application.
+  This file configures the connection to the Supabase backend using
+  environment variables provided by Vite (.env.local).
+
+  Author(s): Connor Anderson
+  */
+
 import { createClient } from "@supabase/supabase-js";
 
 // These environment variables are defined in the .env.local file at the root of the project. 

@@ -1,3 +1,11 @@
+/*
+  File Name: Login.tsx
+
+  Description: This file defines the main login component for the application.
+
+  Author(s): Connor Anderson
+  */
+
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 

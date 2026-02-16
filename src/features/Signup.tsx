@@ -1,3 +1,10 @@
+/*
+  File Name: Dashboard.tsx
+
+  Description: This file defines the main signup component for the application.
+
+  Author(s): Connor Anderson
+  */
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 

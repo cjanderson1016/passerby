@@ -1,4 +1,10 @@
-// This file defines the main dashboard component for the application.
+/*
+  File Name: Dashboard.tsx
+
+  Description: This file defines the main dashboard component for the application.
+
+  Author(s): Connor Anderson
+  */
 
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase"; // Import the pre-configured Supabase client from our lib/supabase.ts file. This keeps our database configuration centralized and reusable across the app.

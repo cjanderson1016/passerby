@@ -1,6 +1,13 @@
 // This is a simple reusable button component that uses React Router's
 // useNavigate hook to programmatically navigate to different routes in the app.
+/*
+  File Name: RouteButtom.tsx
 
+  Description: This is a simple reusable button component that uses React Router's
+  useNavigate hook to programmatically navigate to different routes in the app.
+
+  Author(s): Connor Anderson
+  */
 import { useNavigate } from "react-router-dom";
 
 type ButtonProps = {

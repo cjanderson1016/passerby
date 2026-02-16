@@ -1,5 +1,20 @@
-// This is the main App component for the Passerby application. It currently renders a simple header, but will be expanded in the future to include more functionality and components as the application is developed.
+/*
+  File Name: App.tsx
 
+  Description:
+  The main application component for the Passerby web application.
+  This file manages global authentication state using Supabase,
+  handles session persistence, and conditionally renders the
+  appropriate view (Dashboard, Login, or Signup) based on the
+  user’s authentication status.
+
+  It also listens for authentication state changes and updates
+  the UI accordingly. This component serves as the root-level
+  controller for routing between authenticated and unauthenticated
+  user experiences.
+
+  Author(s): Connor Anderson, Owen Berkholtz, Bryson Toubassi, Jacob Richards, Matthew Eagleman
+*/
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import type { User } from "@supabase/supabase-js";
