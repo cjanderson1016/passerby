@@ -28,6 +28,11 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"login" | "signup">("login");
 
+  // Get app name from environment variable, with a fallback for development
+  const appName =
+    import.meta.env.VITE_APP_NAME ||
+    "No Name Found (missing VITE_APP_NAME env var)";
+
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -57,7 +62,7 @@ function App() {
   return (
     <div className="auth-layout">
       <div className="auth-left">
-        <h1>Passerby</h1>
+        <h1>{appName}</h1>
       </div>
       <div className="auth-right">
         {view === "login" ? (
