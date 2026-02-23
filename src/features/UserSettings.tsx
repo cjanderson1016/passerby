@@ -1,9 +1,9 @@
-import { use, useState } from "react";
-import { supabase } from "../lib/supabase";
+// import { use, useState } from "react";
+// import { supabase } from "../lib/supabase";
 import RouteButton from "../components/RouteButton";
 
 export default function Settings(){
-    const [user, setUser] = useState<null | any>(null);
+    //const [user, setUser] = useState<null | any>(null);
 
     return (
     <div>
