@@ -57,7 +57,7 @@ function App() {
   return (
     <div className="auth-layout">
       <div className="auth-left">
-        <h1>Passerby</h1>
+        <h1>Passerby-Dev</h1>
       </div>
       <div className="auth-right">
         {view === "login" ? (
