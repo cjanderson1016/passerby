@@ -8,6 +8,8 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 import About from "../features/test/About";
+import Reset from "../features/ResetPassword"
+import Settings from "../features/UserSettings"
 
 export const router = createBrowserRouter([
   {
@@ -18,4 +20,13 @@ export const router = createBrowserRouter([
     path: "/about",
     element: <About />,
   },
+  {
+    path: "/reset_pass",
+    element: <Reset/>
+  },
+  {
+    path: "/settings",
+    element: <Settings/>
+  }
+
 ]);

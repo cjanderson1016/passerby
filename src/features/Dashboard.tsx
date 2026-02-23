@@ -79,12 +79,14 @@ function Dashboard() {
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
           alignItems: "center",
+          justifyContent: "space-between",
           marginBottom: "2rem",
         }}
       >
         <h2>Dashboard Component</h2>
+        <div style={{ display: "flex", gap: "1rem" }}>
+          <RouteButton to="/settings">Settings</RouteButton>
         <button
           onClick={handleSignout}
           disabled={signingOut}
@@ -99,6 +101,7 @@ function Dashboard() {
         >
           {signingOut ? "Signing out..." : "Sign Out"}
         </button>
+        </div>
       </div>
       <RouteButton to="/about">Go to About</RouteButton>
       {loading ? (
