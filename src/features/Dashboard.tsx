@@ -105,6 +105,29 @@ export default function Dashboard() {
   const profileWrapRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
 
+  // current user's username (for including in URL when navigating to profile)
+  const [currentUsername, setCurrentUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUsername = async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user?.id) return;
+        const { data } = await supabase
+          .from("users")
+          .select("username")
+          .eq("id", user.id)
+          .single();
+        setCurrentUsername(data?.username ?? null);
+      } catch (err) {
+        console.error("error fetching username for profile link", err);
+      }
+    };
+    fetchUsername();
+  }, []);
+
   const filteredPosts = useMemo(() => {
     return applyFilter(posts, filterOption);
   }, [posts, filterOption]);
@@ -190,9 +213,33 @@ export default function Dashboard() {
             >
               <button
                 className="dash-menu-item"
-                onClick={() => {
+                onClick={async () => {
                   setProfileOpen(false);
-                  navigate("/profile");
+                  let usernameToUse = currentUsername;
+                  // if we haven't loaded the current username yet, try to fetch now
+                  if (!usernameToUse) {
+                    try {
+                      const {
+                        data: { user },
+                      } = await supabase.auth.getUser();
+                      if (user?.id) {
+                        const { data } = await supabase
+                          .from("users")
+                          .select("username")
+                          .eq("id", user.id)
+                          .single();
+                        usernameToUse = data?.username ?? null;
+                      }
+                    } catch (err) {
+                      console.error("unable to lazy-load username", err);
+                    }
+                  }
+                  if (usernameToUse) {
+                    navigate(`/profile/${usernameToUse}`);
+                  } else {
+                    // fallback to the generic route; Profile component still works
+                    navigate("/profile");
+                  }
                 }}
                 role="menuitem"
               >

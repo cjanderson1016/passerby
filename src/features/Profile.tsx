@@ -6,7 +6,7 @@
   Author(s): Connor Anderson
 */
 
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
@@ -20,6 +20,9 @@ type PublicUser = {
 };
 
 export default function Profile() {
+  // Get the username from the route -- TODO: use this to load other users' profiles, currently we just load the authenticated user's profile regardless of the route param
+  const { username: routeUsername } = useParams<{ username: string }>();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<PublicUser | null>(null);
@@ -84,8 +87,14 @@ export default function Profile() {
         </div>
       ) : (
         <>
-          <h1>{displayName ? `Welcome, ${displayName}!` : "Welcome!"}</h1>
-
+          {/* Shows the first and last name of the user profile and the username from the url (if available) */}
+          <h1>
+            {displayName ? `Welcome, ${displayName}!` : "Welcome!"}
+            {routeUsername && (
+              <span style={{ fontWeight: "normal" }}> (@{routeUsername})</span>
+            )}
+          </h1>
+          {/* Shows the username of the user profile */}
           {profile?.username && (
             <p>
               <strong>Username:</strong> @{profile.username}
