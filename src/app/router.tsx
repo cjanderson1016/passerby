@@ -7,15 +7,20 @@
 */
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
-import About from "../features/test/About";
+// import About from "../features/test/About";
+import Profile from "../features/Profile";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
   },
+  // {
+  //   path: "/about",
+  //   element: <About />,
+  // },
   {
-    path: "/about",
-    element: <About />,
+    path: "/profile",
+    element: <Profile />,
   },
 ]);

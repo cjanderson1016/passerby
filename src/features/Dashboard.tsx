@@ -7,6 +7,7 @@
   */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./dashboard.css";
 import { supabase } from "../lib/supabase";
 
@@ -66,7 +67,9 @@ function applyFilter(posts: Post[], filter: FilterOption): Post[] {
 
   switch (filter) {
     case "Most Recently Updated":
-      return copy.sort((a, b) => a.lastUpdatedMinutesAgo - b.lastUpdatedMinutesAgo);
+      return copy.sort(
+        (a, b) => a.lastUpdatedMinutesAgo - b.lastUpdatedMinutesAgo,
+      );
 
     case "Alphabetical (A–Z)":
       return copy.sort((a, b) => a.name.localeCompare(b.name));
@@ -89,8 +92,9 @@ function applyFilter(posts: Post[], filter: FilterOption): Post[] {
 }
 
 export default function Dashboard() {
-  const [filterOption, setFilterOption] =
-    useState<FilterOption>("Most Recently Updated");
+  const [filterOption, setFilterOption] = useState<FilterOption>(
+    "Most Recently Updated",
+  );
 
   const [posts, setPosts] = useState<Post[]>(initialPosts);
 
@@ -99,6 +103,7 @@ export default function Dashboard() {
   const [signingOut, setSigningOut] = useState(false);
 
   const profileWrapRef = useRef<HTMLDivElement | null>(null);
+  const navigate = useNavigate();
 
   const filteredPosts = useMemo(() => {
     return applyFilter(posts, filterOption);
@@ -178,9 +183,21 @@ export default function Dashboard() {
           </button>
 
           {profileOpen && (
-            <div className="dash-profile-menu" role="menu" aria-label="Profile options">
-              {/* Placeholder for later */}
-              {/* <button className="dash-menu-item" onClick={() => navigate("/profile")}>Profile</button> */}
+            <div
+              className="dash-profile-menu"
+              role="menu"
+              aria-label="Profile options"
+            >
+              <button
+                className="dash-menu-item"
+                onClick={() => {
+                  setProfileOpen(false);
+                  navigate("/profile");
+                }}
+                role="menuitem"
+              >
+                Profile
+              </button>
 
               <button
                 className="dash-menu-item danger"
@@ -198,7 +215,9 @@ export default function Dashboard() {
       {/* Filter row */}
       <div className="dash-filter-row">
         <div className="dash-filter-left">
-          <div className="dash-filter-label">choose a friend to catch up with</div>
+          <div className="dash-filter-label">
+            choose a friend to catch up with
+          </div>
 
           <select
             className="dash-select"
@@ -226,7 +245,9 @@ export default function Dashboard() {
             <div className="dash-card-main">
               <div className="dash-card-header">
                 <div className="dash-name">{p.name}</div>
-                <div className="dash-time">{formatMinutes(p.lastUpdatedMinutesAgo)}</div>
+                <div className="dash-time">
+                  {formatMinutes(p.lastUpdatedMinutesAgo)}
+                </div>
               </div>
 
               <div className="dash-message-box">
