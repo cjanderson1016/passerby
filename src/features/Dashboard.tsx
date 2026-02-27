@@ -6,10 +6,11 @@
   Author(s): Connor Anderson
   */
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
 import "./dashboard.css";
-import { supabase } from "../lib/supabase";
+import type { Friend } from "../types";
+import ProfileMenu from "../components/ProfileMenu";
+import FriendTable from "../components/FriendTable";
 
 type FilterOption =
   | "Most Recently Updated"
@@ -17,15 +18,11 @@ type FilterOption =
   | "Unread Messages First"
   | "Closest Friends"; // placeholder for later
 
-type Post = {
-  id: string;
-  name: string;
-  text: string;
-  lastUpdatedMinutesAgo: number;
-  unreadMessages: boolean;
-};
+// the friend profiles displayed on the dashboard represent the friends' most recent updates
+// use the shared Friend type imported above
+// TODO: id will become the username once we have real data, and we'll also need to add a profile picture URL and maybe other fields
 
-const initialPosts: Post[] = [
+const initialFriends: Friend[] = [
   {
     id: "1",
     name: "John Doe",
@@ -56,13 +53,7 @@ const initialPosts: Post[] = [
   },
 ];
 
-function formatMinutes(m: number) {
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  return `${h}h`;
-}
-
-function applyFilter(posts: Post[], filter: FilterOption): Post[] {
+function applyFilter(posts: Friend[], filter: FilterOption): Friend[] {
   const copy = [...posts];
 
   switch (filter) {
@@ -96,46 +87,18 @@ export default function Dashboard() {
     "Most Recently Updated",
   );
 
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [friends, setFriends] = useState<Friend[]>(initialFriends);
 
-  // Profile dropdown state
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
+  // we no longer manage profile circle/drowdown state here; it's handled by ProfileMenu
 
-  const profileWrapRef = useRef<HTMLDivElement | null>(null);
-  const navigate = useNavigate();
-
-  // current user's username (for including in URL when navigating to profile)
-  const [currentUsername, setCurrentUsername] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchUsername = async () => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user?.id) return;
-        const { data } = await supabase
-          .from("users")
-          .select("username")
-          .eq("id", user.id)
-          .single();
-        setCurrentUsername(data?.username ?? null);
-      } catch (err) {
-        console.error("error fetching username for profile link", err);
-      }
-    };
-    fetchUsername();
-  }, []);
-
-  const filteredPosts = useMemo(() => {
-    return applyFilter(posts, filterOption);
-  }, [posts, filterOption]);
+  const filteredFriends = useMemo(() => {
+    return applyFilter(friends, filterOption);
+  }, [friends, filterOption]);
 
   const onAddFriend = () => {
     // Dummy for now — later open modal and insert real friend
-    const newId = String(posts.length + 1);
-    setPosts((prev) => [
+    const newId = String(friends.length + 1);
+    setFriends((prev) => [
       ...prev,
       {
         id: newId,
@@ -147,116 +110,14 @@ export default function Dashboard() {
     ]);
   };
 
-  const toggleProfileMenu = () => {
-    setProfileOpen((v) => !v);
-  };
-
-  const handleSignOut = async () => {
-    setSigningOut(true);
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) console.error("Error signing out:", error);
-      // App.tsx listens to auth changes; you will automatically return to Login.
-    } catch (err) {
-      console.error("Unexpected error during signout:", err);
-    } finally {
-      setSigningOut(false);
-      setProfileOpen(false);
-    }
-  };
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const onDocMouseDown = (e: MouseEvent) => {
-      const wrap = profileWrapRef.current;
-      if (!wrap) return;
-      if (!wrap.contains(e.target as Node)) {
-        setProfileOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", onDocMouseDown);
-    return () => document.removeEventListener("mousedown", onDocMouseDown);
-  }, []);
-
-  // Close dropdown with Escape
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setProfileOpen(false);
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
-
   return (
     <div className="dash-page">
       {/* Top bar */}
       <div className="dash-topbar">
         <div className="dash-title">PASSERBY</div>
 
-        {/* Profile Circle + Dropdown */}
-        <div className="dash-profile-wrap" ref={profileWrapRef}>
-          <button
-            className="dash-profile"
-            onClick={toggleProfileMenu}
-            aria-label="Profile menu"
-            aria-expanded={profileOpen}
-          >
-            <span className="dash-profile-circle" />
-          </button>
-
-          {profileOpen && (
-            <div
-              className="dash-profile-menu"
-              role="menu"
-              aria-label="Profile options"
-            >
-              <button
-                className="dash-menu-item"
-                onClick={async () => {
-                  setProfileOpen(false);
-                  let usernameToUse = currentUsername;
-                  // if we haven't loaded the current username yet, try to fetch now
-                  if (!usernameToUse) {
-                    try {
-                      const {
-                        data: { user },
-                      } = await supabase.auth.getUser();
-                      if (user?.id) {
-                        const { data } = await supabase
-                          .from("users")
-                          .select("username")
-                          .eq("id", user.id)
-                          .single();
-                        usernameToUse = data?.username ?? null;
-                      }
-                    } catch (err) {
-                      console.error("unable to lazy-load username", err);
-                    }
-                  }
-                  if (usernameToUse) {
-                    navigate(`/profile/${usernameToUse}`);
-                  } else {
-                    // fallback to the generic route; Profile component still works
-                    navigate("/profile");
-                  }
-                }}
-                role="menuitem"
-              >
-                Profile
-              </button>
-
-              <button
-                className="dash-menu-item danger"
-                onClick={handleSignOut}
-                disabled={signingOut}
-                role="menuitem"
-              >
-                {signingOut ? "Signing out..." : "Sign out"}
-              </button>
-            </div>
-          )}
-        </div>
+        {/* profile button/dropdown moved into its own component */}
+        <ProfileMenu />
       </div>
 
       {/* Filter row */}
@@ -284,32 +145,7 @@ export default function Dashboard() {
       </div>
 
       {/* Feed */}
-      <div className="dash-feed">
-        {filteredPosts.map((p) => (
-          <div key={p.id} className="dash-card">
-            <div className="dash-avatar" />
-
-            <div className="dash-card-main">
-              <div className="dash-card-header">
-                <div className="dash-name">{p.name}</div>
-                <div className="dash-time">
-                  {formatMinutes(p.lastUpdatedMinutesAgo)}
-                </div>
-              </div>
-
-              <div className="dash-message-box">
-                <div className="dash-message">{p.text}</div>
-              </div>
-            </div>
-
-            <div className="dash-checkwrap">
-              <div className="dash-checkbox">
-                {p.unreadMessages && <span className="dash-unread-dot" />}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <FriendTable friends={filteredFriends} />
     </div>
   );
 }
