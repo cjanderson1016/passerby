@@ -3,7 +3,7 @@
 
   Description: This file defines the main dashboard component for the application.
 
-  Author(s): Connor Anderson
+  Author(s): Connor Anderson, Jacob Richards
   */
 
 import { useMemo, useState } from "react";

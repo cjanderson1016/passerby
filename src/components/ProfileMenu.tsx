@@ -1,3 +1,14 @@
+/*
+  File Name: ProfileMenu.tsx
+
+  Description: This component implements the profile circle/dropdown in the dashboard header.
+
+  Future: We will add more options to the dropdown in the future, such as links to settings, help, etc. 
+  We will also add the profile picture/avatar (uploaded from the profile page/settings)
+
+  Author(s): Connor Anderson
+*/
+
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
