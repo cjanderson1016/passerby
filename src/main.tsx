@@ -16,8 +16,10 @@ import { router } from "./app/router";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <UserProvider>
-      <RouterProvider router={router} />
+      {" "}
+      {/* Wrap the app in UserProvider to provide authentication context to all components */}
+      <RouterProvider router={router} />{" "}
+      {/* RouterProvider is used to set up routing in the app based on the configuration defined in router.tsx */}
     </UserProvider>
   </StrictMode>,
 );
-
