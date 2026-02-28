@@ -225,3 +225,86 @@ html, body {
 .dash-menu-item.danger {
   color: #b00020;
 }
+
+/* ============================= */
+/* Friend Request List */
+.fr-list {
+  margin: 0 18px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fr-list-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: #0c2b4a;
+  margin-bottom: 2px;
+}
+
+/* Friend Request Card */
+.fr-card {
+  background: #ffffff;
+  border: 1px solid #d4d4d4;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 400px;
+}
+
+.fr-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fr-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: #1f1f1f;
+}
+
+.fr-username {
+  font-size: 11px;
+  color: #6b6b6b;
+}
+
+.fr-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.fr-accept-btn {
+  height: 26px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 6px;
+  background: #2e7d32;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fr-accept-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fr-decline-btn {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid #bdbdbd;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1f1f1f;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fr-decline-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

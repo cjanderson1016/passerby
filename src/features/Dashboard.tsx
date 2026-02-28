@@ -6,11 +6,14 @@
   Author(s): Connor Anderson, Jacob Richards
   */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./dashboard.css";
 import type { Friend } from "../types";
+import { supabase } from "../lib/supabase";
 import ProfileMenu from "../components/ProfileMenu";
 import FriendTable from "../components/FriendTable";
+import FriendRequestList from "../components/FriendRequestList";
+import AddFriendModal from "../components/AddFriendModal";
 
 type FilterOption =
   | "Most Recently Updated"
@@ -88,27 +91,21 @@ export default function Dashboard() {
   );
 
   const [friends, setFriends] = useState<Friend[]>(initialFriends);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // we no longer manage profile circle/drowdown state here; it's handled by ProfileMenu
+
+  // Fetch the current user's ID on mount (needed by FriendRequestList and AddFriendModal)
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setCurrentUserId(user.id);
+    });
+  }, []);
 
   const filteredFriends = useMemo(() => {
     return applyFilter(friends, filterOption);
   }, [friends, filterOption]);
-
-  const onAddFriend = () => {
-    // Dummy for now — later open modal and insert real friend
-    const newId = String(friends.length + 1);
-    setFriends((prev) => [
-      ...prev,
-      {
-        id: newId,
-        name: "New Friend",
-        text: "New placeholder post (replace with real data later).",
-        lastUpdatedMinutesAgo: 5,
-        unreadMessages: true,
-      },
-    ]);
-  };
 
   return (
     <div className="dash-page">
@@ -139,13 +136,27 @@ export default function Dashboard() {
           </select>
         </div>
 
-        <button className="dash-add-btn" onClick={onAddFriend}>
+        <button className="dash-add-btn" onClick={() => setModalOpen(true)}>
           Add Friend
         </button>
       </div>
 
+      {/* Incoming friend requests — stacks vertically, pushes feed down */}
+      {currentUserId && (
+        <FriendRequestList currentUserId={currentUserId} />
+      )}
+
       {/* Feed */}
       <FriendTable friends={filteredFriends} />
+
+      {/* Add Friend modal */}
+      {currentUserId && (
+        <AddFriendModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          currentUserId={currentUserId}
+        />
+      )}
     </div>
   );
 }

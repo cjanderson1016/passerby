@@ -1,0 +1,141 @@
+.afm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.afm-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90vw;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.afm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.afm-title {
+  font-weight: 700;
+  font-size: 18px;
+  color: #0c2b4a;
+}
+
+.afm-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6b6b6b;
+  line-height: 1;
+}
+
+.afm-close:hover {
+  color: #1f1f1f;
+}
+
+.afm-body {
+  padding: 20px;
+}
+
+.afm-search-row {
+  display: flex;
+  gap: 8px;
+}
+
+.afm-input {
+  flex: 1;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #bdbdbd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.afm-input:focus {
+  outline: none;
+  border-color: #0c2b4a;
+}
+
+.afm-search-btn {
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 6px;
+  background: #0c2b4a;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.afm-search-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.afm-error {
+  margin-top: 12px;
+  color: #b00020;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.afm-success {
+  margin-top: 12px;
+  color: #2e7d32;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.afm-result {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.afm-result-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.afm-result-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: #1f1f1f;
+}
+
+.afm-result-username {
+  font-size: 13px;
+  color: #6b6b6b;
+}
+
+.afm-send-btn {
+  height: 34px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 6px;
+  background: #2e7d32;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.afm-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
