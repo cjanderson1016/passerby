@@ -90,7 +90,7 @@ export default function Dashboard() {
     "Most Recently Updated",
   );
 
-  const [friends, setFriends] = useState<Friend[]>(initialFriends);
+  const [friends] = useState<Friend[]>(initialFriends);
   const [modalOpen, setModalOpen] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
