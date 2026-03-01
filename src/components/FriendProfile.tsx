@@ -10,6 +10,7 @@
 */
 
 import type { Friend } from "../types";
+import { useNavigate } from "react-router-dom";
 
 function formatMinutes(m: number) {
   if (m < 60) return `${m}m`;
@@ -22,8 +23,24 @@ interface FriendProfileProps {
 }
 
 export default function FriendProfile({ friend }: FriendProfileProps) {
+  const navigate = useNavigate();
+
+  const goToFriendProfile = () => {
+    // Your router is /profile/:username
+    // Dashboard.tsx sets friend.id to u.username (ideal)
+    navigate(`/profile/${friend.id}`);
+  };
+
   return (
-    <div className="dash-card">
+    <div
+      className="dash-card"
+      role="button"
+      tabIndex={0}
+      onClick={goToFriendProfile}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") goToFriendProfile();
+      }}
+    >
       <div className="dash-avatar" />
 
       <div className="dash-card-main">
