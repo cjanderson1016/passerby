@@ -1,3 +1,10 @@
+/*
+  File Name: Accordion.css
+
+  Description: Style component for Accordion.tsx
+
+  Author(s): Owen Berkholtz
+*/
 .accordion_container {
     border: 1px solid black;  
   padding: 1rem; 
