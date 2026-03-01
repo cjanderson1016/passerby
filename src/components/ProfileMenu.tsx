@@ -124,6 +124,11 @@ export default function ProfileMenu() {
             Profile
           </button>
 
+          <button className="dash-menu-item"
+          onClick={() => navigate("/Settings")}>
+            Settings
+          </button>
+
           <button
             className="dash-menu-item danger"
             onClick={handleSignOut}
@@ -132,6 +137,7 @@ export default function ProfileMenu() {
           >
             {signingOut ? "Signing out..." : "Sign out"}
           </button>
+
         </div>
       )}
     </div>

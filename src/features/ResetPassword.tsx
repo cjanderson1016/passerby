@@ -1,44 +1,48 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
-import RouteButton from "../components/RouteButton";
 
-export default function Reset() {
-  const [password, setPassword] = useState<string>("");
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
-  const [message, setMessage] = useState<string | null>(null);
+export default function ResetPass() {
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setMessage(null);
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
+    setSuccess(null);
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setError("Password must be at least 6 characters");
       return;
     }
-
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
     setLoading(true);
 
-    const { error } = await supabase.auth.updateUser({
-      password: password,
-    });
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: password,
+      });
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setMessage("Password updated successfully!");
-      setPassword("");
-      setConfirmPassword("");
+      if (error) {
+        setError(error.message);
+      } else {
+        setSuccess("Password updated successfully!");
+        setPassword("");
+        setConfirmPassword("");
+      }
+    } catch (err) {
+      setError(
+        "Unexpected error" +
+          (err instanceof Error ? `: ${err.message}` : "")
+      );
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -54,9 +58,7 @@ export default function Reset() {
 
       <form onSubmit={handlePasswordReset}>
         <div style={{ marginBottom: "1rem" }}>
-          <label style={{ display: "block", marginBottom: "0.5rem" }}>
-            New Password:
-          </label>
+          <label>Password:</label>
           <input
             type="password"
             value={password}
@@ -71,11 +73,8 @@ export default function Reset() {
             }}
           />
         </div>
-
         <div style={{ marginBottom: "1rem" }}>
-          <label style={{ display: "block", marginBottom: "0.5rem" }}>
-            Confirm Password:
-          </label>
+          <label>Confirm Password:</label>
           <input
             type="password"
             value={confirmPassword}
@@ -91,12 +90,14 @@ export default function Reset() {
         </div>
 
         {error && (
-          <div style={{ color: "red", marginBottom: "1rem" }}>{error}</div>
+          <div style={{ color: "red", marginBottom: "1rem" }}>
+            {error}
+          </div>
         )}
 
-        {message && (
+        {success && (
           <div style={{ color: "green", marginBottom: "1rem" }}>
-            {message}
+            {success}
           </div>
         )}
 
@@ -106,7 +107,7 @@ export default function Reset() {
           style={{
             width: "100%",
             padding: "0.75rem",
-            backgroundColor: loading ? "#ccc" : "#007bff",
+            backgroundColor: loading ? "#ccc" : "#28a745",
             color: "white",
             border: "none",
             borderRadius: "4px",
@@ -116,8 +117,6 @@ export default function Reset() {
           {loading ? "Updating..." : "Update Password"}
         </button>
       </form>
-       <RouteButton to = "/settings">Go back</RouteButton>
     </div>
-    
   );
 }

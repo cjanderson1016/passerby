@@ -1,0 +1,52 @@
+.settings-title {
+    margin-left: 100px;
+}
+
+.settings-body {
+    margin-left: 120px;
+
+}
+
+.toggle-button {
+    background-color: lightgray;
+    border: 1px solid black;
+    border-radius: 99px;
+    width: 50px;
+    height: 25px;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    vertical-align: middle;
+}
+
+.toggle-button.isToggled {
+    background-color: #00FF7F;
+}
+
+.circle {
+    height: 18px;
+    width: 18px;
+    position: absolute;
+    transition: left 0.15s ease;
+    border-radius: 50%;
+    background-color: whitesmoke;
+    left: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.toggle-button.isToggled .circle {
+    left: 27px;
+}
+
+.settings-btn{
+    padding: 10px;
+    cursor: pointer;
+}
+
+.settings-btn-important{
+    padding: 10px;
+    cursor: pointer;
+    border-color: red;
+    color: red;
+}
