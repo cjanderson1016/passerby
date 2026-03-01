@@ -8,12 +8,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import "./dashboard.css";
-import type { Friend } from "../types";
-import { supabase } from "../lib/supabase";
+import type { Friend, Post, AcceptedFriendRequest, FriendUser } from "../types";
 import ProfileMenu from "../components/ProfileMenu";
 import FriendTable from "../components/FriendTable";
 import FriendRequestList from "../components/FriendRequestList";
 import AddFriendModal from "../components/AddFriendModal";
+import { useUser } from "../hooks/useUser";  // hook wraps UserContext and provides user/profile/loading
+import { supabase } from "../lib/supabase"; // still used for fetching friends/posts
 
 type FilterOption =
   | "Most Recently Updated"
@@ -50,8 +51,12 @@ function applyFilter(posts: Friend[], filter: FilterOption): Friend[] {
   }
 }
 
-// Helper: safest timestamp picker
-function getPostTimestampMs(post: any): number {
+// Helper: safest timestamp picker.  The post only needs to expose
+// `created_at`/`updated_at` so we use a partial of the full `Post` type
+// instead of resorting to `any`.
+function getPostTimestampMs(
+  post: Partial<Pick<Post, "updated_at" | "created_at">> | null | undefined,
+): number {
   const raw = post?.updated_at ?? post?.created_at;
   const t = raw ? new Date(raw).getTime() : NaN;
   return Number.isFinite(t) ? t : Date.now();
@@ -66,17 +71,11 @@ export default function Dashboard() {
   const [loadingFriends, setLoadingFriends] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // Fetch the current user's ID on mount (needed by FriendRequestList and AddFriendModal)
-  useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setCurrentUserId(data.user?.id ?? null);
-    };
-
-    void getUser();
-  }, []);
+  // instead of tracking currentUserId in state and querying supabase again,
+  // obtain the authenticated user from our UserContext via the useUser hook.
+  const { user } = useUser();
+  const currentUserId = user?.id ?? null; // derived value used by other effects/components
 
   // Pull friends + latest posts from Supabase
   useEffect(() => {
@@ -90,20 +89,26 @@ export default function Dashboard() {
         .from("friend_requests")
         .select("requester_id, recipient_id")
         .eq("status", "accepted")
-        .or(`requester_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`);
+        .or(
+          `requester_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`,
+        );
 
       if (acceptedError) {
-        console.error("Error fetching accepted friends:", acceptedError.message);
+        console.error(
+          "Error fetching accepted friends:",
+          acceptedError.message,
+        );
         setFriends([]);
         setLoadingFriends(false);
         return;
       }
 
-      const friendIds = (accepted ?? [])
-        .map((r: any) =>
-          r.requester_id === currentUserId ? r.recipient_id : r.requester_id,
-        )
-        .filter(Boolean);
+      const friendIds =
+        (accepted as AcceptedFriendRequest[] | null)
+          ?.map((r) =>
+            r.requester_id === currentUserId ? r.recipient_id : r.requester_id,
+          )
+          .filter(Boolean) ?? [];
 
       if (friendIds.length === 0) {
         setFriends([]);
@@ -135,8 +140,9 @@ export default function Dashboard() {
         // Still show friends even if posts fail
       }
 
-      const latestByUser = new Map<string, any>();
-      for (const p of posts ?? []) {
+      // Compute the latest post per friend.  We could do this in SQL with window functions, but doing it in JS is simpler for now and we don't expect a large number of friends/posts.
+      const latestByUser = new Map<string, Post>();
+      for (const p of (posts as Post[] | null) ?? []) {
         const ts = getPostTimestampMs(p);
         const existing = latestByUser.get(p.user_id);
         const existingTs = existing ? getPostTimestampMs(existing) : -1;
@@ -146,24 +152,28 @@ export default function Dashboard() {
       const now = Date.now();
 
       // 4) Build Friend[] for FriendTable
-      const feed: Friend[] = (friendUsers ?? []).map((u: any) => {
-        const latest = latestByUser.get(u.id);
-        const lastTime = latest ? getPostTimestampMs(latest) : now;
-        const minutesAgo = Math.max(0, Math.floor((now - lastTime) / 60000));
+      const feed: Friend[] = ((friendUsers as FriendUser[] | null) ?? []).map(
+        (u) => {
+          const latest = latestByUser.get(u.id);
+          const lastTime = latest ? getPostTimestampMs(latest) : now;
+          const minutesAgo = Math.max(0, Math.floor((now - lastTime) / 60000));
 
-        const fullName = [u.first_name, u.last_name].filter(Boolean).join(" ");
-        const name = fullName.trim() || u.username || "Unknown";
+          const fullName = [u.first_name, u.last_name]
+            .filter(Boolean)
+            .join(" ");
+          const name = fullName.trim() || u.username || "Unknown";
 
-        return {
-          // IMPORTANT: Your router is /profile/:username
-          // So friend.id should be the username (not UUID)
-          id: u.username ?? u.id,
-          name,
-          text: latest?.content ?? "(No posts yet)",
-          lastUpdatedMinutesAgo: minutesAgo,
-          unreadMessages: false, // you can wire this later
-        };
-      });
+          return {
+            // IMPORTANT: Your router is /profile/:username
+            // So friend.id should be the username (not UUID)
+            id: u.username ?? u.id,
+            name,
+            text: latest?.content ?? "(No posts yet)",
+            lastUpdatedMinutesAgo: minutesAgo,
+            unreadMessages: false, // you can wire this later
+          };
+        },
+      );
 
       setFriends(feed);
       setLoadingFriends(false);
