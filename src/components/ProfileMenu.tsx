@@ -1,14 +1,27 @@
-import { useEffect, useRef, useState } from "react";
+/*
+  File Name: ProfileMenu.tsx
+
+  Description: This component implements the profile circle/dropdown in the dashboard header.
+
+  Future: We will add more options to the dropdown in the future, such as links to settings, help, etc. 
+  We will also add the profile picture/avatar (uploaded from the profile page/settings)
+
+  Author(s): Connor Anderson
+*/
+
+import { useRef, useState, useEffect } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, KeyboardEventHandler } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { useUser } from "../hooks/useUser";
 import "../features/dashboard.css"; // keep existing styles
 
 export default function ProfileMenu() {
   const [open, setOpen] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
   const navigate = useNavigate();
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const { userProfile } = useUser();
 
   const toggle = () => setOpen((v) => !v);
 
@@ -26,31 +39,11 @@ export default function ProfileMenu() {
     }
   };
 
-  // fetch username once if we don't already have it
-  useEffect(() => {
-    const fetchUsername = async () => {
-      if (username) return;
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user?.id) return;
-        const { data } = await supabase
-          .from("users")
-          .select("username")
-          .eq("id", user.id)
-          .single();
-        setUsername(data?.username ?? null);
-      } catch (err) {
-        console.error("error fetching username for profile link", err);
-      }
-    };
-    fetchUsername();
-  }, [username]);
-
   // close dropdown when clicking outside
+  // "mousedown" handler attached to the document so we can
+  // detect clicks anywhere in the page, not just on the button.
   useEffect(() => {
-    const onDocMouseDown = (e: MouseEvent) => {
+    const handleDocMouseDown = (e: MouseEvent) => {
       const wrap = wrapRef.current;
       if (!wrap) return;
       if (!wrap.contains(e.target as Node)) {
@@ -58,42 +51,20 @@ export default function ProfileMenu() {
       }
     };
 
-    document.addEventListener("mousedown", onDocMouseDown);
-    return () => document.removeEventListener("mousedown", onDocMouseDown);
+    document.addEventListener("mousedown", handleDocMouseDown);
+    return () => document.removeEventListener("mousedown", handleDocMouseDown);
   }, []);
 
-  // close with Escape
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
+  const handleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (
+    e: ReactKeyboardEvent<HTMLButtonElement>
+  ) => {
+    if (e.key === "Escape") setOpen(false);
+  };
 
-  const gotoProfile = async () => {
+  const gotoProfile = () => {
     setOpen(false);
-    let usernameToUse = username;
-    if (!usernameToUse) {
-      // try to lazy load if still missing
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user?.id) {
-          const { data } = await supabase
-            .from("users")
-            .select("username")
-            .eq("id", user.id)
-            .single();
-          usernameToUse = data?.username ?? null;
-        }
-      } catch (err) {
-        console.error("unable to lazy-load username", err);
-      }
-    }
-    if (usernameToUse) {
-      navigate(`/profile/${usernameToUse}`);
+    if (userProfile?.username) {
+      navigate(`/profile/${userProfile.username}`);
     } else {
       navigate("/profile");
     }
@@ -104,6 +75,7 @@ export default function ProfileMenu() {
       <button
         className="dash-profile"
         onClick={toggle}
+        onKeyDown={handleKeyDown}
         aria-label="Profile menu"
         aria-expanded={open}
       >

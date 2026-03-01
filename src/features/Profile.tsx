@@ -7,18 +7,12 @@
 */
 
 import { Link, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { useUser } from "../hooks/useUser";
 
 // We will need to decide how to load profile pages in the future.
 // For now, this just loads the current user's profile based on their session.
-
-type PublicUser = {
-  id?: string;
-  username?: string | null;
-  first_name?: string | null;
-  last_name?: string | null;
-};
 
 type Post = {
   id: string;
@@ -31,10 +25,7 @@ type Post = {
 export default function Profile() {
   // Get the username from the route -- TODO: use this to load other users' profiles, currently we just load the authenticated user's profile regardless of the route param
   const { username: routeUsername } = useParams<{ username: string }>();
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [profile, setProfile] = useState<PublicUser | null>(null);
+  const { user, userProfile } = useUser();
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -43,60 +34,26 @@ export default function Profile() {
   const [showNewPostForm, setShowNewPostForm] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
   const [posting, setPosting] = useState(false);
+  const postsFetchedRef = useRef(false);
 
   useEffect(() => {
-    let mounted = true;
-
-    const loadProfile = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user?.id) {
-          setError("No authenticated user");
-          return;
-        }
-        // remember for later comparing and posting
-        setCurrentUserId(user.id);
-
-        const { data, error } = await supabase
-          .from("users")
-          .select("id, username, first_name, last_name")
-          .eq("id", user.id)
-          .single();
-
-        if (error) {
-          setError(error.message);
-        } else if (mounted) {
-          setProfile(data ?? null);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    loadProfile();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    if (user?.id) {
+      setCurrentUserId(user.id);
+    }
+  }, [user]);
 
   const displayName =
-    profile && (profile.first_name || profile.last_name)
-      ? `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim()
+    userProfile && (userProfile.first_name || userProfile.last_name)
+      ? `${userProfile.first_name ?? ""} ${userProfile.last_name ?? ""}`.trim()
       : null;
 
-  const isOwnProfile = currentUserId && profile?.id === currentUserId;
+  const isOwnProfile = currentUserId && userProfile?.id === currentUserId;
 
   // fetch posts whenever we know which profile we are viewing
   useEffect(() => {
-    if (!profile?.id) return;
+    if (!userProfile?.id) return;
+    if (postsFetchedRef.current) return;
+    postsFetchedRef.current = true;
 
     const loadPosts = async () => {
       setLoadingPosts(true);
@@ -104,7 +61,7 @@ export default function Profile() {
         const { data, error } = await supabase
           .from("posts")
           .select("id, content, created_at, user_id, updated_at")
-          .eq("user_id", profile.id)
+          .eq("user_id", userProfile.id)
           .order("created_at", { ascending: false });
 
         if (error) {
@@ -118,7 +75,7 @@ export default function Profile() {
     };
 
     loadPosts();
-  }, [profile?.id]);
+  }, [userProfile?.id]);
 
   const handleNewPost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,95 +113,84 @@ export default function Profile() {
       className="profile-page"
       style={{ padding: "24px", fontFamily: "Arial, Helvetica, sans-serif" }}
     >
-      {loading ? (
-        <h2>Loading profile…</h2>
-      ) : error ? (
-        <div>
-          <h2>Profile</h2>
-          <p style={{ color: "red" }}>{error}</p>
-        </div>
-      ) : (
-        <>
-          {/* Shows the first and last name of the user profile and the username from the url (if available) */}
-          <h1>
-            {displayName ? `Welcome, ${displayName}!` : "Welcome!"}
-            {routeUsername && (
-              <span style={{ fontWeight: "normal" }}> (@{routeUsername})</span>
-            )}
-          </h1>
-          {/* Shows the username of the user profile */}
-          {profile?.username && (
-            <p>
-              <strong>Username:</strong> @{profile.username}
-            </p>
-          )}
+      {/* Shows the first and last name of the user profile and the username from the url (if available) */}
+      <h1>
+        {displayName ? `Welcome, ${displayName}!` : "Welcome!"}
+        {routeUsername && (
+          <span style={{ fontWeight: "normal" }}> (@{routeUsername})</span>
+        )}
+      </h1>
+      {/* Shows the username of the user profile */}
+      {userProfile?.username && (
+        <p>
+          <strong>Username:</strong> @{userProfile.username}
+        </p>
+      )}
 
-          {!profile?.username && <p>No username set.</p>}
+      {!userProfile?.username && <p>No username set.</p>}
 
-          {/* if this is the current user's profile, allow posting */}
-          {isOwnProfile && (
-            <div style={{ marginTop: "1.5rem" }}>
-              {!showNewPostForm ? (
+      {/* if this is the current user's profile, allow posting */}
+      {isOwnProfile && (
+        <div style={{ marginTop: "1.5rem" }}>
+          {!showNewPostForm ? (
+            <button
+              onClick={() => setShowNewPostForm(true)}
+              style={{ padding: "0.5rem 1rem" }}
+            >
+              New Post
+            </button>
+          ) : (
+            <form onSubmit={handleNewPost}>
+              <div>
+                <textarea
+                  value={newPostContent}
+                  onChange={(e) => setNewPostContent(e.target.value)}
+                  rows={4}
+                  style={{ width: "100%" }}
+                  required
+                />
+              </div>
+              <div style={{ marginTop: "0.5rem" }}>
                 <button
-                  onClick={() => setShowNewPostForm(true)}
+                  type="submit"
+                  disabled={posting}
                   style={{ padding: "0.5rem 1rem" }}
                 >
-                  New Post
+                  {posting ? "Posting…" : "Post"}
+                </button>{" "}
+                <button
+                  type="button"
+                  onClick={() => setShowNewPostForm(false)}
+                  disabled={posting}
+                >
+                  Cancel
                 </button>
-              ) : (
-                <form onSubmit={handleNewPost}>
-                  <div>
-                    <textarea
-                      value={newPostContent}
-                      onChange={(e) => setNewPostContent(e.target.value)}
-                      rows={4}
-                      style={{ width: "100%" }}
-                      required
-                    />
-                  </div>
-                  <div style={{ marginTop: "0.5rem" }}>
-                    <button
-                      type="submit"
-                      disabled={posting}
-                      style={{ padding: "0.5rem 1rem" }}
-                    >
-                      {posting ? "Posting…" : "Post"}
-                    </button>{" "}
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPostForm(false)}
-                      disabled={posting}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
+              </div>
+            </form>
           )}
-
-          {/* display any posts belonging to this profile */}
-          <div style={{ marginTop: "2rem" }}>
-            <h3>Posts</h3>
-            {loadingPosts ? (
-              <p>Loading posts…</p>
-            ) : posts.length === 0 ? (
-              <p>No posts yet.</p>
-            ) : (
-              <ul>
-                {posts.map((p) => (
-                  <li key={p.id} style={{ marginBottom: "1rem" }}>
-                    <div>{p.content}</div>
-                    <div style={{ fontSize: "0.8rem", color: "#666" }}>
-                      {new Date(p.created_at).toLocaleString()}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </>
+        </div>
       )}
+
+      {/* display any posts belonging to this profile */}
+      <div style={{ marginTop: "2rem" }}>
+        <h3>Posts</h3>
+        {loadingPosts ? (
+          <p>Loading posts…</p>
+        ) : posts.length === 0 ? (
+          <p>No posts yet.</p>
+        ) : (
+          <ul>
+            {posts.map((p) => (
+              <li key={p.id} style={{ marginBottom: "1rem" }}>
+                <div>{p.content}</div>
+                <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                  {new Date(p.created_at).toLocaleString()}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       <Link to="/">← Back to dashboard</Link>
     </div>

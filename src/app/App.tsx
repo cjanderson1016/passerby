@@ -16,40 +16,20 @@
   Author(s): Connor Anderson, Owen Berkholtz, Bryson Toubassi, Jacob Richards, Matthew Eagleman
 */
 import "./App.css";
-import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
-import type { User } from "@supabase/supabase-js";
+import { useState } from "react";
+import { useUser } from "../hooks/useUser";
 import Dashboard from "../features/Dashboard";
 import Login from "../features/Login";
 import Signup from "../features/Signup";
 
 function App() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"login" | "signup">("login");
+  const { user, loading } = useUser();
 
   // Get app name from environment variable, with a fallback for development
   const appName =
     import.meta.env.VITE_APP_NAME ||
     "No Name Found (missing VITE_APP_NAME env var)";
-
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   if (loading) {
     return <div>Loading...</div>;

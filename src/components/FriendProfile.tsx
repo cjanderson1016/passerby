@@ -1,3 +1,14 @@
+/*
+  File Name: FriendProfile.tsx
+
+  Description: This component represents an individual friend's profile card on the dashboard feed. 
+  It displays the friend's name, their most recent update, how long ago it was posted, and whether there are any unread messages from that friend.
+
+  Future: We add the profile picture and the ability to go to the friend's profile page or messages with that friend.
+  
+  Author(s): Connor Anderson
+*/
+
 import type { Friend } from "../types";
 
 function formatMinutes(m: number) {
