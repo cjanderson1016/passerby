@@ -1,3 +1,11 @@
+/*
+  File Name: ToggleButton.tsx
+
+  Description: Adds a snazzy button that slides on/off. Style sheet can be found in "settings.css"
+
+  Author(s): Owen Berkholtz
+*/
+
 import { useState, useEffect } from "react";
 import "../features/settings.css"
 import {getItem, setItem} from "../components/LocalStorage"

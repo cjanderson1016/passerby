@@ -1,3 +1,16 @@
+/*
+  File Name: UserSettings.tsx
+
+  Description: A settings page that lets users:
+    - Change their username
+    - Change their password
+    - Delete their account
+    - Change who can see their comments/posts/likes
+
+
+
+  Author(s): Owen Berkholtz
+*/
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 //import { useNavigate } from "react-router-dom";
@@ -11,6 +24,7 @@ import ResetPass from "./ResetPassword";
 
 
 export default function Settings(){
+  //useState hooks
     const [user, setUser] = useState<null | any>(null);
     const [newUser, setNewUser] = useState("");
     const [openModal_pass, setOpenModal_pass] = useState(false);
@@ -18,8 +32,9 @@ export default function Settings(){
     const [openModal_user, setOpenModal_user] = useState(false);
 
 
-
+//List that contains the settings information for an accordion style menu. (see accordion.tsx)
 const settings_list = [
+  // Container 1: Account settings --> reset password, delete account
   {
     id: "1",
     title: "Account Settings",
@@ -30,6 +45,7 @@ const settings_list = [
     ],
   },
   {
+    // Container 2: Privacy & Visibilty --> Others can see my posts/comments/likes
     id: "2",
     title: "Privacy and Visibility",
 
@@ -83,17 +99,19 @@ const settings_list = [
         </div>
 
         <div className="settings-body">
+          <div className="change_user">
           <form onSubmit={(e) => e.preventDefault()}
           
           
           >Username: 
             <input type="textbox" placeholder={user}
             value={newUser}
-            onChange={(e) => setNewUser(e.target.value)}>
+            onChange={(e) => setNewUser(e.target.value)} style={{ marginLeft: "5px", padding: "5px"}}>
             </input>
-            <button onClick={() => setOpenModal_user(true)}
+            <button onClick={() => setOpenModal_user(true)} style={{ marginLeft: "5px", padding: "5px", cursor: "pointer" }}
             >Change Username</button>
           </form>
+          </div>
           <br/>
           <Accordion_Component list={settings_list}/>
           
@@ -108,6 +126,7 @@ const settings_list = [
   );
 }
 
+{/* Popup that comes up when the user wants to update their password. */}
 interface ConfirmUserParams {
   newUser: string;
   setUser: React.Dispatch<React.SetStateAction<any>>;
@@ -159,10 +178,11 @@ catch(error){
 };
 
 return (
-  <div>
-    are you sure you want to change your username?
+  <div className="confirm_box">
+    <h2> Attention</h2>
+    You are about to change your username. Would you like to proceed?
     <div>
-      <button onClick={handleUsernameReset}>
+      <button onClick={handleUsernameReset} className="confirm_accept">
         Yes
       </button>
     </div>

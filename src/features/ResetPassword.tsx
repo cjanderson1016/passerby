@@ -1,7 +1,15 @@
+/*
+  File Name: ResetPassword.tsx
+
+  Description: Allows the user to reset their password if they wish. 
+
+  Author(s): Owen Berkholtz
+*/
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
 export default function ResetPass() {
+  // useState hooks
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,7 +38,8 @@ export default function ResetPass() {
 
       if (error) {
         setError(error.message);
-      } else {
+      } 
+      else {
         setSuccess("Password updated successfully!");
         setPassword("");
         setConfirmPassword("");

@@ -1,3 +1,11 @@
+/*
+  File Name: settings.css
+
+  Description: Styles for UserSettings.tsx
+
+  Author(s): Owen Berkholtz
+*/
+
 .settings-title {
     margin-left: 100px;
 }
@@ -49,4 +57,33 @@
     cursor: pointer;
     border-color: red;
     color: red;
+}
+
+.confirm_box{
+    display: inline;
+    align-items: center;
+}
+
+.confirm_accept{
+            padding: 0.75rem;
+            background-color: #46d668;
+            color: white;
+            border: none;
+            margin-top: 30px;
+            font-weight: bold;
+            width: 50%;
+            margin-left: 25%;
+
+        
+}
+
+.confirm_accept:hover{
+    cursor: pointer;
+}
+
+.change_user{
+    padding: 10px;
+    width: 51%;
+    font-weight: bold;
+
 }

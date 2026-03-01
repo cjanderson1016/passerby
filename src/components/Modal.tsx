@@ -1,3 +1,11 @@
+/*
+  File Name: Modal.tsx
+
+  Description: Generic Modal component for popups. Takes in react components and displays them in a small window with an exit button
+
+  Author(s): Owen Berkholtz
+*/
+
 import React from "react";
 import "./Modal.css";
 
@@ -6,6 +14,7 @@ type ModalParams = {
     current_state: (open :boolean) =>void;
     component: React.ReactNode;
 }
+
 const Modal : React.FC<ModalParams> = ({is_open, current_state, component}) => {
     if (!is_open) return null;
     return (

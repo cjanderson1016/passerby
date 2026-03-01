@@ -1,3 +1,11 @@
+/*
+  File Name: Modal.css
+
+  Description: Styling for the generic modal in Modal.tsx
+
+  Author(s): Owen Berkholtz
+*/
+
 /* Fullscreen backdrop */
 .popup_window {
     position: fixed;
