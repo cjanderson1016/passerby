@@ -21,41 +21,6 @@ type FilterOption =
   | "Unread Messages First"
   | "Closest Friends"; // placeholder for later
 
-// the friend profiles displayed on the dashboard represent the friends' most recent updates
-// use the shared Friend type imported above
-// TODO: id will become the username once we have real data, and we'll also need to add a profile picture URL and maybe other fields
-
-const initialFriends: Friend[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-    lastUpdatedMinutesAgo: 12,
-    unreadMessages: true,
-  },
-  {
-    id: "2",
-    name: "Alyssa Kim",
-    text: "Quick update—just finished a new project and it went really well.",
-    lastUpdatedMinutesAgo: 55,
-    unreadMessages: false,
-  },
-  {
-    id: "3",
-    name: "Sam Patel",
-    text: "Anyone free this weekend? Thinking about grabbing coffee.",
-    lastUpdatedMinutesAgo: 140,
-    unreadMessages: true,
-  },
-  {
-    id: "4",
-    name: "Taylor M.",
-    text: "Trying a new study routine. It’s actually helping a lot.",
-    lastUpdatedMinutesAgo: 300,
-    unreadMessages: false,
-  },
-];
-
 function applyFilter(posts: Friend[], filter: FilterOption): Friend[] {
   const copy = [...posts];
 
@@ -85,23 +50,127 @@ function applyFilter(posts: Friend[], filter: FilterOption): Friend[] {
   }
 }
 
+// Helper: safest timestamp picker
+function getPostTimestampMs(post: any): number {
+  const raw = post?.updated_at ?? post?.created_at;
+  const t = raw ? new Date(raw).getTime() : NaN;
+  return Number.isFinite(t) ? t : Date.now();
+}
+
 export default function Dashboard() {
   const [filterOption, setFilterOption] = useState<FilterOption>(
     "Most Recently Updated",
   );
 
-  const [friends] = useState<Friend[]>(initialFriends);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [loadingFriends, setLoadingFriends] = useState(false);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // we no longer manage profile circle/drowdown state here; it's handled by ProfileMenu
-
   // Fetch the current user's ID on mount (needed by FriendRequestList and AddFriendModal)
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setCurrentUserId(user.id);
-    });
+    const getUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setCurrentUserId(data.user?.id ?? null);
+    };
+
+    void getUser();
   }, []);
+
+  // Pull friends + latest posts from Supabase
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const fetchFriendsFeed = async () => {
+      setLoadingFriends(true);
+
+      // 1) Get accepted relationships involving this user
+      const { data: accepted, error: acceptedError } = await supabase
+        .from("friend_requests")
+        .select("requester_id, recipient_id")
+        .eq("status", "accepted")
+        .or(`requester_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`);
+
+      if (acceptedError) {
+        console.error("Error fetching accepted friends:", acceptedError.message);
+        setFriends([]);
+        setLoadingFriends(false);
+        return;
+      }
+
+      const friendIds = (accepted ?? [])
+        .map((r: any) =>
+          r.requester_id === currentUserId ? r.recipient_id : r.requester_id,
+        )
+        .filter(Boolean);
+
+      if (friendIds.length === 0) {
+        setFriends([]);
+        setLoadingFriends(false);
+        return;
+      }
+
+      // 2) Load friend user profiles
+      const { data: friendUsers, error: usersError } = await supabase
+        .from("users")
+        .select("id, username, first_name, last_name")
+        .in("id", friendIds);
+
+      if (usersError) {
+        console.error("Error fetching friend users:", usersError.message);
+        setFriends([]);
+        setLoadingFriends(false);
+        return;
+      }
+
+      // 3) Load posts for those friends (we'll compute latest per friend in JS)
+      const { data: posts, error: postsError } = await supabase
+        .from("posts")
+        .select("id, user_id, content, created_at, updated_at")
+        .in("user_id", friendIds);
+
+      if (postsError) {
+        console.error("Error fetching friend posts:", postsError.message);
+        // Still show friends even if posts fail
+      }
+
+      const latestByUser = new Map<string, any>();
+      for (const p of posts ?? []) {
+        const ts = getPostTimestampMs(p);
+        const existing = latestByUser.get(p.user_id);
+        const existingTs = existing ? getPostTimestampMs(existing) : -1;
+        if (!existing || ts > existingTs) latestByUser.set(p.user_id, p);
+      }
+
+      const now = Date.now();
+
+      // 4) Build Friend[] for FriendTable
+      const feed: Friend[] = (friendUsers ?? []).map((u: any) => {
+        const latest = latestByUser.get(u.id);
+        const lastTime = latest ? getPostTimestampMs(latest) : now;
+        const minutesAgo = Math.max(0, Math.floor((now - lastTime) / 60000));
+
+        const fullName = [u.first_name, u.last_name].filter(Boolean).join(" ");
+        const name = fullName.trim() || u.username || "Unknown";
+
+        return {
+          // IMPORTANT: Your router is /profile/:username
+          // So friend.id should be the username (not UUID)
+          id: u.username ?? u.id,
+          name,
+          text: latest?.content ?? "(No posts yet)",
+          lastUpdatedMinutesAgo: minutesAgo,
+          unreadMessages: false, // you can wire this later
+        };
+      });
+
+      setFriends(feed);
+      setLoadingFriends(false);
+    };
+
+    void fetchFriendsFeed();
+  }, [currentUserId]);
 
   const filteredFriends = useMemo(() => {
     return applyFilter(friends, filterOption);
@@ -142,12 +211,18 @@ export default function Dashboard() {
       </div>
 
       {/* Incoming friend requests — stacks vertically, pushes feed down */}
-      {currentUserId && (
-        <FriendRequestList currentUserId={currentUserId} />
-      )}
+      {currentUserId && <FriendRequestList currentUserId={currentUserId} />}
 
       {/* Feed */}
-      <FriendTable friends={filteredFriends} />
+      {loadingFriends ? (
+        <div style={{ padding: "16px" }}>Loading friends…</div>
+      ) : friends.length === 0 ? (
+        <div style={{ padding: "16px" }}>
+          No friends yet. Click <b>Add Friend</b> to send a request.
+        </div>
+      ) : (
+        <FriendTable friends={filteredFriends} />
+      )}
 
       {/* Add Friend modal */}
       {currentUserId && (
