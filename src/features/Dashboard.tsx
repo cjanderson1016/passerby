@@ -7,6 +7,7 @@
   */
 
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import "./dashboard.css";
 import type { Friend, Post, AcceptedFriendRequest, FriendUser } from "../types";
 import ProfileMenu from "../components/ProfileMenu";
@@ -215,9 +216,14 @@ export default function Dashboard() {
           </select>
         </div>
 
-        <button className="dash-add-btn" onClick={() => setModalOpen(true)}>
-          Add Friend
-        </button>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <Link to="/messages" className="dash-add-btn" style={{ textDecoration: "none", display: "flex", alignItems: "center", fontSize: "48px", padding: "0 10px" }} title="Messages">
+            ✉
+          </Link>
+          <button className="dash-add-btn" onClick={() => setModalOpen(true)}>
+            Add Friend
+          </button>
+        </div>
       </div>
 
       {/* Incoming friend requests — stacks vertically, pushes feed down */}

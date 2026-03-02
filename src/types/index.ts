@@ -41,3 +41,20 @@ export interface FriendUser {
   first_name: string | null;
   last_name: string | null;
 }
+
+// A conversation joined with the other participant's info and last message preview.
+export interface ConversationPreview {
+  conversation_id: string;
+  last_message_at: string | null;
+  other_user: FriendUser;
+  last_message_content: string | null;
+}
+
+// A single message in a conversation thread.
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+}

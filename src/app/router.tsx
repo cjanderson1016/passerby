@@ -11,6 +11,8 @@ import App from "./App";
 import Profile from "../features/Profile";
 import Settings from "../features/UserSettings"
 import Reset from "../features/ResetPassword";
+import Messages from "../features/Messages";
+import Conversation from "../features/Conversation";
 
 export const router = createBrowserRouter([
   {
@@ -41,5 +43,13 @@ export const router = createBrowserRouter([
       {
     path: "/reset_pass",
     element: <Reset />,
+  },
+  {
+    path: "/messages",
+    element: <Messages />,
+  },
+  {
+    path: "/messages/:conversationId",
+    element: <Conversation />,
   },
 ]);
