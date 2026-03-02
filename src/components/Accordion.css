@@ -1,0 +1,54 @@
+/*
+  File Name: Accordion.css
+
+  Description: Style component for Accordion.tsx
+
+  Author(s): Owen Berkholtz
+*/
+.accordion_container {
+    border: 1px solid black;  
+  padding: 1rem; 
+  background-color: rgb(214, 214, 214);
+  width: 50%;
+}
+
+.container_title {
+    font-weight: bold;
+    padding-bottom: 3px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    
+}
+
+.accordion_row{
+    display: flex;
+    padding-bottom: 10px;
+}
+
+.accordion_element{
+    display: "flex";
+    justify-content: "space-between";
+    width: 250px;
+    padding-left: 50px;
+}
+
+.container_title:hover{
+    cursor: pointer;
+    
+}
+
+.container_arrow{
+    color: red;
+  margin-left: auto;
+}
+
+.accordion_item {
+    margin-left: 20px;
+    padding-top: 1rem;
+}
+
+.accordion_button {
+    padding-left: 10px;
+}

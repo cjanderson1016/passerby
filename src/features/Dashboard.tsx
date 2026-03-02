@@ -3,119 +3,251 @@
 
   Description: This file defines the main dashboard component for the application.
 
-  Author(s): Connor Anderson
+  Author(s): Connor Anderson, Jacob Richards
   */
 
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase"; // Import the pre-configured Supabase client from our lib/supabase.ts file. This keeps our database configuration centralized and reusable across the app.
-import RouteButton from "../components/RouteButton"; // Import a reusable Button component for navigation. This is just an example of how we can build out our UI with shared components.
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import "./dashboard.css";
+import type { Friend, Post, AcceptedFriendRequest, FriendUser } from "../types";
+import ProfileMenu from "../components/ProfileMenu";
+import FriendTable from "../components/FriendTable";
+import FriendRequestList from "../components/FriendRequestList";
+import AddFriendModal from "../components/AddFriendModal";
+import { useUser } from "../hooks/useUser";  // hook wraps UserContext and provides user/profile/loading
+import { supabase } from "../lib/supabase"; // still used for fetching friends/posts
 
-// Lightweight type describing the instrument rows we expect from the DB.
-// Adding this helps TypeScript understand shapes used in the UI.
-type Instrument = {
-  id?: number;
-  name: string;
-};
+type FilterOption =
+  | "Most Recently Updated"
+  | "Alphabetical (A–Z)"
+  | "Unread Messages First"
+  | "Closest Friends"; // placeholder for later
 
-function Dashboard() {
-  // State holds the fetched instruments. Start with an empty array.
-  const [instruments, setInstruments] = useState<Instrument[]>([]);
-  const [signingOut, setSigningOut] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+function applyFilter(posts: Friend[], filter: FilterOption): Friend[] {
+  const copy = [...posts];
 
-  const handleSignout = async () => {
-    setSigningOut(true);
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error("Error signing out:", error);
-      }
-    } catch (err) {
-      console.error("Unexpected error during signout:", err);
-    } finally {
-      setSigningOut(false);
-    }
-  };
+  switch (filter) {
+    case "Most Recently Updated":
+      return copy.sort(
+        (a, b) => a.lastUpdatedMinutesAgo - b.lastUpdatedMinutesAgo,
+      );
 
+    case "Alphabetical (A–Z)":
+      return copy.sort((a, b) => a.name.localeCompare(b.name));
+
+    case "Unread Messages First":
+      return copy.sort((a, b) => {
+        if (a.unreadMessages === b.unreadMessages) {
+          return a.lastUpdatedMinutesAgo - b.lastUpdatedMinutesAgo;
+        }
+        return a.unreadMessages ? -1 : 1;
+      });
+
+    case "Closest Friends":
+      // placeholder: later sort by closeness score
+      return copy;
+
+    default:
+      return copy;
+  }
+}
+
+// Helper: safest timestamp picker.  The post only needs to expose
+// `created_at`/`updated_at` so we use a partial of the full `Post` type
+// instead of resorting to `any`.
+function getPostTimestampMs(
+  post: Partial<Pick<Post, "updated_at" | "created_at">> | null | undefined,
+): number {
+  const raw = post?.updated_at ?? post?.created_at;
+  const t = raw ? new Date(raw).getTime() : NaN;
+  return Number.isFinite(t) ? t : Date.now();
+}
+
+export default function Dashboard() {
+  const [filterOption, setFilterOption] = useState<FilterOption>(
+    "Most Recently Updated",
+  );
+
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [loadingFriends, setLoadingFriends] = useState(false);
+
+  const [modalOpen, setModalOpen] = useState(false);
+
+  // instead of tracking currentUserId in state and querying supabase again,
+  // obtain the authenticated user from our UserContext via the useUser hook.
+  const { user } = useUser();
+  const currentUserId = user?.id ?? null; // derived value used by other effects/components
+
+  // Pull friends + latest posts from Supabase
   useEffect(() => {
-    // `mounted` guard prevents calling `setInstruments` after unmount.
-    let mounted = true;
+    if (!currentUserId) return;
 
-    // Use an async IIFE (Immediately Invoked Function Expression) so we can await inside useEffect.
-    (async () => {
-      // NOTE: Supabase `from` in v2 typings can expect 2 generics depending on
-      // how the client is typed. To avoid the "Expected 2 type arguments"
-      // error we call `.from("instruments")` without generics and cast the
-      // returned `data` to `Instrument[]` when setting state.
-      const { data, error } = await supabase.from("instruments").select("*");
+    const fetchFriendsFeed = async () => {
+      setLoadingFriends(true);
 
-      if (error) {
-        // Log and bail on error; don't update state.
-        console.error("Error fetching instruments:", error);
-        if (mounted) setError(`Error: ${error.message}`);
-        if (mounted) setLoading(false);
+      // 1) Get accepted relationships involving this user
+      const { data: accepted, error: acceptedError } = await supabase
+        .from("friend_requests")
+        .select("requester_id, recipient_id")
+        .eq("status", "accepted")
+        .or(
+          `requester_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`,
+        );
+
+      if (acceptedError) {
+        console.error(
+          "Error fetching accepted friends:",
+          acceptedError.message,
+        );
+        setFriends([]);
+        setLoadingFriends(false);
         return;
       }
 
-      // Only update state if component is still mounted. Cast `data` to the
-      // expected `Instrument[]` shape; `data` may be `null` if no rows exist.
-      if (mounted) {
-        console.log("Instruments fetched:", data);
-        setInstruments((data ?? []) as Instrument[]);
-        setLoading(false);
+      const friendIds =
+        (accepted as AcceptedFriendRequest[] | null)
+          ?.map((r) =>
+            r.requester_id === currentUserId ? r.recipient_id : r.requester_id,
+          )
+          .filter(Boolean) ?? [];
+
+      if (friendIds.length === 0) {
+        setFriends([]);
+        setLoadingFriends(false);
+        return;
       }
-    })();
 
-    return () => {
-      mounted = false;
+      // 2) Load friend user profiles
+      const { data: friendUsers, error: usersError } = await supabase
+        .from("users")
+        .select("id, username, first_name, last_name")
+        .in("id", friendIds);
+
+      if (usersError) {
+        console.error("Error fetching friend users:", usersError.message);
+        setFriends([]);
+        setLoadingFriends(false);
+        return;
+      }
+
+      // 3) Load posts for those friends (we'll compute latest per friend in JS)
+      const { data: posts, error: postsError } = await supabase
+        .from("posts")
+        .select("id, user_id, content, created_at, updated_at")
+        .in("user_id", friendIds);
+
+      if (postsError) {
+        console.error("Error fetching friend posts:", postsError.message);
+        // Still show friends even if posts fail
+      }
+
+      // Compute the latest post per friend.  We could do this in SQL with window functions, but doing it in JS is simpler for now and we don't expect a large number of friends/posts.
+      const latestByUser = new Map<string, Post>();
+      for (const p of (posts as Post[] | null) ?? []) {
+        const ts = getPostTimestampMs(p);
+        const existing = latestByUser.get(p.user_id);
+        const existingTs = existing ? getPostTimestampMs(existing) : -1;
+        if (!existing || ts > existingTs) latestByUser.set(p.user_id, p);
+      }
+
+      const now = Date.now();
+
+      // 4) Build Friend[] for FriendTable
+      const feed: Friend[] = ((friendUsers as FriendUser[] | null) ?? []).map(
+        (u) => {
+          const latest = latestByUser.get(u.id);
+          const lastTime = latest ? getPostTimestampMs(latest) : now;
+          const minutesAgo = Math.max(0, Math.floor((now - lastTime) / 60000));
+
+          const fullName = [u.first_name, u.last_name]
+            .filter(Boolean)
+            .join(" ");
+          const name = fullName.trim() || u.username || "Unknown";
+
+          return {
+            // IMPORTANT: Your router is /profile/:username
+            // So friend.id should be the username (not UUID)
+            id: u.username ?? u.id,
+            name,
+            text: latest?.content ?? "(No posts yet)",
+            lastUpdatedMinutesAgo: minutesAgo,
+            unreadMessages: false, // you can wire this later
+          };
+        },
+      );
+
+      setFriends(feed);
+      setLoadingFriends(false);
     };
-  }, []);
 
-  // Render the list of instruments. Use `id` as key when available, fall back
-  // to `name` as a stable string key.
+    void fetchFriendsFeed();
+  }, [currentUserId]);
+
+  const filteredFriends = useMemo(() => {
+    return applyFilter(friends, filterOption);
+  }, [friends, filterOption]);
+
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "2rem",
-        }}
-      >
-        <h2>Dashboard Component</h2>
-        <button
-          onClick={handleSignout}
-          disabled={signingOut}
-          style={{
-            padding: "0.5rem 1rem",
-            backgroundColor: signingOut ? "#ccc" : "#dc3545",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: signingOut ? "not-allowed" : "pointer",
-          }}
-        >
-          {signingOut ? "Signing out..." : "Sign Out"}
-        </button>
+    <div className="dash-page">
+      {/* Top bar */}
+      <div className="dash-topbar">
+        <div className="dash-title">PASSERBY</div>
+
+        {/* profile button/dropdown moved into its own component */}
+        <ProfileMenu />
       </div>
-      <RouteButton to="/about">Go to About</RouteButton>
-      {loading ? (
-        <p>Loading instruments...</p>
-      ) : error ? (
-        <p style={{ color: "red" }}>{error}</p>
-      ) : instruments.length === 0 ? (
-        <p>No instruments found. This may indicate a Row Level Security (RLS) issue.</p>
+
+      {/* Filter row */}
+      <div className="dash-filter-row">
+        <div className="dash-filter-left">
+          <div className="dash-filter-label">
+            choose a friend to catch up with
+          </div>
+
+          <select
+            className="dash-select"
+            value={filterOption}
+            onChange={(e) => setFilterOption(e.target.value as FilterOption)}
+          >
+            <option>Most Recently Updated</option>
+            <option>Alphabetical (A–Z)</option>
+            <option>Unread Messages First</option>
+            <option>Closest Friends</option>
+          </select>
+        </div>
+
+        <div style={{ display: "flex", gap: "8px" }}>
+          <Link to="/messages" className="dash-add-btn" style={{ textDecoration: "none", display: "flex", alignItems: "center", fontSize: "48px", padding: "0 10px" }} title="Messages">
+            ✉
+          </Link>
+          <button className="dash-add-btn" onClick={() => setModalOpen(true)}>
+            Add Friend
+          </button>
+        </div>
+      </div>
+
+      {/* Incoming friend requests — stacks vertically, pushes feed down */}
+      {currentUserId && <FriendRequestList currentUserId={currentUserId} />}
+
+      {/* Feed */}
+      {loadingFriends ? (
+        <div style={{ padding: "16px" }}>Loading friends…</div>
+      ) : friends.length === 0 ? (
+        <div style={{ padding: "16px" }}>
+          No friends yet. Click <b>Add Friend</b> to send a request.
+        </div>
       ) : (
-        <ul>
-        {instruments.map((instrument) => (
-          <li key={instrument.id ?? instrument.name}>{instrument.name}</li>
-        ))}
-      </ul>
+        <FriendTable friends={filteredFriends} />
+      )}
+
+      {/* Add Friend modal */}
+      {currentUserId && (
+        <AddFriendModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          currentUserId={currentUserId}
+        />
       )}
     </div>
   );
 }
-
-export default Dashboard;

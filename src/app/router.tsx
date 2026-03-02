@@ -7,15 +7,49 @@
 */
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
-import About from "../features/test/About";
+// import About from "../features/test/About";
+import Profile from "../features/Profile";
+import Settings from "../features/UserSettings"
+import Reset from "../features/ResetPassword";
+import Messages from "../features/Messages";
+import Conversation from "../features/Conversation";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
   },
+  // {
+  //   path: "/about",
+  //   element: <About />,
+  // },
+  // maintain a plain /profile route for backwards compatibility or
+  // cases where the username is not yet known; it renders the same component.
   {
-    path: "/about",
-    element: <About />,
+    path: "/profile",
+    element: <Profile />,
+  },
+  {
+    // profile route now includes username as a dynamic segment. the component
+    // can still fetch the authenticated user itself, but the URL reflects the
+    // user's chosen username for bookmarking/linking.
+    path: "/profile/:username",
+    element: <Profile />,
+  },
+    {
+    path: "/settings",
+    element: <Settings />,
+  },
+      {
+    path: "/reset_pass",
+    element: <Reset />,
+  },
+  {
+    path: "/messages",
+    element: <Messages />,
+  },
+  {
+    path: "/messages/:conversationId",
+    element: <Conversation />,
   },
 ]);
