@@ -108,69 +108,68 @@ export default function Activity(props: ActivityProps) {
           className="activity"
           style={{ padding: "24px", fontFamily: "Arial, Helvetica, sans-serif" }}
         >
-          
-            {/* if this is the current user's profile, allow posting */}
-            {isOwnProfile && (
-              <div style={{ marginTop: "1.5rem" }}>
-                {!showNewPostForm ? (
-                  <button
-                    onClick={() => setShowNewPostForm(true)}
-                    style={{ padding: "0.5rem 1rem" }}
-                  >
-                    New Post
-                  </button>
-                ) : (
-                  <form onSubmit={handleNewPost}>
-                    <div>
-                      <textarea
-                        value={newPostContent}
-                        onChange={(e) => setNewPostContent(e.target.value)}
-                        rows={4}
-                        style={{ width: "100%" }}
-                        required
-                      />
-                    </div>
-                    <div style={{ marginTop: "0.5rem" }}>
-                      <button
-                        type="submit"
-                        disabled={posting}
-                        style={{ padding: "0.5rem 1rem" }}
-                      >
-                        {posting ? "Posting…" : "Post"}
-                      </button>{" "}
-                      <button
-                        type="button"
-                        onClick={() => setShowNewPostForm(false)}
-                        disabled={posting}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                )}
-              </div>
-            )}
-
-            {/* display any posts belonging to this profile */}
-            <div style={{ marginTop: "2rem" }}>
-              <h3>Posts</h3>
-              {loadingPosts ? (
-                <p>Loading posts…</p>
-              ) : posts.length === 0 ? (
-                <p>No posts yet.</p>
+          {/* if this is the current user's profile, allow posting */}
+          {isOwnProfile && (
+            <div style={{ marginTop: "1.5rem" }}>
+              {!showNewPostForm ? (
+                <button
+                  onClick={() => setShowNewPostForm(true)}
+                  style={{ padding: "0.5rem 1rem" }}
+                >
+                  New Post
+                </button>
               ) : (
-                <ul>
-                  {posts.map((p) => (
-                    <li key={p.id} style={{ marginBottom: "1rem" }}>
-                      <div>{p.content}</div>
-                      <div style={{ fontSize: "0.8rem", color: "#666" }}>
-                        {new Date(p.created_at).toLocaleString()}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                <form onSubmit={handleNewPost}>
+                  <div>
+                    <textarea
+                      value={newPostContent}
+                      onChange={(e) => setNewPostContent(e.target.value)}
+                      rows={4}
+                      style={{ width: "100%" }}
+                      required
+                    />
+                  </div>
+                  <div style={{ marginTop: "0.5rem" }}>
+                    <button
+                      type="submit"
+                      disabled={posting}
+                      style={{ padding: "0.5rem 1rem" }}
+                    >
+                      {posting ? "Posting…" : "Post"}
+                    </button>{" "}
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPostForm(false)}
+                      disabled={posting}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
               )}
             </div>
+          )}
+
+          {/* display any posts belonging to this profile */}
+          <div style={{ marginTop: "2rem" }}>
+            <h3>Posts</h3>
+            {loadingPosts ? (
+              <p>Loading posts…</p>
+            ) : posts.length === 0 ? (
+              <p>No posts yet.</p>
+            ) : (
+              <ul>
+                {posts.map((p) => (
+                  <li key={p.id} style={{ marginBottom: "1rem" }}>
+                    <div>{p.content}</div>
+                    <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                      {new Date(p.created_at).toLocaleString()}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
     </>
