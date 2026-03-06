@@ -17,12 +17,14 @@ export interface UserProfile {
   username: string | null;
   first_name: string | null;
   last_name: string | null;
+  profile_pic_key?: string; // optional key for the user's profile picture stored in R2
 }
 
 // The UserContextType defines the shape of the context value that will be provided by the UserProvider.
 export interface UserContextType {
   user: User | null; // This is the authenticated user object from Supabase, which includes basic auth info like id and email
   userProfile: UserProfile | null; // This is the additional profile info we fetch from our public.users table based on the authenticated user's id
+  setUserProfile: (profile: UserProfile | null) => void; // NEW: allows updating userProfile
   loading: boolean; // Indicates whether the user data is still loading (e.g. fetching session or profile data)
 }
 

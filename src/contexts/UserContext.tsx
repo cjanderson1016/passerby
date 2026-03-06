@@ -36,7 +36,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     try {
       const { data } = await supabase
         .from("users")
-        .select("id, username, first_name, last_name")
+        .select("id, username, first_name, last_name, profile_pic_key")
         .eq("id", userId)
         .single();
       setUserProfile({
@@ -45,6 +45,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         username: data?.username ?? null,
         first_name: data?.first_name ?? null,
         last_name: data?.last_name ?? null,
+        profile_pic_key: data?.profile_pic_key ?? null,
       });
     } catch (err) {
       // if there is an error fetching the profile, log the error and set userProfile to null
@@ -96,7 +97,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
   //    the additional profile info we fetch from our users table, (userProfile)
   //    and a loading state to indicate if we are still determining the auth state. (loading)
   return (
-    <UserContext.Provider value={{ user, userProfile, loading }}>
+    <UserContext.Provider
+      value={{ user, userProfile, setUserProfile, loading }}
+    >
       {children}
     </UserContext.Provider>
   );
