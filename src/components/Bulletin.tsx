@@ -5,7 +5,7 @@
 
   Author(s): Matthew Eagleman
 */
-import { useEffect, useRef, useState } from "react";
+import { Component, use, useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useUser } from "../hooks/useUser";
 
@@ -35,18 +35,32 @@ export default function Bulletin(props: BulletinProps) {
   const [bulletinComponents, setBulletinComponents] = useState<(TextComponent | TitleComponent)[]>([]);
   const [loadingComponents, setLoadingComponents] = useState(false);
 
+  const cleanAddComponents = (components: Array<TextComponent | TitleComponent>, additions: Array<TextComponent | TitleComponent>) => {
+    additions.forEach((addition) => {
+      let isInArray = false
+      components.forEach((component) => {
+        if (component.component_id === addition.component_id) isInArray = true;
+      })
+      if (!isInArray) components.push(addition)
+    })
+    return components.sort((a,b) => a.position - b.position)
+  }
+
   useEffect(() => {
     if (user?.id) {
       setCurrentUserId(user.id);
     }
   }, [user]);
 
+  /*useEffect(() => {
+    console.log("bulletin components updated:", bulletinComponents);
+  }, [bulletinComponents]);*/
+
   useEffect(() => {
       if (!userProfile?.id) return;
       const loadBulletin = async () => {
         setLoadingComponents(true);
         try {
-          setBulletinComponents([])
           const { data: containerData, error: containerError } = await supabase
             .from("bulletin_components")
             .select(`*`)
@@ -60,7 +74,7 @@ export default function Bulletin(props: BulletinProps) {
           }
           if (containerData){
             const componentTypes = new Set(containerData.map((component) => (component.child_table)));
-            console.log("component types:",componentTypes);
+            //console.log("component types:",componentTypes);
             componentTypes.forEach(async (componentType) => {
               const {data: componentTypeData, error:componentTypeError} = await supabase
               .from("bulletin_components")
@@ -73,17 +87,16 @@ export default function Bulletin(props: BulletinProps) {
                 console.error(`error loading ${componentType}`, componentTypeError);
               } else {
                 console.log(`loaded ${componentType}`, componentTypeData);
-                setBulletinComponents(prev => [...prev, ...componentTypeData]);
+                setBulletinComponents(prev => cleanAddComponents([...prev], [...componentTypeData]));
               }
             })
-            //setBulletinComponents(prev => prev.sort((a,b) => a.position - b.position))
           }
         } finally {
           setLoadingComponents(false);
         }
       };
-  
-      loadBulletin();
+      
+      loadBulletin()
     }, [userProfile?.id]);
   return (
     <>
@@ -93,7 +106,9 @@ export default function Bulletin(props: BulletinProps) {
           bulletinComponents.map((component) => (
             <div key={component.component_id} className="bulliton-components">
               {component.child_table == "text_components" &&
-                <p key={component.component_id}>this is component {component.position}, it is of type {component.child_table}</p>
+                <div>
+                  <p key={component.component_id}>this is component {component.position}, it is of type {component.child_table}</p>
+                </div>
               }
               {component.child_table == "title_card_components" &&
                 <p key={component.component_id}>this is component {component.position}, it is of type {component.child_table}</p>

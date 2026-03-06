@@ -11,6 +11,8 @@ import { useEffect, useState} from "react";
 import { useUser } from "../hooks/useUser";
 import Activity from "../components/Activity";
 import Bulletin from "../components/Bulletin";
+import ProfileMenu from "../components/ProfileMenu";  
+import "../features/Profile.css"; // styles specific to the profile page, such as the tab buttons and layout
 
 // We will need to decide how to load profile pages in the future.
 // For now, this just loads the current user's profile based on their session.
@@ -35,8 +37,13 @@ export default function Profile() {
   return (
     <div
       className="profile-page"
-      style={{ padding: "24px", fontFamily: "Arial, Helvetica, sans-serif" }}
     >
+      <div className="profile-topbar">
+        <div className="profile-title">PASSERBY</div>
+      
+              {/* profile button/dropdown moved into its own component */}
+        <ProfileMenu />
+      </div>
       {/* Shows the first and last name of the user profile and the username from the url (if available) */}
       <h1>
         {displayName ? `Welcome, ${displayName}!` : "Welcome!"}
