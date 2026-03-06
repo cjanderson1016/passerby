@@ -17,42 +17,82 @@ export interface UploadFileResponse {
   publicUrl: string;
 }
 
-/**
- * Request presigned URL from Supabase Edge Function
- */
-export async function getPresignedUrl(filename: string, contentType: string): Promise<UploadFileResponse> {
-  const { data, error } = await supabase.functions.invoke('upload-media', {
-    body: { filename, contentType }
-  });
+/** 
+ * Helper function to get the current user's access token for authenticated requests 
+*/
+async function getAccessToken(): Promise<string> {
+  // Get the current session to retrieve the access token
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
 
-  if (error) throw new Error(error.message || "Failed to get presigned URL");
+  // Handle errors or missing session
+  if (error || !session?.access_token) {
+    throw new Error("You must be signed in to upload files");
+  }
 
-  return data as UploadFileResponse;
+  return session.access_token; // Return the access token for authenticated requests
 }
 
 /**
- * Upload file directly to Cloudflare R2 using presigned URL
+ * Request presigned URL from Supabase Edge Function
  */
-export async function uploadFileToR2(file: File): Promise<{ key: string; publicUrl: string }> {
-  const filename = `${Date.now()}-${file.name}`;
-  const { presignedUrl, key, publicUrl } = await getPresignedUrl(filename, file.type);
+export async function getPresignedUrl(file: File) {
+  // Get access token for authentication
+  const accessToken = await getAccessToken();
 
-  const putRes = await fetch(presignedUrl, {
-    method: "PUT",
-    body: file,
-    headers: { "Content-Type": file.type },
+  // Call the edge function to get a presigned URL and key for the file
+  const { data, error } = await supabase.functions.invoke("upload-media", {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: {
+      fileName: file.name,
+      contentType: file.type,
+    },
   });
 
-  if (!putRes.ok) throw new Error("Upload failed");
+  // Handle errors from the edge function
+  if (error) {
+    console.error("Edge function error:", error);
+    throw new Error("Failed to get presigned URL");
+  }
 
-  // Return the key and public URL
-  return { key, publicUrl };
+  return data; // Should contain { uploadUrl, key }
+}
+
+/**
+ * Upload file directly to Cloudflare R2 using a presigned URL
+ */
+export async function uploadFileToR2(file: File) {
+  // Get presigned URL and key from supabase edge function
+  const { uploadUrl, key } = await getPresignedUrl(file);
+
+  // Upload the file to R2 using the presigned URL
+  const upload = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": file.type,
+    },
+    body: file,
+  });
+
+  // Handle upload errors
+  if (!upload.ok) {
+    throw new Error("Upload failed");
+  }
+
+  // Return the key and the public URL for the uploaded file
+  return {
+    key,
+    publicUrl: getPublicUrl(key),
+  };
 }
 
 /**
  * Generate a public URL from the key (assuming R2 bucket is public or uses CDN)
  */
 export function getPublicUrl(key: string) {
-  // Replace with your Cloudflare public bucket URL
-  return `https://<your-r2-subdomain>.r2.dev/${key}`;
+  return `${import.meta.env.VITE_R2_PUBLIC_URL}/${key}`;
 }
