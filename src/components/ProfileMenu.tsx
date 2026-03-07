@@ -10,7 +10,10 @@
 */
 
 import { useRef, useState, useEffect } from "react";
-import type { KeyboardEvent as ReactKeyboardEvent, KeyboardEventHandler } from "react";
+import type {
+  KeyboardEvent as ReactKeyboardEvent,
+  KeyboardEventHandler,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useUser } from "../hooks/useUser";
@@ -29,8 +32,11 @@ export default function ProfileMenu() {
     setSigningOut(true);
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) console.error("Error signing out:", error);
-      // App.tsx listens to auth changes and will redirect to login.
+      if (error) {
+        console.error("Error signing out:", error);
+        return;
+      }
+      navigate("/", { replace: true });
     } catch (err) {
       console.error("Unexpected error during signout:", err);
     } finally {
@@ -56,7 +62,7 @@ export default function ProfileMenu() {
   }, []);
 
   const handleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (
-    e: ReactKeyboardEvent<HTMLButtonElement>
+    e: ReactKeyboardEvent<HTMLButtonElement>,
   ) => {
     if (e.key === "Escape") setOpen(false);
   };
@@ -96,8 +102,10 @@ export default function ProfileMenu() {
             Profile
           </button>
 
-          <button className="dash-menu-item"
-          onClick={() => navigate("/Settings")}>
+          <button
+            className="dash-menu-item"
+            onClick={() => navigate("/Settings")}
+          >
             Settings
           </button>
 
@@ -109,7 +117,6 @@ export default function ProfileMenu() {
           >
             {signingOut ? "Signing out..." : "Sign out"}
           </button>
-
         </div>
       )}
     </div>
