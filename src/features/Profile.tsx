@@ -15,6 +15,7 @@ import ProfilePictureUpload from "../components/ProfilePictureUpload";
 import { supabase } from "../lib/supabase";
 import { getPublicUrl } from "../services/dataService";
 import PostCard from "../components/PostCard";
+import Bulletin from "../components/Bulletin/Bulletin";
 
 type ViewedProfile = {
   id: string;
@@ -524,7 +525,7 @@ export default function Profile() {
                 Activity
               </button>
             </div>
-
+            <Bulletin show={true} isOwnProfile={isOwnProfile} profileUserId={viewedProfile?.id} />
             <div className="profile-content-grid">
               <aside className="profile-left-panel">
                 <div className="profile-side-card">

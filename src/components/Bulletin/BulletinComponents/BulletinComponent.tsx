@@ -5,6 +5,10 @@
 
   Author(s): Matthew Eagleman
 */
+import { type TextComponentType } from "./TextComponent";
+import { type TitleComponentType } from "./TitleComponent";
+
+export type BulletinComponentsUnionType = TextComponentType | TitleComponentType
 
 export type BulletinComponent = {
   component_id: string;

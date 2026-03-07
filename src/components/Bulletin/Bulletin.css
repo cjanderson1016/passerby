@@ -1,8 +1,8 @@
 .bulletin {
     display: flex;
     align-items: center;
-    justify-content: center;
-    size: 100%;
+    justify-content: space-between;
+    size: 100vw;
     border-top: #cdcdcd solid 2px;
     height: 100vh;
     margin: 20px;
