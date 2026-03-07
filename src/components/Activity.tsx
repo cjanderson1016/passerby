@@ -8,14 +8,8 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useUser } from "../hooks/useUser";
-
-type Post = {
-  id: string;
-  content: string;
-  created_at: string;
-  user_id: string;
-  updated_at: string | null;
-};
+import type { Post } from "../types";
+import PostItem from "./PostItem";
 
 interface ActivityProps {
   show: boolean; // whether to show this tab or not, passed from parent
@@ -159,13 +153,8 @@ export default function Activity(props: ActivityProps) {
               <p>No posts yet.</p>
             ) : (
               <ul>
-                {posts.map((p) => (
-                  <li key={p.id} style={{ marginBottom: "1rem" }}>
-                    <div>{p.content}</div>
-                    <div style={{ fontSize: "0.8rem", color: "#666" }}>
-                      {new Date(p.created_at).toLocaleString()}
-                    </div>
-                  </li>
+                {posts.map((post) => (
+                  <PostItem key={post.id} post={post} />
                 ))}
               </ul>
             )}
