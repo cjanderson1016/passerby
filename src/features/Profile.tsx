@@ -42,11 +42,15 @@ export default function Profile() {
   const { username } = useParams();
   const { user } = useUser();
 
-  const [viewedProfile, setViewedProfile] = useState<ViewedProfile | null>(null);
+  const [viewedProfile, setViewedProfile] = useState<ViewedProfile | null>(
+    null,
+  );
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profileError, setProfileError] = useState("");
 
-  const [activeTab, setActiveTab] = useState<"bulletin" | "activity">("bulletin");
+  const [activeTab, setActiveTab] = useState<"bulletin" | "activity">(
+    "bulletin",
+  );
   const [posts, setPosts] = useState<Post[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
@@ -79,7 +83,7 @@ export default function Profile() {
           const { data, error } = await supabase
             .from("users")
             .select(
-              "id, username, first_name, last_name, profile_pic_key, bio, about_me, interests"
+              "id, username, first_name, last_name, profile_pic_key, bio, about_me, interests",
             )
             .eq("username", username)
             .maybeSingle();
@@ -102,7 +106,7 @@ export default function Profile() {
           const { data, error } = await supabase
             .from("users")
             .select(
-              "id, username, first_name, last_name, profile_pic_key, bio, about_me, interests"
+              "id, username, first_name, last_name, profile_pic_key, bio, about_me, interests",
             )
             .eq("id", user.id)
             .maybeSingle();
@@ -174,12 +178,13 @@ export default function Profile() {
     };
   }, [viewedProfile?.id]);
 
-  const isOwnProfile = !!user?.id && !!viewedProfile?.id && user.id === viewedProfile.id;
+  const isOwnProfile =
+    !!user?.id && !!viewedProfile?.id && user.id === viewedProfile.id;
 
   const displayName =
     viewedProfile?.first_name || viewedProfile?.last_name
       ? `${viewedProfile.first_name ?? ""} ${viewedProfile.last_name ?? ""}`.trim()
-      : viewedProfile?.username ?? "";
+      : (viewedProfile?.username ?? "");
 
   const viewedProfilePictureUrl = viewedProfile?.profile_pic_key
     ? getPublicUrl(viewedProfile.profile_pic_key)
@@ -309,7 +314,7 @@ export default function Profile() {
 
   const selectedPost = useMemo(
     () => posts.find((post) => post.id === postMenuPostId) ?? null,
-    [posts, postMenuPostId]
+    [posts, postMenuPostId],
   );
 
   const handleTogglePinPost = async () => {
@@ -321,7 +326,9 @@ export default function Profile() {
       const nextPinnedValue = !selectedPost.is_pinned;
 
       if (nextPinnedValue) {
-        const currentlyPinned = posts.find((post) => post.is_pinned && post.id !== selectedPost.id);
+        const currentlyPinned = posts.find(
+          (post) => post.is_pinned && post.id !== selectedPost.id,
+        );
 
         if (currentlyPinned) {
           const { error: unpinError } = await supabase
@@ -365,7 +372,9 @@ export default function Profile() {
           const aPinned = a.is_pinned ? 1 : 0;
           const bPinned = b.is_pinned ? 1 : 0;
           if (bPinned !== aPinned) return bPinned - aPinned;
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          return (
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
         });
       });
 
@@ -403,18 +412,22 @@ export default function Profile() {
   const feedPosts = posts.filter((post) => !post.is_pinned);
   const newestPost =
     [...posts].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     )[0] ?? null;
-  const interests = useMemo(() => viewedProfile?.interests ?? [], [viewedProfile?.interests]);
+  const interests = useMemo(
+    () => viewedProfile?.interests ?? [],
+    [viewedProfile?.interests],
+  );
 
   const modalTitle =
     editField === "bio"
       ? "Edit Description"
       : editField === "about_me"
-      ? "Edit About Me"
-      : editField === "interests"
-      ? "Edit Interests"
-      : "";
+        ? "Edit About Me"
+        : editField === "interests"
+          ? "Edit Interests"
+          : "";
 
   const modalHelpText =
     editField === "interests"
@@ -445,7 +458,9 @@ export default function Profile() {
               <div className="profile-header-left">
                 <div className="profile-photo-block">
                   {isOwnProfile ? (
-                    <ProfilePictureUpload />
+                    <ProfilePictureUpload
+                      initialImagePath={viewedProfile.profile_pic_key ?? null}
+                    />
                   ) : viewedProfilePictureUrl ? (
                     <img
                       src={viewedProfilePictureUrl}
@@ -460,8 +475,12 @@ export default function Profile() {
                 </div>
 
                 <div className="profile-header-info">
-                  <h1 className="profile-name">{displayName || viewedProfile.username}</h1>
-                  <div className="profile-username">@{viewedProfile.username}</div>
+                  <h1 className="profile-name">
+                    {displayName || viewedProfile.username}
+                  </h1>
+                  <div className="profile-username">
+                    @{viewedProfile.username}
+                  </div>
 
                   <div className="profile-editable-row">
                     <p className="profile-bio">
@@ -491,7 +510,10 @@ export default function Profile() {
                     onClick={() =>
                       document
                         .getElementById("create-post-box")
-                        ?.scrollIntoView({ behavior: "smooth", block: "center" })
+                        ?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "center",
+                        })
                     }
                   >
                     Create Post
@@ -566,9 +588,13 @@ export default function Profile() {
 
                   <div className="profile-tags">
                     {interests.length > 0 ? (
-                      interests.map((interest) => <span key={interest}>{interest}</span>)
+                      interests.map((interest) => (
+                        <span key={interest}>{interest}</span>
+                      ))
                     ) : (
-                      <span className="profile-empty-chip">No interests added yet</span>
+                      <span className="profile-empty-chip">
+                        No interests added yet
+                      </span>
                     )}
                   </div>
                 </div>
@@ -653,9 +679,7 @@ export default function Profile() {
                 {activeTab === "activity" && (
                   <div className="profile-side-card">
                     <h3>Activity</h3>
-                    <p>
-                      For now, blank not sure what to put here
-                    </p>
+                    <p>For now, blank not sure what to put here</p>
                   </div>
                 )}
               </main>
@@ -673,14 +697,21 @@ export default function Profile() {
                       onClick={() =>
                         document
                           .getElementById(`profile-post-${newestPost.id}`)
-                          ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                          ?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                          })
                       }
                     >
                       <div className="profile-recent-name">
                         {displayName || viewedProfile.username}
                       </div>
-                      <div className="profile-recent-handle">@{viewedProfile.username}</div>
-                      <div className="profile-recent-preview">{newestPost.content}</div>
+                      <div className="profile-recent-handle">
+                        @{viewedProfile.username}
+                      </div>
+                      <div className="profile-recent-preview">
+                        {newestPost.content}
+                      </div>
                     </button>
                   )}
                 </div>
@@ -711,10 +742,14 @@ export default function Profile() {
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
                 rows={editField === "interests" ? 4 : 5}
-                placeholder={editField === "interests" ? "UI Design, Coding, Gaming" : ""}
+                placeholder={
+                  editField === "interests" ? "UI Design, Coding, Gaming" : ""
+                }
               />
 
-              {modalHelpText && <p className="profile-modal-help">{modalHelpText}</p>}
+              {modalHelpText && (
+                <p className="profile-modal-help">{modalHelpText}</p>
+              )}
 
               <div className="profile-modal-actions">
                 <button
@@ -756,7 +791,9 @@ export default function Profile() {
             </div>
 
             <div className="profile-post-menu-body">
-              <p className="profile-post-menu-preview">{selectedPost.content}</p>
+              <p className="profile-post-menu-preview">
+                {selectedPost.content}
+              </p>
 
               <button
                 type="button"
