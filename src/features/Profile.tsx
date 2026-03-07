@@ -10,7 +10,7 @@ import { Link, useParams } from "react-router-dom";
 import { useEffect, useState} from "react";
 import { useUser } from "../hooks/useUser";
 import Activity from "../components/Activity";
-import Bulletin from "../components/Bulletin";
+import Bulletin from "../components/Bulletin/Bulletin";
 import ProfileMenu from "../components/ProfileMenu";  
 import "../features/Profile.css"; // styles specific to the profile page, such as the tab buttons and layout
 
