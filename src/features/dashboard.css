@@ -308,3 +308,6 @@ html, body {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.dash-card { cursor: pointer; }
+.dash-card:hover { background: #fafafa; }

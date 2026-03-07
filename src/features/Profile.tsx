@@ -7,306 +7,778 @@
 */
 
 import { Link, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useUser } from "../hooks/useUser";
-import Activity from "../components/Activity";
-import Bulletin from "../components/Bulletin/Bulletin";
 import ProfileMenu from "../components/ProfileMenu";
-import "../features/Profile.css"; // styles specific to the profile page, such as the tab buttons and layout
+import "./Profile.css";
 import ProfilePictureUpload from "../components/ProfilePictureUpload";
 import { supabase } from "../lib/supabase";
 import { getPublicUrl } from "../services/dataService";
+import PostCard from "../components/PostCard";
 
-interface ViewedProfile {
-  // this is the shape of the profile data we load for the profile page, which is a subset of the full user data
+type ViewedProfile = {
   id: string;
   username: string;
-  first_name: string | null;
-  last_name: string | null;
-  profile_pic_key: string | null;
-}
+  first_name?: string | null;
+  last_name?: string | null;
+  profile_pic_key?: string | null;
+  bio?: string | null;
+  about_me?: string | null;
+  interests?: string[] | null;
+};
+
+type Post = {
+  id: string;
+  content: string;
+  created_at: string;
+  updated_at?: string | null;
+  user_id: string;
+  is_pinned?: boolean | null;
+};
+
+type EditField = "bio" | "about_me" | "interests" | null;
 
 export default function Profile() {
-  const { username: routeUsername } = useParams<{ username: string }>();
-  const { user, userProfile } = useUser();
-  const [currentTab, setCurrentTab] = useState(0); // 0 = bulliton, 1 = activity, etc. We can add more tabs later if we like.
-  const [viewedProfile, setViewedProfile] = useState<ViewedProfile | null>( // the profile data for the profile we are currently viewing, which may be our own or a friend's depending on the route and access
-    null,
-  );
-  const [loadingProfile, setLoadingProfile] = useState(true); // whether we are still loading the profile data, used to show a loading state while we fetch from the database
-  const [profileError, setProfileError] = useState<string | null>(null); // any error message related to loading the profile, used to show an error state if we fail to load the profile data
+  const { username } = useParams();
+  const { user } = useUser();
 
-  // we derive a display name to show on the profile page based on the first and last name, but fall back to just the username if we don't have either of those
-  const displayName =
-    viewedProfile && (viewedProfile.first_name || viewedProfile.last_name)
-      ? `${viewedProfile.first_name ?? ""} ${viewedProfile.last_name ?? ""}`.trim()
-      : null;
+  const [viewedProfile, setViewedProfile] = useState<ViewedProfile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [profileError, setProfileError] = useState("");
 
-  // load the profile data for the profile we are viewing whenever the route username or current user changes. This includes access control to ensure we can only view our own profile or profiles of accepted friends.
+  const [activeTab, setActiveTab] = useState<"bulletin" | "activity">("bulletin");
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [newPostContent, setNewPostContent] = useState("");
+  const [posting, setPosting] = useState(false);
+
+  const [editField, setEditField] = useState<EditField>(null);
+  const [editValue, setEditValue] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const [postMenuPostId, setPostMenuPostId] = useState<string | null>(null);
+  const [savingPostAction, setSavingPostAction] = useState(false);
+
   useEffect(() => {
     let isActive = true;
 
     const loadProfile = async () => {
-      // async function to load the profile data for the profile we are viewing, including access control checks
-      // if we don't have a logged in user, we can't load any profile data
-      if (!user?.id) {
-        if (!isActive) return;
-        setViewedProfile(null);
-        setProfileError("Please sign in to view profiles.");
-        setLoadingProfile(false);
-        return;
-      }
-
       setLoadingProfile(true);
-      setProfileError(null);
+      setProfileError("");
 
-      // we first determine which profile we are trying to view based on the route. If the route username is missing or matches our own username, we are trying to view our own profile. Otherwise, we are trying to view someone else's profile based on the username in the route.
-      const requested = routeUsername?.trim().toLowerCase();
-      const ownUsername = userProfile?.username?.toLowerCase();
-
-      // if we are trying to view our own profile (either no username in route, or it matches our username), we can skip some of the access control checks and just load our own profile data
-      if (!requested || requested === ownUsername) {
-        if (userProfile) {
-          if (!isActive) return;
-          setViewedProfile({
-            id: userProfile.id,
-            username: userProfile.username,
-            first_name: userProfile.first_name ?? null,
-            last_name: userProfile.last_name ?? null,
-            profile_pic_key: userProfile.profile_pic_key ?? null,
-          });
-          setLoadingProfile(false);
+      try {
+        if (!username && !user?.id) {
+          if (isActive) {
+            setViewedProfile(null);
+            setProfileError("No profile found.");
+          }
           return;
         }
 
-        // if we don't have the userProfile from context for some reason, we can try to load it directly from the database as a fallback, though this should be rare since we load the userProfile on login and keep it in context.
-        const { data: ownProfile, error: ownProfileError } = await supabase
-          .from("users")
-          .select("id, username, first_name, last_name, profile_pic_key")
-          .eq("id", user.id)
-          .maybeSingle();
+        if (username) {
+          const { data, error } = await supabase
+            .from("users")
+            .select(
+              "id, username, first_name, last_name, profile_pic_key, bio, about_me, interests"
+            )
+            .eq("username", username)
+            .maybeSingle();
 
-        if (!isActive) return; // check if the component is still mounted before setting state
+          if (error) {
+            console.error("Error loading viewed profile:", error);
+            if (isActive) setProfileError("Could not load profile.");
+            return;
+          }
 
-        // if we have an error loading our own profile, or the profile is missing (which shouldn't happen since we have an authenticated user, but we check just in case), show an error
-        if (ownProfileError || !ownProfile) {
-          console.error("error loading current profile", ownProfileError);
-          setViewedProfile(null);
-          setProfileError("Could not load your profile.");
-          setLoadingProfile(false);
-          return;
+          if (!data) {
+            if (isActive) setProfileError("Profile not found.");
+            return;
+          }
+
+          if (isActive) {
+            setViewedProfile(data as ViewedProfile);
+          }
+        } else if (user?.id) {
+          const { data, error } = await supabase
+            .from("users")
+            .select(
+              "id, username, first_name, last_name, profile_pic_key, bio, about_me, interests"
+            )
+            .eq("id", user.id)
+            .maybeSingle();
+
+          if (error) {
+            console.error("Error loading own profile:", error);
+            if (isActive) setProfileError("Could not load profile.");
+            return;
+          }
+
+          if (!data) {
+            if (isActive) setProfileError("Profile not found.");
+            return;
+          }
+
+          if (isActive) {
+            setViewedProfile(data as ViewedProfile);
+          }
         }
-
-        // if our own profile is missing a username (which is required), show an error since we won't be able to display the profile properly
-        if (!ownProfile.username) {
-          setViewedProfile(null);
-          setProfileError("Your profile is missing a required username.");
-          setLoadingProfile(false);
-          return;
-        }
-
-        // if we successfully loaded our own profile, set it in state to view our profile page
-        setViewedProfile(ownProfile as ViewedProfile);
-        setLoadingProfile(false);
-        return;
+      } finally {
+        if (isActive) setLoadingProfile(false);
       }
-
-      // if we are trying to view someone else's profile, we first need to load that profile based on the username in the route, and then check if we have access to view it (i.e. it's either our own profile or a profile of an accepted friend)
-      const { data: targetProfile, error: byUsernameError } = await supabase
-        .from("users")
-        .select("id, username, first_name, last_name, profile_pic_key")
-        .eq("username", requested)
-        .maybeSingle();
-
-      // if we have an error loading the target profile by username, show an error. If we just have no data (i.e. no profile with that username), we handle that case separately below to show a "not found" message, since it's not really an "error" to have no matching profile for a given username.
-      if (byUsernameError) {
-        if (!isActive) return;
-        console.error(
-          "error loading target profile by username",
-          byUsernameError,
-        );
-        setViewedProfile(null);
-        setProfileError("Could not load that profile.");
-        setLoadingProfile(false);
-        return;
-      }
-
-      if (!isActive) return; // check if the component is still mounted before setting state
-
-      // if we have no target profile data, or the target profile is missing a username (which is required), show a "not found" error
-      if (!targetProfile || !targetProfile.username) {
-        setViewedProfile(null);
-        setProfileError("Profile not found.");
-        setLoadingProfile(false);
-        return;
-      }
-
-      // if the target profile we are trying to view is our own profile, we can just show it without further access control checks
-      if (targetProfile.id === user.id) {
-        setViewedProfile(targetProfile);
-        setLoadingProfile(false);
-        return;
-      }
-
-      let canViewTarget = false; // we will determine whether we can view the target profile based on whether it's our own profile or a profile of an accepted friend. We can use a RPC to check this access control logic in the database, or if the RPC is unavailable for some reason, we can fall back to checking the friend_requests table directly from the client (though this is less ideal since it exposes more of our data fetching logic to the client and may be less efficient, but it allows us to still enforce access control even if there are issues with the RPC).
-
-      // first we try to use the RPC to check if we can view the target profile, which is the ideal way since it keeps the access control logic in the database and abstracts away the details from the client. If there is an error calling the RPC, we log a warning and fall back to checking the friend_requests table directly from the client.
-      const { data: canViewData, error: canViewError } = await supabase.rpc(
-        "can_view_profile",
-        {
-          target_user: targetProfile.id,
-        },
-      );
-
-      // if the RPC call succeeds and returns a boolean, we use that to determine if we can view the target profile. If there is an error calling the RPC, or the RPC doesn't return a boolean for some reason, we fall back to checking the friend_requests table directly from the client to see if there is an accepted friend request between the current user and the target profile user.
-      if (!canViewError && typeof canViewData === "boolean") {
-        canViewTarget = canViewData;
-      } else {
-        // if there is an error calling the RPC, we log a warning and fall back to checking the friend_requests table directly from the client, which is less ideal but allows us to still enforce access control even if there are issues with the RPC
-        if (canViewError) {
-          console.warn(
-            "can_view_profile RPC unavailable, using client fallback",
-            canViewError,
-          );
-        }
-
-        // we check the friend_requests table to see if there is an accepted friend request between the current user and the target profile user, which would allow us to view the profile. We check for both directions of the friend request (i.e. where the current user is the requester and the target is the recipient, or vice versa) since either way would indicate an accepted friendship.
-        const { data: acceptedRows, error: acceptedError } = await supabase
-          .from("friend_requests")
-          .select("id")
-          .eq("status", "accepted")
-          .or(
-            `and(requester_id.eq.${user.id},recipient_id.eq.${targetProfile.id}),and(requester_id.eq.${targetProfile.id},recipient_id.eq.${user.id})`,
-          )
-          .limit(1);
-
-        if (!isActive) return; // check if the component is still mounted before setting state
-
-        // if there is an error checking the friend_requests table for accepted friendships, we log the error and show a generic access error message. We don't want to show a "not found" message in this case since the profile does exist, we just had an issue verifying access to it.
-        if (acceptedError) {
-          console.error("error checking profile access", acceptedError);
-          setViewedProfile(null);
-          setProfileError("Could not verify profile access.");
-          setLoadingProfile(false);
-          return;
-        }
-
-        canViewTarget = !!acceptedRows && acceptedRows.length > 0; // if we have any accepted friend request rows, that means we can view the target profile since it's a profile of an accepted friend
-      }
-
-      if (!isActive) return; // check if the component is still mounted before setting state
-
-      // if we determine that we cannot view the target profile based on either the RPC or the client-side check, we show an access error message. We don't want to show a "not found" message since the profile does exist, we just don't have access to view it.
-      if (!canViewTarget) {
-        setViewedProfile(null);
-        setProfileError(
-          "You can only view your own profile or profiles of accepted friends.",
-        );
-        setLoadingProfile(false);
-        return;
-      }
-
-      // if we get here, that means we can view the target profile, so we set it in state to show the profile page
-      setViewedProfile(targetProfile);
-      setLoadingProfile(false);
     };
 
-    void loadProfile(); // we call the async function but don't await it since useEffect can't be async
+    void loadProfile();
 
     return () => {
-      // when the component unmounts, we set isActive to false to prevent setting state on an unmounted component in any of the async functions
       isActive = false;
     };
-  }, [routeUsername, user?.id, userProfile]);
+  }, [username, user?.id]);
 
-  const isOwnProfile = !!viewedProfile?.id && viewedProfile.id === user?.id;
+  useEffect(() => {
+    if (!viewedProfile?.id) {
+      setPosts([]);
+      return;
+    }
+
+    let isActive = true;
+
+    const loadPosts = async () => {
+      setLoadingPosts(true);
+
+      try {
+        const { data, error } = await supabase
+          .from("posts")
+          .select("id, content, created_at, updated_at, user_id, is_pinned")
+          .eq("user_id", viewedProfile.id)
+          .order("is_pinned", { ascending: false })
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("Error loading posts:", error);
+          if (isActive) setPosts([]);
+          return;
+        }
+
+        if (isActive) {
+          setPosts((data as Post[]) ?? []);
+        }
+      } finally {
+        if (isActive) setLoadingPosts(false);
+      }
+    };
+
+    void loadPosts();
+
+    return () => {
+      isActive = false;
+    };
+  }, [viewedProfile?.id]);
+
+  const isOwnProfile = !!user?.id && !!viewedProfile?.id && user.id === viewedProfile.id;
+
+  const displayName =
+    viewedProfile?.first_name || viewedProfile?.last_name
+      ? `${viewedProfile.first_name ?? ""} ${viewedProfile.last_name ?? ""}`.trim()
+      : viewedProfile?.username ?? "";
+
   const viewedProfilePictureUrl = viewedProfile?.profile_pic_key
     ? getPublicUrl(viewedProfile.profile_pic_key)
-    : null;
+    : "";
+
+  const handleCreatePost = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!newPostContent.trim() || !user?.id || !isOwnProfile) return;
+
+    setPosting(true);
+
+    try {
+      const content = newPostContent.trim();
+
+      const { data, error } = await supabase
+        .from("posts")
+        .insert({
+          user_id: user.id,
+          content,
+          is_pinned: false,
+        })
+        .select("id, content, created_at, updated_at, user_id, is_pinned")
+        .single();
+
+      if (error) {
+        console.error("Error creating post:", error);
+        return;
+      }
+
+      setPosts((prev) => [data as Post, ...prev]);
+      setNewPostContent("");
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  const openEditModal = (field: EditField) => {
+    if (!viewedProfile || !field || !isOwnProfile) return;
+
+    setEditField(field);
+
+    if (field === "bio") {
+      setEditValue(viewedProfile.bio ?? "");
+    } else if (field === "about_me") {
+      setEditValue(viewedProfile.about_me ?? "");
+    } else if (field === "interests") {
+      setEditValue((viewedProfile.interests ?? []).join(", "));
+    }
+  };
+
+  const closeEditModal = () => {
+    setEditField(null);
+    setEditValue("");
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!viewedProfile?.id || !editField || !isOwnProfile) return;
+
+    setSavingEdit(true);
+
+    try {
+      let updatePayload: Record<string, unknown> = {};
+
+      if (editField === "bio") {
+        updatePayload = { bio: editValue.trim() };
+      } else if (editField === "about_me") {
+        updatePayload = { about_me: editValue.trim() };
+      } else if (editField === "interests") {
+        const cleaned = editValue
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+
+        updatePayload = { interests: cleaned };
+      }
+
+      const { error } = await supabase
+        .from("users")
+        .update(updatePayload)
+        .eq("id", viewedProfile.id);
+
+      if (error) {
+        console.error("Error saving profile edit:", error);
+        return;
+      }
+
+      setViewedProfile((prev) => {
+        if (!prev) return prev;
+
+        if (editField === "bio") {
+          return { ...prev, bio: editValue.trim() };
+        }
+
+        if (editField === "about_me") {
+          return { ...prev, about_me: editValue.trim() };
+        }
+
+        if (editField === "interests") {
+          return {
+            ...prev,
+            interests: editValue
+              .split(",")
+              .map((item) => item.trim())
+              .filter(Boolean),
+          };
+        }
+
+        return prev;
+      });
+
+      closeEditModal();
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const openPostMenu = (postId: string) => {
+    if (!isOwnProfile) return;
+    setPostMenuPostId(postId);
+  };
+
+  const closePostMenu = () => {
+    setPostMenuPostId(null);
+  };
+
+  const selectedPost = useMemo(
+    () => posts.find((post) => post.id === postMenuPostId) ?? null,
+    [posts, postMenuPostId]
+  );
+
+  const handleTogglePinPost = async () => {
+    if (!selectedPost || !isOwnProfile) return;
+
+    setSavingPostAction(true);
+
+    try {
+      const nextPinnedValue = !selectedPost.is_pinned;
+
+      if (nextPinnedValue) {
+        const currentlyPinned = posts.find((post) => post.is_pinned && post.id !== selectedPost.id);
+
+        if (currentlyPinned) {
+          const { error: unpinError } = await supabase
+            .from("posts")
+            .update({ is_pinned: false })
+            .eq("id", currentlyPinned.id)
+            .eq("user_id", viewedProfile?.id ?? "");
+
+          if (unpinError) {
+            console.error("Error unpinning current post:", unpinError);
+            return;
+          }
+        }
+      }
+
+      const { error } = await supabase
+        .from("posts")
+        .update({ is_pinned: nextPinnedValue })
+        .eq("id", selectedPost.id)
+        .eq("user_id", viewedProfile?.id ?? "");
+
+      if (error) {
+        console.error("Error updating pinned post:", error);
+        return;
+      }
+
+      setPosts((prev) => {
+        const updated = prev.map((post) => {
+          if (post.id === selectedPost.id) {
+            return { ...post, is_pinned: nextPinnedValue };
+          }
+
+          if (nextPinnedValue) {
+            return { ...post, is_pinned: false };
+          }
+
+          return post;
+        });
+
+        return [...updated].sort((a, b) => {
+          const aPinned = a.is_pinned ? 1 : 0;
+          const bPinned = b.is_pinned ? 1 : 0;
+          if (bPinned !== aPinned) return bPinned - aPinned;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+      });
+
+      closePostMenu();
+    } finally {
+      setSavingPostAction(false);
+    }
+  };
+
+  const handleDeletePost = async () => {
+    if (!selectedPost || !isOwnProfile) return;
+
+    setSavingPostAction(true);
+
+    try {
+      const { error } = await supabase
+        .from("posts")
+        .delete()
+        .eq("id", selectedPost.id)
+        .eq("user_id", viewedProfile?.id ?? "");
+
+      if (error) {
+        console.error("Error deleting post:", error);
+        return;
+      }
+
+      setPosts((prev) => prev.filter((post) => post.id !== selectedPost.id));
+      closePostMenu();
+    } finally {
+      setSavingPostAction(false);
+    }
+  };
+
+  const pinnedPost = posts.find((post) => post.is_pinned) ?? null;
+  const feedPosts = posts.filter((post) => !post.is_pinned);
+  const newestPost =
+    [...posts].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )[0] ?? null;
+  const interests = useMemo(() => viewedProfile?.interests ?? [], [viewedProfile?.interests]);
+
+  const modalTitle =
+    editField === "bio"
+      ? "Edit Description"
+      : editField === "about_me"
+      ? "Edit About Me"
+      : editField === "interests"
+      ? "Edit Interests"
+      : "";
+
+  const modalHelpText =
+    editField === "interests"
+      ? "Enter interests separated by commas. Example: UI Design, Coding, Gaming"
+      : "";
 
   return (
     <div className="profile-page">
       <div className="profile-topbar">
         <div className="profile-title">PASSERBY</div>
-
-        {/* profile button/dropdown moved into its own component */}
         <ProfileMenu />
       </div>
+
       {loadingProfile ? (
-        <p style={{ padding: "16px" }}>Loading profile…</p>
+        <p style={{ padding: "16px" }}>Loading profile...</p>
       ) : profileError ? (
         <p style={{ padding: "16px" }}>{profileError}</p>
       ) : viewedProfile ? (
-        <>
-          {isOwnProfile ? (
-            <ProfilePictureUpload />
-          ) : (
-            <div style={{ margin: "16px 0", textAlign: "center" }}>
-              {viewedProfilePictureUrl ? (
-                <img
-                  src={viewedProfilePictureUrl}
-                  alt="Profile"
-                  style={{
-                    width: 120,
-                    height: 120,
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                    border: "2px solid #ccc",
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: 120,
-                    height: 120,
-                    borderRadius: "50%",
-                    border: "2px dashed #ccc",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#888",
-                    fontSize: 14,
-                    background: "#f0f0f0",
-                    margin: "0 auto",
-                  }}
-                >
-                  No Photo
+        <div className="profile-shell">
+          <div className="profile-back-row">
+            <Link to="/" className="profile-back-link">
+              ← Back to Dashboard
+            </Link>
+          </div>
+
+          <div className="profile-card">
+            <div className="profile-header">
+              <div className="profile-header-left">
+                <div className="profile-photo-block">
+                  {isOwnProfile ? (
+                    <ProfilePictureUpload />
+                  ) : viewedProfilePictureUrl ? (
+                    <img
+                      src={viewedProfilePictureUrl}
+                      alt="Profile"
+                      className="profile-avatar"
+                    />
+                  ) : (
+                    <div className="profile-avatar profile-avatar-placeholder">
+                      No Photo
+                    </div>
+                  )}
                 </div>
-              )}
+
+                <div className="profile-header-info">
+                  <h1 className="profile-name">{displayName || viewedProfile.username}</h1>
+                  <div className="profile-username">@{viewedProfile.username}</div>
+
+                  <div className="profile-editable-row">
+                    <p className="profile-bio">
+                      {viewedProfile.bio?.trim()
+                        ? viewedProfile.bio
+                        : "Add a short description about yourself."}
+                    </p>
+
+                    {isOwnProfile && (
+                      <button
+                        type="button"
+                        className="profile-pencil-btn"
+                        onClick={() => openEditModal("bio")}
+                        aria-label="Edit description"
+                      >
+                        ✏️
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="profile-header-actions">
+                {isOwnProfile && (
+                  <button
+                    className="profile-action-btn"
+                    onClick={() =>
+                      document
+                        .getElementById("create-post-box")
+                        ?.scrollIntoView({ behavior: "smooth", block: "center" })
+                    }
+                  >
+                    Create Post
+                  </button>
+                )}
+
+                {isOwnProfile && (
+                  <button
+                    type="button"
+                    className="profile-action-btn profile-link-btn"
+                    onClick={() => openEditModal("bio")}
+                  >
+                    Edit Profile
+                  </button>
+                )}
+              </div>
             </div>
-          )}
 
-          {/* Shows the first and last name of the viewed profile */}
-          <h1>
-            {isOwnProfile
-              ? displayName
-                ? `Welcome, ${displayName}!`
-                : "Welcome!"
-              : displayName || "Profile"}
-            <span style={{ fontWeight: "normal" }}>
-              {" "}
-              (@{viewedProfile.username})
-            </span>
-          </h1>
+            <div className="profile-tabs">
+              <button
+                className={`profile-tab ${activeTab === "bulletin" ? "active" : ""}`}
+                onClick={() => setActiveTab("bulletin")}
+              >
+                Bulletin
+              </button>
+              <button
+                className={`profile-tab ${activeTab === "activity" ? "active" : ""}`}
+                onClick={() => setActiveTab("activity")}
+              >
+                Activity
+              </button>
+            </div>
 
-          {/* Shows the username of the viewed profile */}
-          <p>
-            <strong>Username:</strong> @{viewedProfile.username}
-          </p>
+            <div className="profile-content-grid">
+              <aside className="profile-left-panel">
+                <div className="profile-side-card">
+                  <div className="profile-card-header-row">
+                    <h3>About Me</h3>
+                    {isOwnProfile && (
+                      <button
+                        type="button"
+                        className="profile-pencil-btn"
+                        onClick={() => openEditModal("about_me")}
+                        aria-label="Edit about me"
+                      >
+                        ✏️
+                      </button>
+                    )}
+                  </div>
 
-          <button onClick={() => setCurrentTab(0)}>Bulliton</button>
-          <button onClick={() => setCurrentTab(1)}>Activity</button>
+                  <p>
+                    {viewedProfile.about_me?.trim()
+                      ? viewedProfile.about_me
+                      : "Tell people a little more about yourself."}
+                  </p>
+                </div>
 
-          <Bulletin show={currentTab === 0} profileUserId={viewedProfile.id} />
-          <Activity
-            show={currentTab === 1}
-            profileUserId={viewedProfile.id}
-            isOwnProfile={isOwnProfile}
-          />
-        </>
+                <div className="profile-side-card">
+                  <div className="profile-card-header-row">
+                    <h3>Interests</h3>
+                    {isOwnProfile && (
+                      <button
+                        type="button"
+                        className="profile-pencil-btn"
+                        onClick={() => openEditModal("interests")}
+                        aria-label="Edit interests"
+                      >
+                        ✏️
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="profile-tags">
+                    {interests.length > 0 ? (
+                      interests.map((interest) => <span key={interest}>{interest}</span>)
+                    ) : (
+                      <span className="profile-empty-chip">No interests added yet</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="profile-side-card">
+                  <h3>
+                    {posts.length} Post{posts.length === 1 ? "" : "s"}
+                  </h3>
+                </div>
+              </aside>
+
+              <main className="profile-center-panel">
+                {activeTab === "bulletin" && (
+                  <>
+                    {isOwnProfile && (
+                      <form
+                        id="create-post-box"
+                        className="profile-compose-card"
+                        onSubmit={handleCreatePost}
+                      >
+                        <div className="profile-compose-avatar" />
+                        <textarea
+                          className="profile-compose-input"
+                          placeholder="What’s on your mind?"
+                          value={newPostContent}
+                          onChange={(e) => setNewPostContent(e.target.value)}
+                          rows={2}
+                        />
+                        <button
+                          className="profile-post-btn"
+                          type="submit"
+                          disabled={posting}
+                        >
+                          {posting ? "Posting..." : "Post"}
+                        </button>
+                      </form>
+                    )}
+
+                    {pinnedPost && (
+                      <div className="profile-feed-section">
+                        <div className="profile-section-label">📌 Pinned</div>
+
+                        <PostCard
+                          id={pinnedPost.id}
+                          name={displayName || viewedProfile.username}
+                          username={viewedProfile.username}
+                          content={pinnedPost.content}
+                          createdAt={pinnedPost.created_at}
+                          pinned={true}
+                          canManage={isOwnProfile}
+                          onOpenMenu={openPostMenu}
+                        />
+                      </div>
+                    )}
+
+                    <div className="profile-feed-section">
+                      {loadingPosts ? (
+                        <p>Loading posts...</p>
+                      ) : posts.length === 0 ? (
+                        <p>No posts yet.</p>
+                      ) : feedPosts.length === 0 ? (
+                        <p>No additional posts yet.</p>
+                      ) : (
+                        feedPosts.map((post) => (
+                          <PostCard
+                            key={post.id}
+                            id={post.id}
+                            name={displayName || viewedProfile.username}
+                            username={viewedProfile.username}
+                            content={post.content}
+                            createdAt={post.created_at}
+                            pinned={!!post.is_pinned}
+                            canManage={isOwnProfile}
+                            onOpenMenu={openPostMenu}
+                          />
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {activeTab === "activity" && (
+                  <div className="profile-side-card">
+                    <h3>Activity</h3>
+                    <p>
+                      For now, blank not sure what to put here
+                    </p>
+                  </div>
+                )}
+              </main>
+
+              <aside className="profile-right-panel">
+                <div className="profile-side-card">
+                  <h3>Recent Post</h3>
+
+                  {!newestPost ? (
+                    <p>No recent posts yet.</p>
+                  ) : (
+                    <button
+                      type="button"
+                      className="profile-recent-item"
+                      onClick={() =>
+                        document
+                          .getElementById(`profile-post-${newestPost.id}`)
+                          ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                      }
+                    >
+                      <div className="profile-recent-name">
+                        {displayName || viewedProfile.username}
+                      </div>
+                      <div className="profile-recent-handle">@{viewedProfile.username}</div>
+                      <div className="profile-recent-preview">{newestPost.content}</div>
+                    </button>
+                  )}
+                </div>
+              </aside>
+            </div>
+          </div>
+        </div>
       ) : null}
 
-      <Link to="/">← Back to dashboard</Link>
+      {isOwnProfile && editField && (
+        <div className="profile-modal-overlay" onClick={closeEditModal}>
+          <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-modal-header">
+              <h3>{modalTitle}</h3>
+              <button
+                type="button"
+                className="profile-modal-close"
+                onClick={closeEditModal}
+                aria-label="Close modal"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="profile-modal-form">
+              <textarea
+                className="profile-modal-textarea"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                rows={editField === "interests" ? 4 : 5}
+                placeholder={editField === "interests" ? "UI Design, Coding, Gaming" : ""}
+              />
+
+              {modalHelpText && <p className="profile-modal-help">{modalHelpText}</p>}
+
+              <div className="profile-modal-actions">
+                <button
+                  type="button"
+                  className="profile-modal-secondary-btn"
+                  onClick={closeEditModal}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="profile-modal-primary-btn"
+                  disabled={savingEdit}
+                >
+                  {savingEdit ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isOwnProfile && selectedPost && (
+        <div className="profile-modal-overlay" onClick={closePostMenu}>
+          <div
+            className="profile-modal profile-post-menu-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="profile-modal-header">
+              <h3>Post Options</h3>
+              <button
+                type="button"
+                className="profile-modal-close"
+                onClick={closePostMenu}
+                aria-label="Close post options"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="profile-post-menu-body">
+              <p className="profile-post-menu-preview">{selectedPost.content}</p>
+
+              <button
+                type="button"
+                className="profile-post-menu-btn"
+                onClick={handleTogglePinPost}
+                disabled={savingPostAction}
+              >
+                {selectedPost.is_pinned ? "Unpin Post" : "Pin Post To Top"}
+              </button>
+
+              <button
+                type="button"
+                className="profile-post-menu-btn profile-post-menu-delete"
+                onClick={handleDeletePost}
+                disabled={savingPostAction}
+              >
+                Delete Post
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
