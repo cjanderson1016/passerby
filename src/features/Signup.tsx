@@ -42,11 +42,12 @@ function Signup({ onSwitchToLogin }: SignupProps) {
       }
 
       // Validate username format (alphanumeric and underscore, 3+ chars)
-      const usernameRegex = /^[a-zA-Z0-9_]{3,}$/;
-      if (!usernameRegex.test(username.trim())) {
+      const usernameRegex = /^[a-z0-9_]{3,}$/;
+      const candidate = username.trim().toLowerCase();
+      if (!usernameRegex.test(candidate)) {
         setUsernameValid(false);
         setUsernameMessage(
-          "Username must be 3+ characters and contain only letters, numbers, and underscores",
+          "Username must be 3+ lowercase characters and contain only letters, numbers, and underscores",
         );
         return;
       }
@@ -59,7 +60,7 @@ function Signup({ onSwitchToLogin }: SignupProps) {
         // data (what is returned) is expected to be of the form { available: boolean, error: PostgrestError | null }
         const { data: available, error } = await supabase.rpc(
           "is_username_available",
-          { candidate: username.trim() },
+          { candidate },
         );
 
         if (error) {
@@ -107,6 +108,13 @@ function Signup({ onSwitchToLogin }: SignupProps) {
       return;
     }
 
+    // We also check the username validity state here to prevent submission if the username is not valid, which could happen if the user types a username and immediately submits before the availability check completes. This is a secondary check in addition to disabling the submit button, to ensure we don't attempt to sign up with an invalid username.
+    if (usernameValid !== true) {
+      setError("Please enter a valid, available username");
+      setLoading(false);
+      return;
+    }
+
     try {
       const signUpResult = await supabase.auth.signUp({
         email,
@@ -127,7 +135,7 @@ function Signup({ onSwitchToLogin }: SignupProps) {
       try {
         // the data to update the user's profile in the public.users table
         const updateData: UserUpdate = {
-          username: username.trim(),
+          username: username.trim().toLowerCase(),
           first_name: firstName.trim(),
           last_name: lastName.trim(),
         };

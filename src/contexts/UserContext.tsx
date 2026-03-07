@@ -39,10 +39,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
         .select("id, username, first_name, last_name, profile_pic_key")
         .eq("id", userId)
         .single();
+
+      if (!data?.username || !data.username.trim()) {
+        console.error("user profile is missing a required username", {
+          userId,
+        });
+        setUserProfile(null);
+        return;
+      }
+
       setUserProfile({
         // set the user id, username, first_name, and last_name in the userProfile state
         id: userId,
-        username: data?.username ?? null,
+        username: data.username,
         first_name: data?.first_name ?? null,
         last_name: data?.last_name ?? null,
         profile_pic_key: data?.profile_pic_key ?? null,

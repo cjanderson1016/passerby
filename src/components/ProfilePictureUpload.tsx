@@ -132,7 +132,7 @@ export default function ProfilePictureUpload() {
               background: "#f0f0f0",
             }}
           >
-            Upload Avatar
+            Upload Photo
           </div>
         )}
       </label>

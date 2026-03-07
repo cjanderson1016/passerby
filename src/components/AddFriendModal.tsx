@@ -60,25 +60,55 @@ export default function AddFriendModal({
     setFoundUser(null);
     setSearching(true);
 
-    const { data, error: fetchError } = await supabase
-      .from("users")
-      .select("id, username, first_name, last_name")
-      .eq("username", username)
-      .maybeSingle();
+    // First attempt to find the user via a Supabase RPC that searches by username.
+    // This is more efficient than querying the entire users table, but if the RPC is unavailable for any reason, we fall back to a direct query.
+    const { data, error: fetchError } = await supabase.rpc(
+      "find_user_by_username_for_request",
+      {
+        search_username: username,
+      },
+    );
+
+    let match = Array.isArray(data) ? data[0] : data;
+
+    // If there's an error calling the RPC, log it and fall back to a direct query on the users table. This allows the search functionality to still work even if the RPC is misconfigured or has an issue, albeit less efficiently. If the RPC call succeeds but returns no data, we skip the fallback since that means the user simply doesn't exist. We only want to fall back on an error, which indicates a potential issue with the RPC itself.
+    if (fetchError) {
+      console.warn(
+        "find_user_by_username_for_request RPC unavailable, using fallback",
+        fetchError,
+      );
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from("users")
+        .select("id, username, first_name, last_name")
+        .eq("username", username)
+        .maybeSingle();
+
+      if (fallbackError) {
+        // if the fallback query also fails, we can't search for users at all, so show a generic error
+        setSearching(false);
+        console.error("Error finding user by username:", fallbackError);
+        setError("Could not search for user right now");
+        return;
+      }
+
+      match = fallbackData;
+    }
 
     setSearching(false);
 
-    if (fetchError || !data) {
+    if (!match) {
+      // if we have no match after either the RPC or fallback query, the user doesn't exist
       setError("User not found");
       return;
     }
 
-    if (data.id === currentUserId) {
+    if (match.id === currentUserId) {
+      // if the found user is the current user, show an error since we can't friend ourselves
       setError("You can't add yourself as a friend");
       return;
     }
 
-    setFoundUser(data);
+    setFoundUser(match as FoundUser); // we have a valid user match, so set it in state to show the option to send a friend request
   };
 
   const handleSendRequest = async () => {

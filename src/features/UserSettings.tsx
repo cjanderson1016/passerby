@@ -25,7 +25,7 @@ import ResetPass from "./ResetPassword";
 
 export default function Settings(){
   //useState hooks
-    const [user, setUser] = useState<null | any>(null);
+    const [user, setUser] = useState("");
     const [newUser, setNewUser] = useState("");
     const [openModal_pass, setOpenModal_pass] = useState(false);
     //const [openModal_delete, setOpenModal_delete] = useState(false);
@@ -74,7 +74,7 @@ const settings_list = [
           .select("username")
           .eq("id", user.id)
           .single();
-        setUser(data?.username ?? null);
+        setUser(data?.username ?? "");
       } catch (err) {
         console.error("error fetching username for profile link", err);
       }
@@ -129,7 +129,7 @@ const settings_list = [
 {/* Popup that comes up when the user wants to update their password. */}
 interface ConfirmUserParams {
   newUser: string;
-  setUser: React.Dispatch<React.SetStateAction<any>>;
+  setUser: React.Dispatch<React.SetStateAction<string>>;
   setNewUser: React.Dispatch<React.SetStateAction<string>>;
 }
 
@@ -137,6 +137,19 @@ function ConfirmChangeUsername ({newUser, setUser, setNewUser} : ConfirmUserPara
 
 const handleUsernameReset = async (e: React.FormEvent) => {
   e.preventDefault();
+
+  const normalizedUsername = newUser.trim().toLowerCase();
+  const usernameRegex = /^[a-z0-9_]{3,}$/;
+
+  if (!normalizedUsername) {
+    alert("You Must Enter New Username!");
+    return;
+  }
+
+  if (!usernameRegex.test(normalizedUsername)) {
+    alert("Username must be 3+ lowercase characters and only include letters, numbers, and underscores.");
+    return;
+  }
 
   try{
   // Get logged-in user
@@ -150,24 +163,20 @@ const handleUsernameReset = async (e: React.FormEvent) => {
    const { data: existing } = await supabase
    .from("users")
       .select("id")
-  .eq("username", newUser)
+  .eq("username", normalizedUsername)
   .maybeSingle();
   if (existing) {
     alert("That user already exists!");
     return;
 }
-  if(newUser === ""){
-    alert("You Must Enter New Username!");
-    return;
-  }
   // Update username
   await supabase
     .from("users")
-    .update({ username: newUser })
+    .update({ username: normalizedUsername })
     .eq("id", userId);
 
   // Update thelocal state
-  setUser(newUser);
+  setUser(normalizedUsername);
   setNewUser("");
 
   alert("Username Changed Successfully!");

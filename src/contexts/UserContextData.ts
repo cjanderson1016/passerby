@@ -14,7 +14,7 @@ import type { User } from "@supabase/supabase-js";
 // NOT the same as the auth.users table which only has email, id, etc. and is accessed via supabase.auth.getUser()
 export interface UserProfile {
   id: string;
-  username: string | null;
+  username: string;
   first_name: string | null;
   last_name: string | null;
   profile_pic_key?: string; // optional key for the user's profile picture stored in R2
