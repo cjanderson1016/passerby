@@ -14,7 +14,7 @@ import ProfileMenu from "../components/ProfileMenu";
 import FriendTable from "../components/FriendTable";
 import FriendRequestList from "../components/FriendRequestList";
 import AddFriendModal from "../components/AddFriendModal";
-import { useUser } from "../hooks/useUser";  // hook wraps UserContext and provides user/profile/loading
+import { useUser } from "../hooks/useUser"; // hook wraps UserContext and provides user/profile/loading
 import { supabase } from "../lib/supabase"; // still used for fetching friends/posts
 
 type FilterOption =
@@ -82,6 +82,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!currentUserId) return;
 
+    // This function fetches the list of friends for the current user, along with their latest post and how long ago it was updated, then sets that in state for the feed.  We do this in multiple steps:
     const fetchFriendsFeed = async () => {
       setLoadingFriends(true);
 
@@ -162,12 +163,11 @@ export default function Dashboard() {
           const fullName = [u.first_name, u.last_name]
             .filter(Boolean)
             .join(" ");
-          const name = fullName.trim() || u.username || "Unknown";
+          const name = fullName.trim() || u.username;
 
           return {
-            // IMPORTANT: Your router is /profile/:username
-            // So friend.id should be the username (not UUID)
-            id: u.username ?? u.id,
+            id: u.id,
+            username: u.username,
             name,
             text: latest?.content ?? "(No posts yet)",
             lastUpdatedMinutesAgo: minutesAgo,
@@ -217,7 +217,18 @@ export default function Dashboard() {
         </div>
 
         <div style={{ display: "flex", gap: "8px" }}>
-          <Link to="/messages" className="dash-add-btn" style={{ textDecoration: "none", display: "flex", alignItems: "center", fontSize: "48px", padding: "0 10px" }} title="Messages">
+          <Link
+            to="/messages"
+            className="dash-add-btn"
+            style={{
+              textDecoration: "none",
+              display: "flex",
+              alignItems: "center",
+              fontSize: "48px",
+              padding: "0 10px",
+            }}
+            title="Messages"
+          >
             ✉
           </Link>
           <button className="dash-add-btn" onClick={() => setModalOpen(true)}>

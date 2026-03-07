@@ -7,67 +7,778 @@
 */
 
 import { Link, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useUser } from "../hooks/useUser";
-import Activity from "../components/Activity";
-import Bulletin from "../components/Bulletin/Bulletin";
-import ProfileMenu from "../components/ProfileMenu";  
-import "../features/Profile.css"; // styles specific to the profile page, such as the tab buttons and layout
+import ProfileMenu from "../components/ProfileMenu";
+import "./Profile.css";
 import ProfilePictureUpload from "../components/ProfilePictureUpload";
+import { supabase } from "../lib/supabase";
+import { getPublicUrl } from "../services/dataService";
+import PostCard from "../components/PostCard";
 
-// We will need to decide how to load profile pages in the future.
-// For now, this just loads the current user's profile based on their session.
+type ViewedProfile = {
+  id: string;
+  username: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  profile_pic_key?: string | null;
+  bio?: string | null;
+  about_me?: string | null;
+  interests?: string[] | null;
+};
+
+type Post = {
+  id: string;
+  content: string;
+  created_at: string;
+  updated_at?: string | null;
+  user_id: string;
+  is_pinned?: boolean | null;
+};
+
+type EditField = "bio" | "about_me" | "interests" | null;
 
 export default function Profile() {
-  // Get the username from the route -- TODO: use this to load other users' profiles, currently we just load the authenticated user's profile regardless of the route param
-  const { username: routeUsername } = useParams<{ username: string }>();
-  const { userProfile } = useUser();
-  const [currentTab, setCurrentTab] = useState(0); // 0 = bulliton, 1 = activity, etc. We can add more tabs later if we like.
+  const { username } = useParams();
+  const { user } = useUser();
+
+  const [viewedProfile, setViewedProfile] = useState<ViewedProfile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [profileError, setProfileError] = useState("");
+
+  const [activeTab, setActiveTab] = useState<"bulletin" | "activity">("bulletin");
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [newPostContent, setNewPostContent] = useState("");
+  const [posting, setPosting] = useState(false);
+
+  const [editField, setEditField] = useState<EditField>(null);
+  const [editValue, setEditValue] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const [postMenuPostId, setPostMenuPostId] = useState<string | null>(null);
+  const [savingPostAction, setSavingPostAction] = useState(false);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadProfile = async () => {
+      setLoadingProfile(true);
+      setProfileError("");
+
+      try {
+        if (!username && !user?.id) {
+          if (isActive) {
+            setViewedProfile(null);
+            setProfileError("No profile found.");
+          }
+          return;
+        }
+
+        if (username) {
+          const { data, error } = await supabase
+            .from("users")
+            .select(
+              "id, username, first_name, last_name, profile_pic_key, bio, about_me, interests"
+            )
+            .eq("username", username)
+            .maybeSingle();
+
+          if (error) {
+            console.error("Error loading viewed profile:", error);
+            if (isActive) setProfileError("Could not load profile.");
+            return;
+          }
+
+          if (!data) {
+            if (isActive) setProfileError("Profile not found.");
+            return;
+          }
+
+          if (isActive) {
+            setViewedProfile(data as ViewedProfile);
+          }
+        } else if (user?.id) {
+          const { data, error } = await supabase
+            .from("users")
+            .select(
+              "id, username, first_name, last_name, profile_pic_key, bio, about_me, interests"
+            )
+            .eq("id", user.id)
+            .maybeSingle();
+
+          if (error) {
+            console.error("Error loading own profile:", error);
+            if (isActive) setProfileError("Could not load profile.");
+            return;
+          }
+
+          if (!data) {
+            if (isActive) setProfileError("Profile not found.");
+            return;
+          }
+
+          if (isActive) {
+            setViewedProfile(data as ViewedProfile);
+          }
+        }
+      } finally {
+        if (isActive) setLoadingProfile(false);
+      }
+    };
+
+    void loadProfile();
+
+    return () => {
+      isActive = false;
+    };
+  }, [username, user?.id]);
+
+  useEffect(() => {
+    if (!viewedProfile?.id) {
+      setPosts([]);
+      return;
+    }
+
+    let isActive = true;
+
+    const loadPosts = async () => {
+      setLoadingPosts(true);
+
+      try {
+        const { data, error } = await supabase
+          .from("posts")
+          .select("id, content, created_at, updated_at, user_id, is_pinned")
+          .eq("user_id", viewedProfile.id)
+          .order("is_pinned", { ascending: false })
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("Error loading posts:", error);
+          if (isActive) setPosts([]);
+          return;
+        }
+
+        if (isActive) {
+          setPosts((data as Post[]) ?? []);
+        }
+      } finally {
+        if (isActive) setLoadingPosts(false);
+      }
+    };
+
+    void loadPosts();
+
+    return () => {
+      isActive = false;
+    };
+  }, [viewedProfile?.id]);
+
+  const isOwnProfile = !!user?.id && !!viewedProfile?.id && user.id === viewedProfile.id;
 
   const displayName =
-    userProfile && (userProfile.first_name || userProfile.last_name)
-      ? `${userProfile.first_name ?? ""} ${userProfile.last_name ?? ""}`.trim()
-      : null;
+    viewedProfile?.first_name || viewedProfile?.last_name
+      ? `${viewedProfile.first_name ?? ""} ${viewedProfile.last_name ?? ""}`.trim()
+      : viewedProfile?.username ?? "";
 
-  // fetch posts whenever we know which profile we are viewing
-  useEffect(() => {
-    if (!userProfile?.id) return;
-  }, [userProfile?.id]);
+  const viewedProfilePictureUrl = viewedProfile?.profile_pic_key
+    ? getPublicUrl(viewedProfile.profile_pic_key)
+    : "";
+
+  const handleCreatePost = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!newPostContent.trim() || !user?.id || !isOwnProfile) return;
+
+    setPosting(true);
+
+    try {
+      const content = newPostContent.trim();
+
+      const { data, error } = await supabase
+        .from("posts")
+        .insert({
+          user_id: user.id,
+          content,
+          is_pinned: false,
+        })
+        .select("id, content, created_at, updated_at, user_id, is_pinned")
+        .single();
+
+      if (error) {
+        console.error("Error creating post:", error);
+        return;
+      }
+
+      setPosts((prev) => [data as Post, ...prev]);
+      setNewPostContent("");
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  const openEditModal = (field: EditField) => {
+    if (!viewedProfile || !field || !isOwnProfile) return;
+
+    setEditField(field);
+
+    if (field === "bio") {
+      setEditValue(viewedProfile.bio ?? "");
+    } else if (field === "about_me") {
+      setEditValue(viewedProfile.about_me ?? "");
+    } else if (field === "interests") {
+      setEditValue((viewedProfile.interests ?? []).join(", "));
+    }
+  };
+
+  const closeEditModal = () => {
+    setEditField(null);
+    setEditValue("");
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!viewedProfile?.id || !editField || !isOwnProfile) return;
+
+    setSavingEdit(true);
+
+    try {
+      let updatePayload: Record<string, unknown> = {};
+
+      if (editField === "bio") {
+        updatePayload = { bio: editValue.trim() };
+      } else if (editField === "about_me") {
+        updatePayload = { about_me: editValue.trim() };
+      } else if (editField === "interests") {
+        const cleaned = editValue
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+
+        updatePayload = { interests: cleaned };
+      }
+
+      const { error } = await supabase
+        .from("users")
+        .update(updatePayload)
+        .eq("id", viewedProfile.id);
+
+      if (error) {
+        console.error("Error saving profile edit:", error);
+        return;
+      }
+
+      setViewedProfile((prev) => {
+        if (!prev) return prev;
+
+        if (editField === "bio") {
+          return { ...prev, bio: editValue.trim() };
+        }
+
+        if (editField === "about_me") {
+          return { ...prev, about_me: editValue.trim() };
+        }
+
+        if (editField === "interests") {
+          return {
+            ...prev,
+            interests: editValue
+              .split(",")
+              .map((item) => item.trim())
+              .filter(Boolean),
+          };
+        }
+
+        return prev;
+      });
+
+      closeEditModal();
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const openPostMenu = (postId: string) => {
+    if (!isOwnProfile) return;
+    setPostMenuPostId(postId);
+  };
+
+  const closePostMenu = () => {
+    setPostMenuPostId(null);
+  };
+
+  const selectedPost = useMemo(
+    () => posts.find((post) => post.id === postMenuPostId) ?? null,
+    [posts, postMenuPostId]
+  );
+
+  const handleTogglePinPost = async () => {
+    if (!selectedPost || !isOwnProfile) return;
+
+    setSavingPostAction(true);
+
+    try {
+      const nextPinnedValue = !selectedPost.is_pinned;
+
+      if (nextPinnedValue) {
+        const currentlyPinned = posts.find((post) => post.is_pinned && post.id !== selectedPost.id);
+
+        if (currentlyPinned) {
+          const { error: unpinError } = await supabase
+            .from("posts")
+            .update({ is_pinned: false })
+            .eq("id", currentlyPinned.id)
+            .eq("user_id", viewedProfile?.id ?? "");
+
+          if (unpinError) {
+            console.error("Error unpinning current post:", unpinError);
+            return;
+          }
+        }
+      }
+
+      const { error } = await supabase
+        .from("posts")
+        .update({ is_pinned: nextPinnedValue })
+        .eq("id", selectedPost.id)
+        .eq("user_id", viewedProfile?.id ?? "");
+
+      if (error) {
+        console.error("Error updating pinned post:", error);
+        return;
+      }
+
+      setPosts((prev) => {
+        const updated = prev.map((post) => {
+          if (post.id === selectedPost.id) {
+            return { ...post, is_pinned: nextPinnedValue };
+          }
+
+          if (nextPinnedValue) {
+            return { ...post, is_pinned: false };
+          }
+
+          return post;
+        });
+
+        return [...updated].sort((a, b) => {
+          const aPinned = a.is_pinned ? 1 : 0;
+          const bPinned = b.is_pinned ? 1 : 0;
+          if (bPinned !== aPinned) return bPinned - aPinned;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+      });
+
+      closePostMenu();
+    } finally {
+      setSavingPostAction(false);
+    }
+  };
+
+  const handleDeletePost = async () => {
+    if (!selectedPost || !isOwnProfile) return;
+
+    setSavingPostAction(true);
+
+    try {
+      const { error } = await supabase
+        .from("posts")
+        .delete()
+        .eq("id", selectedPost.id)
+        .eq("user_id", viewedProfile?.id ?? "");
+
+      if (error) {
+        console.error("Error deleting post:", error);
+        return;
+      }
+
+      setPosts((prev) => prev.filter((post) => post.id !== selectedPost.id));
+      closePostMenu();
+    } finally {
+      setSavingPostAction(false);
+    }
+  };
+
+  const pinnedPost = posts.find((post) => post.is_pinned) ?? null;
+  const feedPosts = posts.filter((post) => !post.is_pinned);
+  const newestPost =
+    [...posts].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )[0] ?? null;
+  const interests = useMemo(() => viewedProfile?.interests ?? [], [viewedProfile?.interests]);
+
+  const modalTitle =
+    editField === "bio"
+      ? "Edit Description"
+      : editField === "about_me"
+      ? "Edit About Me"
+      : editField === "interests"
+      ? "Edit Interests"
+      : "";
+
+  const modalHelpText =
+    editField === "interests"
+      ? "Enter interests separated by commas. Example: UI Design, Coding, Gaming"
+      : "";
 
   return (
-    <div
-      className="profile-page"
-    >
+    <div className="profile-page">
       <div className="profile-topbar">
         <div className="profile-title">PASSERBY</div>
-      
-              {/* profile button/dropdown moved into its own component */}
         <ProfileMenu />
       </div>
-      <ProfilePictureUpload />
-      {/* Shows the first and last name of the user profile */}
-      <h1>
-        {displayName ? `Welcome, ${displayName}!` : "Welcome!"}
-        {routeUsername && (
-          <span style={{ fontWeight: "normal" }}> (@{routeUsername})</span>
-        )}
-      </h1>
-      {/* Shows the username of the user profile */}
-      {userProfile?.username && (
-        <p>
-          <strong>Username:</strong> @{userProfile.username}
-        </p>
+
+      {loadingProfile ? (
+        <p style={{ padding: "16px" }}>Loading profile...</p>
+      ) : profileError ? (
+        <p style={{ padding: "16px" }}>{profileError}</p>
+      ) : viewedProfile ? (
+        <div className="profile-shell">
+          <div className="profile-back-row">
+            <Link to="/" className="profile-back-link">
+              ← Back to Dashboard
+            </Link>
+          </div>
+
+          <div className="profile-card">
+            <div className="profile-header">
+              <div className="profile-header-left">
+                <div className="profile-photo-block">
+                  {isOwnProfile ? (
+                    <ProfilePictureUpload />
+                  ) : viewedProfilePictureUrl ? (
+                    <img
+                      src={viewedProfilePictureUrl}
+                      alt="Profile"
+                      className="profile-avatar"
+                    />
+                  ) : (
+                    <div className="profile-avatar profile-avatar-placeholder">
+                      No Photo
+                    </div>
+                  )}
+                </div>
+
+                <div className="profile-header-info">
+                  <h1 className="profile-name">{displayName || viewedProfile.username}</h1>
+                  <div className="profile-username">@{viewedProfile.username}</div>
+
+                  <div className="profile-editable-row">
+                    <p className="profile-bio">
+                      {viewedProfile.bio?.trim()
+                        ? viewedProfile.bio
+                        : "Add a short description about yourself."}
+                    </p>
+
+                    {isOwnProfile && (
+                      <button
+                        type="button"
+                        className="profile-pencil-btn"
+                        onClick={() => openEditModal("bio")}
+                        aria-label="Edit description"
+                      >
+                        ✏️
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="profile-header-actions">
+                {isOwnProfile && (
+                  <button
+                    className="profile-action-btn"
+                    onClick={() =>
+                      document
+                        .getElementById("create-post-box")
+                        ?.scrollIntoView({ behavior: "smooth", block: "center" })
+                    }
+                  >
+                    Create Post
+                  </button>
+                )}
+
+                {isOwnProfile && (
+                  <button
+                    type="button"
+                    className="profile-action-btn profile-link-btn"
+                    onClick={() => openEditModal("bio")}
+                  >
+                    Edit Profile
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="profile-tabs">
+              <button
+                className={`profile-tab ${activeTab === "bulletin" ? "active" : ""}`}
+                onClick={() => setActiveTab("bulletin")}
+              >
+                Bulletin
+              </button>
+              <button
+                className={`profile-tab ${activeTab === "activity" ? "active" : ""}`}
+                onClick={() => setActiveTab("activity")}
+              >
+                Activity
+              </button>
+            </div>
+
+            <div className="profile-content-grid">
+              <aside className="profile-left-panel">
+                <div className="profile-side-card">
+                  <div className="profile-card-header-row">
+                    <h3>About Me</h3>
+                    {isOwnProfile && (
+                      <button
+                        type="button"
+                        className="profile-pencil-btn"
+                        onClick={() => openEditModal("about_me")}
+                        aria-label="Edit about me"
+                      >
+                        ✏️
+                      </button>
+                    )}
+                  </div>
+
+                  <p>
+                    {viewedProfile.about_me?.trim()
+                      ? viewedProfile.about_me
+                      : "Tell people a little more about yourself."}
+                  </p>
+                </div>
+
+                <div className="profile-side-card">
+                  <div className="profile-card-header-row">
+                    <h3>Interests</h3>
+                    {isOwnProfile && (
+                      <button
+                        type="button"
+                        className="profile-pencil-btn"
+                        onClick={() => openEditModal("interests")}
+                        aria-label="Edit interests"
+                      >
+                        ✏️
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="profile-tags">
+                    {interests.length > 0 ? (
+                      interests.map((interest) => <span key={interest}>{interest}</span>)
+                    ) : (
+                      <span className="profile-empty-chip">No interests added yet</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="profile-side-card">
+                  <h3>
+                    {posts.length} Post{posts.length === 1 ? "" : "s"}
+                  </h3>
+                </div>
+              </aside>
+
+              <main className="profile-center-panel">
+                {activeTab === "bulletin" && (
+                  <>
+                    {isOwnProfile && (
+                      <form
+                        id="create-post-box"
+                        className="profile-compose-card"
+                        onSubmit={handleCreatePost}
+                      >
+                        <div className="profile-compose-avatar" />
+                        <textarea
+                          className="profile-compose-input"
+                          placeholder="What’s on your mind?"
+                          value={newPostContent}
+                          onChange={(e) => setNewPostContent(e.target.value)}
+                          rows={2}
+                        />
+                        <button
+                          className="profile-post-btn"
+                          type="submit"
+                          disabled={posting}
+                        >
+                          {posting ? "Posting..." : "Post"}
+                        </button>
+                      </form>
+                    )}
+
+                    {pinnedPost && (
+                      <div className="profile-feed-section">
+                        <div className="profile-section-label">📌 Pinned</div>
+
+                        <PostCard
+                          id={pinnedPost.id}
+                          name={displayName || viewedProfile.username}
+                          username={viewedProfile.username}
+                          content={pinnedPost.content}
+                          createdAt={pinnedPost.created_at}
+                          pinned={true}
+                          canManage={isOwnProfile}
+                          onOpenMenu={openPostMenu}
+                        />
+                      </div>
+                    )}
+
+                    <div className="profile-feed-section">
+                      {loadingPosts ? (
+                        <p>Loading posts...</p>
+                      ) : posts.length === 0 ? (
+                        <p>No posts yet.</p>
+                      ) : feedPosts.length === 0 ? (
+                        <p>No additional posts yet.</p>
+                      ) : (
+                        feedPosts.map((post) => (
+                          <PostCard
+                            key={post.id}
+                            id={post.id}
+                            name={displayName || viewedProfile.username}
+                            username={viewedProfile.username}
+                            content={post.content}
+                            createdAt={post.created_at}
+                            pinned={!!post.is_pinned}
+                            canManage={isOwnProfile}
+                            onOpenMenu={openPostMenu}
+                          />
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {activeTab === "activity" && (
+                  <div className="profile-side-card">
+                    <h3>Activity</h3>
+                    <p>
+                      For now, blank not sure what to put here
+                    </p>
+                  </div>
+                )}
+              </main>
+
+              <aside className="profile-right-panel">
+                <div className="profile-side-card">
+                  <h3>Recent Post</h3>
+
+                  {!newestPost ? (
+                    <p>No recent posts yet.</p>
+                  ) : (
+                    <button
+                      type="button"
+                      className="profile-recent-item"
+                      onClick={() =>
+                        document
+                          .getElementById(`profile-post-${newestPost.id}`)
+                          ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                      }
+                    >
+                      <div className="profile-recent-name">
+                        {displayName || viewedProfile.username}
+                      </div>
+                      <div className="profile-recent-handle">@{viewedProfile.username}</div>
+                      <div className="profile-recent-preview">{newestPost.content}</div>
+                    </button>
+                  )}
+                </div>
+              </aside>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isOwnProfile && editField && (
+        <div className="profile-modal-overlay" onClick={closeEditModal}>
+          <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-modal-header">
+              <h3>{modalTitle}</h3>
+              <button
+                type="button"
+                className="profile-modal-close"
+                onClick={closeEditModal}
+                aria-label="Close modal"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="profile-modal-form">
+              <textarea
+                className="profile-modal-textarea"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                rows={editField === "interests" ? 4 : 5}
+                placeholder={editField === "interests" ? "UI Design, Coding, Gaming" : ""}
+              />
+
+              {modalHelpText && <p className="profile-modal-help">{modalHelpText}</p>}
+
+              <div className="profile-modal-actions">
+                <button
+                  type="button"
+                  className="profile-modal-secondary-btn"
+                  onClick={closeEditModal}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="profile-modal-primary-btn"
+                  disabled={savingEdit}
+                >
+                  {savingEdit ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
-      {!userProfile?.username && <p>No username set.</p>}
+      {isOwnProfile && selectedPost && (
+        <div className="profile-modal-overlay" onClick={closePostMenu}>
+          <div
+            className="profile-modal profile-post-menu-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="profile-modal-header">
+              <h3>Post Options</h3>
+              <button
+                type="button"
+                className="profile-modal-close"
+                onClick={closePostMenu}
+                aria-label="Close post options"
+              >
+                ×
+              </button>
+            </div>
 
-      <button onClick={() => setCurrentTab(0)}>Bulliton</button>
-      <button onClick={() => setCurrentTab(1)}>Activity</button>
+            <div className="profile-post-menu-body">
+              <p className="profile-post-menu-preview">{selectedPost.content}</p>
 
-      <Bulletin show={currentTab === 0} />
-      <Activity show={currentTab === 1} />
+              <button
+                type="button"
+                className="profile-post-menu-btn"
+                onClick={handleTogglePinPost}
+                disabled={savingPostAction}
+              >
+                {selectedPost.is_pinned ? "Unpin Post" : "Pin Post To Top"}
+              </button>
 
-      <Link to="/">← Back to dashboard</Link>
+              <button
+                type="button"
+                className="profile-post-menu-btn profile-post-menu-delete"
+                onClick={handleDeletePost}
+                disabled={savingPostAction}
+              >
+                Delete Post
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

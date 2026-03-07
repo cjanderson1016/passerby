@@ -26,9 +26,7 @@ export default function FriendProfile({ friend }: FriendProfileProps) {
   const navigate = useNavigate();
 
   const goToFriendProfile = () => {
-    // Your router is /profile/:username
-    // Dashboard.tsx sets friend.id to u.username (ideal)
-    navigate(`/profile/${friend.id}`);
+    navigate(`/profile/${friend.username}`); // navigate to the friend's profile page when the card is clicked
   };
 
   return (
@@ -38,7 +36,7 @@ export default function FriendProfile({ friend }: FriendProfileProps) {
       tabIndex={0}
       onClick={goToFriendProfile}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") goToFriendProfile();
+        if (e.key === "Enter" || e.key === " ") goToFriendProfile(); // navigate to the friend's profile page when Enter or Space is pressed
       }}
     >
       <div className="dash-avatar" />

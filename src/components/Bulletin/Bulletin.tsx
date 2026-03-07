@@ -7,7 +7,6 @@
 */
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { useUser } from "../../hooks/useUser";
 import type { TextComponentType } from "./BulletinComponents/TextComponent";
 import type { TitleComponentType } from "./BulletinComponents/TitleComponent.tsx";
 import EditBulletin from "./EditBulletin.tsx";
@@ -15,84 +14,116 @@ import "./Bulletin.css"
 
 interface BulletinProps {
   show: boolean; // whether to show this tab or not, passed from parent
+  profileUserId: string | null; // the user ID of the profile we are viewing, used to fetch the correct bulletin components
 }
 
-export default function Bulletin(props: BulletinProps) {
-  const { user, userProfile } = useUser();
-
-  //const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [bulletinComponents, setBulletinComponents] = useState<(TextComponentType | TitleComponentType)[]>([]);
+export default function Bulletin({ show, profileUserId }: BulletinProps) {
+  const [bulletinComponents, setBulletinComponents] = useState<
+    (TextComponentType | TitleComponentType)[]
+  >([]);
   const [loadingComponents, setLoadingComponents] = useState(false);
 
   const [editMode, setEditMode] = useState(false);
 
-  const cleanAddComponents = (components: Array<TextComponentType | TitleComponentType>, additions: Array<TextComponentType | TitleComponentType>) => {
+  const cleanAddComponents = (
+    components: Array<TextComponentType | TitleComponentType>,
+    additions: Array<TextComponentType | TitleComponentType>,
+  ) => {
     //check each potential additional component, and see if it has already been loaded
     additions.forEach((addition) => {
-      let isInArray = false
+      let isInArray = false;
       components.forEach((component) => {
         if (component.component_id === addition.component_id) isInArray = true;
-      })
-      if (!isInArray) components.push(addition)
-    })
-    return components.sort((a,b) => a.position - b.position)
-  }
-
-  const loadBulletin = async () => {
-    //get all of the components sorted by
-    setLoadingComponents(true);
-    try {
-      // pull all of the bulletin component containers from supabase
-      if (!userProfile?.id) return
-      const { data: containerData, error: containerError } = await supabase
-        .from("bulletin_components")
-        .select(`*`)
-        .eq("user_id", userProfile.id)
-        .order("position");
-      if (containerError) {
-        console.error("error loading bulletin components", containerError);
-      } else {
-        console.log("loaded bulletin components", containerData);
-      }
-      if (containerData){ //If the containers loaded successfully
-        const componentTypes = new Set(containerData.map((component) => (component.child_table)));//get the unique component types we need to load based on the containers
-        componentTypes.forEach(async (componentType) => {
-          //theta join bulletin components with its respective child relationship to get the full components
-          const {data: componentTypeData, error:componentTypeError} = await supabase
-          .from("bulletin_components")
-        .select(`
-          *,
-          ${componentType}!inner(*)
-          `)
-          .returns<((TextComponentType | TitleComponentType)[])>();
-          if (componentTypeError) {
-            console.error(`error loading ${componentType}`, componentTypeError);
-          } else {
-            console.log(`loaded ${componentType}`, componentTypeData);
-            setBulletinComponents(prev => cleanAddComponents([...prev], [...componentTypeData])); //add component to bulletin components list
-          }
-        })
-      }
-      else console.log("userProfile not loaded yet")
-    } finally {
-      setLoadingComponents(false);
-    }
+      });
+      if (!isInArray) components.push(addition);
+    });
+    return components.sort((a, b) => a.position - b.position);
   };
 
   useEffect(() => {
-    if (user?.id) {
-      //setCurrentUserId(user.id);
+    // if we don't have a profile user ID, we can't load any bulletin components
+    if (!profileUserId) {
+      setBulletinComponents([]);
+      return;
     }
-  }, [user]);
+    // we use a flag and check it in the async function to prevent setting state on an unmounted component
+    let isActive = true;
 
-  useEffect(() => {
-    //useeffect to trigger whenever userid changes
-    loadBulletin()  
-  }, [userProfile?.id]); //monitors the user profile state variable
-  
+    // this function loads all bulletin components for the given profile user ID, then merges them into a single array sorted by position
+    const loadBulletin = async () => {
+      //get all of the components sorted by position
+      setLoadingComponents(true);
+      setBulletinComponents([]);
+
+      try {
+        // first we load all the bulletin components for this user, which gives us the component IDs, types, and positions
+        const { data: containerData, error: containerError } = await supabase
+          .from("bulletin_components")
+          .select(`*`)
+          .eq("user_id", profileUserId)
+          .order("position");
+        // if there's an error loading the bulletin components, log it and return early
+        if (containerError) {
+          console.error("error loading bulletin components", containerError);
+          return;
+        }
+        // if we have container data, we need to load the specific component data for each component based on its type, then merge it together
+        if (containerData && containerData.length > 0) {
+          const componentTypes = Array.from(
+            new Set(containerData.map((component) => component.child_table)),
+          );
+
+          const byTypeData = await Promise.all(
+            componentTypes.map(async (componentType) => {
+              const { data: componentTypeData, error: componentTypeError } =
+                await supabase
+                  .from("bulletin_components")
+                  .select(
+                    `
+              *,
+              ${componentType}!inner(*)
+            `,
+                  )
+                  .eq("user_id", profileUserId) // only load components for this user
+                  .returns<(TextComponentType | TitleComponentType)[]>();
+
+              if (componentTypeError) {
+                console.error(
+                  `error loading ${componentType}`,
+                  componentTypeError,
+                );
+                return [] as (TextComponentType | TitleComponentType)[];
+              }
+
+              return componentTypeData ?? [];
+            }),
+          );
+
+          if (!isActive) return; // check if component is still mounted before setting state
+
+          let merged: (TextComponentType | TitleComponentType)[] = [];
+          byTypeData.forEach((components) => {
+            merged = cleanAddComponents([...merged], components);
+          });
+          setBulletinComponents(merged);
+        }
+      } finally {
+        if (isActive) {
+          setLoadingComponents(false);
+        }
+      }
+    };
+
+    void loadBulletin(); // we call the async function but don't await it since useEffect can't be async
+
+    return () => {
+      isActive = false; // when the component unmounts, set isActive to false to prevent setting state on an unmounted component
+    };
+  }, [profileUserId]);
+
   return (
     <>
-      {props.show && (
+      {show && (
         <div className="bulletin"> 
           {/* bulletin content */}
           <button onClick={() => setEditMode(!editMode)}>Edit</button>
@@ -119,5 +150,5 @@ export default function Bulletin(props: BulletinProps) {
         </div>
       )}
     </>
-  )
+  );
 }

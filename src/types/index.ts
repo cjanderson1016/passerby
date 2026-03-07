@@ -11,6 +11,7 @@
 
 export interface Friend {
   id: string;
+  username: string;
   name: string;
   text: string;
   lastUpdatedMinutesAgo: number;
@@ -37,7 +38,7 @@ export interface AcceptedFriendRequest {
 // Basic user info returned when querying `users` for friends.
 export interface FriendUser {
   id: string;
-  username: string | null;
+  username: string;
   first_name: string | null;
   last_name: string | null;
 }

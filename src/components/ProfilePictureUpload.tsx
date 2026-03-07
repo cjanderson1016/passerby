@@ -6,152 +6,94 @@
     Author(s): Connor Anderson
 */
 
-import { useState, useEffect, useRef } from "react";
-import { uploadFileToR2, getPublicUrl } from "../services/dataService";
+import { useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useUser } from "../hooks/useUser";
-
-// Constants for file validation (max size and accepted types)
-const MAX_FILE_SIZE_MB = 5;
-const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+import { getPublicUrl } from "../services/dataService";
 
 export default function ProfilePictureUpload() {
-  const { userProfile, setUserProfile, user } = useUser(); // Get user and profile from context
+  const { user } = useUser();
 
-  // State for preview URL and upload status
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [uploading, setUploading] = useState(false);
+  const [imagePath, setImagePath] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null); // Ref to reset file input after upload
+  const handleChooseFile = () => {
+    fileInputRef.current?.click();
+  };
 
-  // Load existing profile picture on mount or when userProfile changes
-  useEffect(() => {
-    if (userProfile?.profile_pic_key) {
-      setPreviewUrl(getPublicUrl(userProfile.profile_pic_key)); // Make the public URL from the key and set it as preview
-    } else {
-      setPreviewUrl(null);
-    }
-  }, [userProfile?.profile_pic_key]);
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (!user?.id) return;
 
-  // Handle file selection and upload
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; // Get the selected file
-    if (!file) return; // No file selected, exit early
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    // Validate type
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      alert("Invalid file type. Only JPG, PNG, or WEBP allowed.");
-      return;
-    }
+    setUploading(true);
 
-    // Validate size
-    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-      alert(`File too large. Maximum size is ${MAX_FILE_SIZE_MB} MB.`);
-      return;
-    }
-
-    // Ensure user and profile are loaded before proceeding
-    if (!user || !userProfile?.id) {
-      alert("User not loaded.");
-      return;
-    }
-
-    // Proceed with upload
     try {
-      setUploading(true); // Set uploading state to disable input and show feedback
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${user.id}-${Date.now()}.${fileExt}`;
 
-      // Optimistic preview (local URL) while uploading to R2
-      const localPreview = URL.createObjectURL(file);
-      setPreviewUrl(localPreview);
+      const { error: uploadError } = await supabase.storage
+        .from("profile-pictures")
+        .upload(filePath, file);
 
-      // Upload to R2
-      const { key, publicUrl } = await uploadFileToR2(file);
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        return;
+      }
 
-      // Replace preview with CDN/public URL
-      setPreviewUrl(publicUrl);
-
-      // Save key in database
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from("users")
-        .update({ profile_pic_key: key })
-        .eq("id", userProfile.id);
+        .update({ profile_pic_key: filePath })
+        .eq("id", user.id);
 
-      if (error) throw error;
+      if (updateError) {
+        console.error("Database update error:", updateError);
+        return;
+      }
 
-      // Update context
-      setUserProfile({
-        ...userProfile,
-        profile_pic_key: key,
-      });
-    } catch (err) {
-      // Handle errors and reset preview if upload fails
-      console.error("Profile picture upload failed:", err);
-      alert("Failed to upload profile picture.");
+      setImagePath(filePath);
     } finally {
       setUploading(false);
-
-      // reset input so same file can be selected again
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
     }
   };
 
+  const imageUrl = imagePath ? getPublicUrl(imagePath) : null;
+
   return (
-    <div style={{ margin: "16px 0", textAlign: "center" }}>
-      <label
-        htmlFor="profile-pic-upload"
-        style={{ cursor: uploading ? "not-allowed" : "pointer" }}
+    <div className="profile-avatar-upload">
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          alt="Profile"
+          className="profile-avatar"
+        />
+      ) : (
+        <div className="profile-avatar profile-avatar-placeholder">
+          No Photo
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="profile-avatar-upload-btn"
+        onClick={handleChooseFile}
+        disabled={uploading}
       >
-        {previewUrl ? (
-          <img
-            src={previewUrl}
-            alt="Profile"
-            style={{
-              width: 120,
-              height: 120,
-              borderRadius: "50%",
-              objectFit: "cover",
-              border: "2px solid #ccc",
-              opacity: uploading ? 0.6 : 1,
-              transition: "opacity 0.2s",
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              width: 120,
-              height: 120,
-              borderRadius: "50%",
-              border: "2px dashed #ccc",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#888",
-              fontSize: 14,
-              background: "#f0f0f0",
-            }}
-          >
-            Upload Avatar
-          </div>
-        )}
-      </label>
+        {uploading ? "Uploading..." : "Upload Photo"}
+      </button>
 
       <input
         ref={fileInputRef}
-        id="profile-pic-upload"
         type="file"
-        accept={ACCEPTED_TYPES.join(",")}
-        style={{ display: "none" }}
+        accept="image/*"
         onChange={handleFileChange}
-        disabled={uploading}
+        style={{ display: "none" }}
       />
-
-      {uploading && (
-        <p style={{ fontSize: 14, color: "#666" }}>
-          Uploading profile picture...
-        </p>
-      )}
     </div>
   );
 }
