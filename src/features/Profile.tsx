@@ -10,7 +10,9 @@ import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useUser } from "../hooks/useUser";
 import Activity from "../components/Activity";
-import Bulletin from "../components/Bulletin";
+import Bulletin from "../components/Bulletin/Bulletin";
+import ProfileMenu from "../components/ProfileMenu";  
+import "../features/Profile.css"; // styles specific to the profile page, such as the tab buttons and layout
 import ProfilePictureUpload from "../components/ProfilePictureUpload";
 
 // We will need to decide how to load profile pages in the future.
@@ -35,8 +37,13 @@ export default function Profile() {
   return (
     <div
       className="profile-page"
-      style={{ padding: "24px", fontFamily: "Arial, Helvetica, sans-serif" }}
     >
+      <div className="profile-topbar">
+        <div className="profile-title">PASSERBY</div>
+      
+              {/* profile button/dropdown moved into its own component */}
+        <ProfileMenu />
+      </div>
       <ProfilePictureUpload />
       {/* Shows the first and last name of the user profile */}
       <h1>
