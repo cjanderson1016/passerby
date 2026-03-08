@@ -13,6 +13,7 @@ export interface Friend {
   id: string;
   username: string;
   name: string;
+  profile_pic_key?: string | null; // optional storage key for the friend's profile picture, which we can use to generate a URL when displaying their profile
   text: string;
   lastUpdatedMinutesAgo: number;
   unreadMessages: boolean;
@@ -41,6 +42,7 @@ export interface FriendUser {
   username: string;
   first_name: string | null;
   last_name: string | null;
+  profile_pic_key?: string | null; // optional storage key for the user's profile picture, which we can use to generate a URL when displaying their profile
 }
 
 // A conversation joined with the other participant's info and last message preview.

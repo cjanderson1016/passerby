@@ -17,6 +17,7 @@ import type {
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useUser } from "../hooks/useUser";
+import { getPublicUrl } from "../services/dataService";
 import "../features/dashboard.css"; // keep existing styles
 
 export default function ProfileMenu() {
@@ -25,6 +26,9 @@ export default function ProfileMenu() {
   const navigate = useNavigate();
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const { userProfile } = useUser();
+  const profileImageUrl = userProfile?.profile_pic_key
+    ? getPublicUrl(userProfile.profile_pic_key)
+    : null;
 
   const toggle = () => setOpen((v) => !v);
 
@@ -79,13 +83,22 @@ export default function ProfileMenu() {
   return (
     <div className="dash-profile-wrap" ref={wrapRef}>
       <button
+        type="button"
         className="dash-profile"
         onClick={toggle}
         onKeyDown={handleKeyDown}
         aria-label="Profile menu"
         aria-expanded={open}
       >
-        <span className="dash-profile-circle" />
+        {profileImageUrl ? (
+          <img
+            src={profileImageUrl}
+            alt="Your profile"
+            className="dash-profile-circle"
+          />
+        ) : (
+          <span className="dash-profile-circle" />
+        )}
       </button>
 
       {open && (

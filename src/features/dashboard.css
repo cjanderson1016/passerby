@@ -39,12 +39,27 @@ html, body {
   align-items: center;
 }
 
+.dash-profile {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 0;
+}
+
 .dash-profile-circle {
   width: 28px;
   height: 28px;
   border-radius: 999px;
   background: #bdbdbd;
-  display: inline-block;
+  border: 1px solid #a7a7a7;
+  object-fit: cover;
+  display: block;
 }
 
 /* Filter row */
@@ -114,6 +129,9 @@ html, body {
   height: 60px;
   border-radius: 999px;
   background: #bdbdbd;
+  border: 1px solid #a7a7a7;
+  object-fit: cover;
+  display: block;
   margin-left: 10px;
 }
 

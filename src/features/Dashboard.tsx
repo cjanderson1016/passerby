@@ -121,7 +121,7 @@ export default function Dashboard() {
       // 2) Load friend user profiles
       const { data: friendUsers, error: usersError } = await supabase
         .from("users")
-        .select("id, username, first_name, last_name")
+        .select("id, username, first_name, last_name, profile_pic_key")
         .in("id", friendIds);
 
       if (usersError) {
@@ -169,6 +169,7 @@ export default function Dashboard() {
             id: u.id,
             username: u.username,
             name,
+            profile_pic_key: u.profile_pic_key ?? null,
             text: latest?.content ?? "(No posts yet)",
             lastUpdatedMinutesAgo: minutesAgo,
             unreadMessages: false, // you can wire this later
