@@ -6,6 +6,8 @@
   Author(s): Matthew Eagleman
 */
 
+// i will comment this i promise
+
 //import { useState } from "react";
 import "./EditBulletin.css"
 import { type BulletinComponentsUnionType } from "./BulletinComponents/BulletinComponent";
@@ -27,9 +29,11 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
   function SpecificComponentEditor({component}: SpecificComponentEditorProps){
     return(
       <div className="specific-component-editor">
-        <p>{component.child_table}</p>
-        <button onClick={() => moveComponentUp(component)}>move up</button>
-        <button onClick={() => moveComponentDown(component)}>move down</button>
+        <p>{component.name}</p>
+        <div>
+          <button onClick={() => moveComponentUp(component)}>↑</button>
+          <button onClick={() => moveComponentDown(component)}>↓</button>
+        </div>
       </div>
     )
   }

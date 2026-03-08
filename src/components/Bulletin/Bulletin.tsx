@@ -12,6 +12,10 @@ import { supabase } from "../../lib/supabase";
 import EditBulletin from "./EditBulletin.tsx";
 import "./Bulletin.css";
 import type { BulletinComponentsUnionType } from "./BulletinComponents/BulletinComponent.tsx";
+import AboutMeComponent, { type AboutMeComponentType } from "./BulletinComponents/AboutMeComponent.tsx";
+import InterestsComponent, { type InterestsComponentType } from "./BulletinComponents/InterestsComponent.tsx";
+import TitleComponent, {type TitleComponentType} from "./BulletinComponents/TitleComponent.tsx";
+import TextComponent, { type TextComponentType } from "./BulletinComponents/TextComponent.tsx";
 
 interface BulletinProps {
   show: boolean; // whether to show this tab or not, passed from parent
@@ -96,8 +100,13 @@ export default function Bulletin({
                 );
                 return [] as BulletinComponentsUnionType[];
               }
-
-              return componentTypeData ?? [];
+              console.log(`loaded ${componentType} data:`, componentTypeData);
+              // Flatten the nested data from the join so that child table fields are at the top level
+              const flattened = (componentTypeData ?? []).map((item: any) => ({
+                ...item,
+                ...item[componentType],
+              }));
+              return flattened as BulletinComponentsUnionType[];
             }),
           );
 
@@ -139,12 +148,12 @@ export default function Bulletin({
       {show && (
         <div className="bulletin">
           {/* bulletin content */}
-          <button onClick={() => setEditMode(!editMode)}>Edit</button>
-          {loadingComponents ? (
+          {/*loadingComponents ? (
             <p>Loading Bulletin...</p>
           ) : bulletinComponents.length === 0 ? (
             <p>No posts yet.</p>
           ) : (
+          )*/}
             <div className="bulletin-content">
               {bulletinComponents.map((component) => (
                 <div
@@ -152,22 +161,42 @@ export default function Bulletin({
                   className="bulletin-components"
                 >
                   {component.child_table == "text_components" && (
-                    <p key={component.component_id}>
-                      this is component {component.position}, it is of type{" "}
-                      {component.child_table}
-                    </p>
+                    <TextComponent
+                      key={component.component_id}
+                      component={component as TextComponentType}
+                      isOwnProfile={isOwnProfile}
+                      editMode={editMode}
+                    />
                   )}
                   {component.child_table == "title_card_components" && (
-                    <p key={component.component_id}>
-                      this is component {component.position}, it is of type{" "}
-                      {component.child_table}
-                    </p>
+                    <TitleComponent
+                      key={component.component_id}
+                      component={component as TitleComponentType}
+                      isOwnProfile={isOwnProfile}
+                      editMode={editMode}
+                    />
+                  )}
+                  {component.child_table == "about_me_components" && (
+                    <AboutMeComponent
+                      key={component.component_id}
+                      component={component as AboutMeComponentType}
+                      isOwnProfile={isOwnProfile}
+                      editMode={editMode}
+                    />
+                  )}
+                  {component.child_table == "interests_components" && (
+                    <InterestsComponent
+                      key={component.component_id}
+                      component={component as InterestsComponentType}
+                      isOwnProfile={isOwnProfile}
+                      editMode={editMode}
+                    />
                   )}
                 </div>
               ))}
             </div>
-          )}
           {/* Edit Menu */}
+          <button onClick={() => setEditMode(!editMode)}>Edit Order</button>
           {isOwnProfile && (
             <EditBulletin
               show={editMode}

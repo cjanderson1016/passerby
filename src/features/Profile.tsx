@@ -21,7 +21,7 @@ import CreatePostBox from "../components/profile/CreatePostBox";
 import PinnedPostsSection from "../components/profile/PinnedPostsSection";
 import PostFeed from "../components/profile/PostFeed";
 import RecentPostsPanel from "../components/profile/RecentPostsPanel";
-//import Bulletin from "../components/Bulletin/Bulletin";
+import Bulletin from "../components/Bulletin/Bulletin";
 
 type ViewedProfile = {
   id: string;
@@ -538,7 +538,7 @@ export default function Profile() {
 
                 {activeTab === "bulletin" && (
                   <div className="profile-center-card">
-                    
+                    {/*
                       <AboutMeCard
                         aboutMe={viewedProfile.about_me}
                         isOwnProfile={isOwnProfile}
@@ -556,10 +556,13 @@ export default function Profile() {
                         displayName={displayName}
                         username={viewedProfile.username}
                       />
-                      {/*<PostCountCard postCount={posts.length} />*/}
-                      
-                    
-                    {/*<Bulletin show={true} isOwnProfile={isOwnProfile} profileUserId={viewedProfile?.id} />*/}
+                      <PostCountCard postCount={posts.length} />*/}
+                    {/**/}
+                    <Bulletin 
+                    show={true} 
+                    isOwnProfile={isOwnProfile} 
+                    profileUserId={viewedProfile?.id} 
+                    />
                   </div>
                 )}
               </main>

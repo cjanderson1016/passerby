@@ -6,6 +6,7 @@
   Author(s): Matthew Eagleman
 */
 import type { BulletinComponent } from "./BulletinComponent";
+import "../EditBulletin.css"
 
 export type TitleComponentType = BulletinComponent & {
   title: string;
@@ -13,12 +14,33 @@ export type TitleComponentType = BulletinComponent & {
 
 interface titleProps {
   component: TitleComponentType;
+  isOwnProfile: boolean;
+  editMode: boolean;
 }
 
-export default function TitleComponent(props: titleProps) {
+export default function TitleComponent({
+  component, 
+  isOwnProfile, 
+  editMode
+}: titleProps) {
+
+    const onEdit = () => { 
+      console.log("Edit Title clicked");
+    }
     return (
-        <div>
-            <h2>{props.component.title}</h2>
+        <div className="component">
+            <h2>{component.title}</h2>
+            {isOwnProfile && editMode && (
+          <button
+            type="button"
+            className="profile-inline-edit-btn"
+            onClick={onEdit}
+            aria-label="Edit Interests"
+            title="Edit Interests"
+          >
+            ✏️
+          </button>
+        )}
         </div>
     );
 }
