@@ -21,6 +21,7 @@ import CreatePostBox from "../components/profile/CreatePostBox";
 import PinnedPostsSection from "../components/profile/PinnedPostsSection";
 import PostFeed from "../components/profile/PostFeed";
 import RecentPostsPanel from "../components/profile/RecentPostsPanel";
+import type { ProfilePost as Post } from "../components/profile/types"; // we define a more specific Post type for the profile page that includes the is_pinned field, since we need that for the pinned posts feature. This way we don't have to use the more general Post type from our global types which doesn't include is_pinned.
 //import Bulletin from "../components/Bulletin/Bulletin";
 
 type ViewedProfile = {
@@ -34,16 +35,25 @@ type ViewedProfile = {
   interests?: string[] | null;
 };
 
-type Post = {
+type PostRow = {
+  // this is the raw shape of a post row as it comes from the database, which we will then normalize into our Post type that has a guaranteed boolean for is_pinned. We do this because when we fetch from the database, it is possible for the is_pinned field to come back as null if it's not set, but in our application logic we want to treat that as false. By having this intermediate PostRow type, we can handle that normalization in one place.
   id: string;
   content: string;
   created_at: string;
   updated_at?: string | null;
   user_id: string;
-  is_pinned?: boolean | null;
+  is_pinned?: boolean | null; // we make this optional here because when we fetch posts from the database, the is_pinned field might come back as null if it's not set, but we want to treat that as false. In our normalizePost function below, we will convert any null or undefined is_pinned values to false to ensure our Post type always has a boolean for is_pinned.
 };
 
 type EditField = "bio" | "about_me" | "interests" | null;
+
+function normalizePost(row: PostRow): Post {
+  // this function takes a raw PostRow from the database and converts it into our Post type that has a guaranteed boolean for is_pinned. If is_pinned is null or undefined, we treat it as false.
+  return {
+    ...row,
+    is_pinned: row.is_pinned ?? false,
+  };
+}
 
 export default function Profile() {
   const { username } = useParams();
@@ -172,7 +182,9 @@ export default function Profile() {
         }
 
         if (isActive) {
-          setPosts((data as Post[]) ?? []);
+          setPosts(
+            ((data as PostRow[] | null) ?? []).map((row) => normalizePost(row)),
+          );
         }
       } finally {
         if (isActive) setLoadingPosts(false);
@@ -223,7 +235,9 @@ export default function Profile() {
         return;
       }
 
-      setPosts((prev) => [data as Post, ...prev]);
+      if (data) {
+        setPosts((prev) => [normalizePost(data as PostRow), ...prev]);
+      }
       setNewPostContent("");
     } finally {
       setPosting(false);
@@ -501,70 +515,68 @@ export default function Profile() {
               </button>
             </div>
             {/*<div className="profile-content-grid">*/}
-              {/*<aside className="profile-left-panel">
+            {/*<aside className="profile-left-panel">
                       </aside>*/}
 
-              <main className="profile-center-panel">
-                {activeTab === "activity" && (
-                  <>
-                    {isOwnProfile && (
-                      <CreatePostBox
+            <main className="profile-center-panel">
+              {activeTab === "activity" && (
+                <>
+                  {isOwnProfile && (
+                    <CreatePostBox
                       value={newPostContent}
                       posting={posting}
                       onChange={setNewPostContent}
                       onSubmit={handleCreatePost}
-                      />
-                    )}
+                    />
+                  )}
 
-                    <PinnedPostsSection
-                      post={pinnedPost}
-                      displayName={displayName}
-                      username={viewedProfile.username}
-                      isOwnProfile={isOwnProfile}
-                      onOpenMenu={openPostMenu}
-                      />
+                  <PinnedPostsSection
+                    post={pinnedPost}
+                    displayName={displayName}
+                    username={viewedProfile.username}
+                    isOwnProfile={isOwnProfile}
+                    onOpenMenu={openPostMenu}
+                  />
 
-                    <PostFeed
-                      loadingPosts={loadingPosts}
-                      allPostsCount={posts.length}
-                      posts={feedPosts}
-                      displayName={displayName}
-                      username={viewedProfile.username}
-                      isOwnProfile={isOwnProfile}
-                      onOpenMenu={openPostMenu}
-                      />
-                  </>
-                )}
+                  <PostFeed
+                    loadingPosts={loadingPosts}
+                    allPostsCount={posts.length}
+                    posts={feedPosts}
+                    displayName={displayName}
+                    username={viewedProfile.username}
+                    isOwnProfile={isOwnProfile}
+                    onOpenMenu={openPostMenu}
+                  />
+                </>
+              )}
 
-                {activeTab === "bulletin" && (
-                  <div className="profile-center-card">
-                    
-                      <AboutMeCard
-                        aboutMe={viewedProfile.about_me}
-                        isOwnProfile={isOwnProfile}
-                        onEdit={() => openEditModal("about_me")}
-                        />
+              {activeTab === "bulletin" && (
+                <div className="profile-center-card">
+                  <AboutMeCard
+                    aboutMe={viewedProfile.about_me}
+                    isOwnProfile={isOwnProfile}
+                    onEdit={() => openEditModal("about_me")}
+                  />
 
-                      <InterestsCard
-                        interests={interests}
-                        isOwnProfile={isOwnProfile}
-                        onEdit={() => openEditModal("interests")}
-                        />
+                  <InterestsCard
+                    interests={interests}
+                    isOwnProfile={isOwnProfile}
+                    onEdit={() => openEditModal("interests")}
+                  />
 
-                      <RecentPostsPanel
-                        newestPost={newestPost}
-                        displayName={displayName}
-                        username={viewedProfile.username}
-                      />
-                      {/*<PostCountCard postCount={posts.length} />*/}
-                      
-                    
-                    {/*<Bulletin show={true} isOwnProfile={isOwnProfile} profileUserId={viewedProfile?.id} />*/}
-                  </div>
-                )}
-              </main>
-              
-              {/*<aside className="profile-right-panel">
+                  <RecentPostsPanel
+                    newestPost={newestPost}
+                    displayName={displayName}
+                    username={viewedProfile.username}
+                  />
+                  {/*<PostCountCard postCount={posts.length} />*/}
+
+                  {/*<Bulletin show={true} isOwnProfile={isOwnProfile} profileUserId={viewedProfile?.id} />*/}
+                </div>
+              )}
+            </main>
+
+            {/*<aside className="profile-right-panel">
                 
                 
                 
