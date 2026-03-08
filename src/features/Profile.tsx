@@ -21,6 +21,7 @@ import CreatePostBox from "../components/profile/CreatePostBox";
 import PinnedPostsSection from "../components/profile/PinnedPostsSection";
 import PostFeed from "../components/profile/PostFeed";
 import RecentPostsPanel from "../components/profile/RecentPostsPanel";
+import Bulletin from "../components/Bulletin/Bulletin";
 
 type ViewedProfile = {
   id: string;
@@ -499,33 +500,19 @@ export default function Profile() {
                 Activity
               </button>
             </div>
-
-            <div className="profile-content-grid">
-              <aside className="profile-left-panel">
-                <AboutMeCard
-                  aboutMe={viewedProfile.about_me}
-                  isOwnProfile={isOwnProfile}
-                  onEdit={() => openEditModal("about_me")}
-                />
-
-                <InterestsCard
-                  interests={interests}
-                  isOwnProfile={isOwnProfile}
-                  onEdit={() => openEditModal("interests")}
-                />
-
-                <PostCountCard postCount={posts.length} />
-              </aside>
+            {/*<div className="profile-content-grid">*/}
+              {/*<aside className="profile-left-panel">
+                      </aside>*/}
 
               <main className="profile-center-panel">
-                {activeTab === "bulletin" && (
+                {activeTab === "activity" && (
                   <>
                     {isOwnProfile && (
                       <CreatePostBox
-                        value={newPostContent}
-                        posting={posting}
-                        onChange={setNewPostContent}
-                        onSubmit={handleCreatePost}
+                      value={newPostContent}
+                      posting={posting}
+                      onChange={setNewPostContent}
+                      onSubmit={handleCreatePost}
                       />
                     )}
 
@@ -535,7 +522,7 @@ export default function Profile() {
                       username={viewedProfile.username}
                       isOwnProfile={isOwnProfile}
                       onOpenMenu={openPostMenu}
-                    />
+                      />
 
                     <PostFeed
                       loadingPosts={loadingPosts}
@@ -545,26 +532,44 @@ export default function Profile() {
                       username={viewedProfile.username}
                       isOwnProfile={isOwnProfile}
                       onOpenMenu={openPostMenu}
-                    />
+                      />
                   </>
                 )}
 
-                {activeTab === "activity" && (
-                  <div className="profile-side-card">
-                    <h3>Activity</h3>
-                    <p>For now, blank not sure what to put here</p>
+                {activeTab === "bulletin" && (
+                  <div className="profile-center-card">
+                    
+                      <AboutMeCard
+                        aboutMe={viewedProfile.about_me}
+                        isOwnProfile={isOwnProfile}
+                        onEdit={() => openEditModal("about_me")}
+                        />
+
+                      <InterestsCard
+                        interests={interests}
+                        isOwnProfile={isOwnProfile}
+                        onEdit={() => openEditModal("interests")}
+                        />
+
+                      <RecentPostsPanel
+                        newestPost={newestPost}
+                        displayName={displayName}
+                        username={viewedProfile.username}
+                      />
+                      {/*<PostCountCard postCount={posts.length} />*/}
+                      
+                    
+                    {/*<Bulletin show={true} isOwnProfile={isOwnProfile} profileUserId={viewedProfile?.id} />*/}
                   </div>
                 )}
               </main>
-
-              <aside className="profile-right-panel">
-                <RecentPostsPanel
-                  newestPost={newestPost}
-                  displayName={displayName}
-                  username={viewedProfile.username}
-                />
-              </aside>
-            </div>
+              
+              {/*<aside className="profile-right-panel">
+                
+                
+                
+              </aside>*/}
+            {/*</div>*/}
           </div>
         </div>
       ) : null}
