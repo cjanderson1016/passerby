@@ -1,0 +1,17 @@
+.bulletin {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    size: 100vw;
+    border-top: #cdcdcd solid 2px;
+    height: 100vh;
+    margin: 20px;
+}
+.bulletin-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    gap: 12px;
+    width: 100%;
+}

@@ -6,15 +6,22 @@
   Author(s): Connor Anderson, Matthew Eagleman
 */
 
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useUser } from "../hooks/useUser";
 import ProfileMenu from "../components/ProfileMenu";
 import "./Profile.css";
-import ProfilePictureUpload from "../components/ProfilePictureUpload";
 import { supabase } from "../lib/supabase";
 import { getPublicUrl } from "../services/dataService";
-import PostCard from "../components/PostCard";
+import ProfileHeader from "../components/profile/ProfileHeader";
+import AboutMeCard from "../components/profile/AboutMeCard";
+import InterestsCard from "../components/profile/InterestsCard";
+//import PostCountCard from "../components/profile/PostCountCard";
+import CreatePostBox from "../components/profile/CreatePostBox";
+import PinnedPostsSection from "../components/profile/PinnedPostsSection";
+import PostFeed from "../components/profile/PostFeed";
+import RecentPostsPanel from "../components/profile/RecentPostsPanel";
+//import Bulletin from "../components/Bulletin/Bulletin";
 
 type ViewedProfile = {
   id: string;
@@ -40,6 +47,7 @@ type EditField = "bio" | "about_me" | "interests" | null;
 
 export default function Profile() {
   const { username } = useParams();
+  const navigate = useNavigate();
   const { user } = useUser();
 
   const [viewedProfile, setViewedProfile] = useState<ViewedProfile | null>(
@@ -434,6 +442,13 @@ export default function Profile() {
       ? "Enter interests separated by commas. Example: UI Design, Coding, Gaming"
       : "";
 
+  const scrollToCreatePost = () => {
+    document.getElementById("create-post-box")?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  };
+
   return (
     <div className="profile-page">
       <div className="profile-topbar">
@@ -454,83 +469,22 @@ export default function Profile() {
           </div>
 
           <div className="profile-card">
-            <div className="profile-header">
-              <div className="profile-header-left">
-                <div className="profile-photo-block">
-                  {isOwnProfile ? (
-                    <ProfilePictureUpload
-                      initialImagePath={viewedProfile.profile_pic_key ?? null}
-                    />
-                  ) : viewedProfilePictureUrl ? (
-                    <img
-                      src={viewedProfilePictureUrl}
-                      alt="Profile"
-                      className="profile-avatar"
-                    />
-                  ) : (
-                    <div className="profile-avatar profile-avatar-placeholder">
-                      No Photo
-                    </div>
-                  )}
-                </div>
-
-                <div className="profile-header-info">
-                  <h1 className="profile-name">
-                    {displayName || viewedProfile.username}
-                  </h1>
-                  <div className="profile-username">
-                    @{viewedProfile.username}
-                  </div>
-
-                  <div className="profile-editable-row">
-                    <p className="profile-bio">
-                      {viewedProfile.bio?.trim()
-                        ? viewedProfile.bio
-                        : "Add a short description about yourself."}
-                    </p>
-
-                    {isOwnProfile && (
-                      <button
-                        type="button"
-                        className="profile-pencil-btn"
-                        onClick={() => openEditModal("bio")}
-                        aria-label="Edit description"
-                      >
-                        ✏️
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="profile-header-actions">
-                {isOwnProfile && (
-                  <button
-                    className="profile-action-btn"
-                    onClick={() =>
-                      document
-                        .getElementById("create-post-box")
-                        ?.scrollIntoView({
-                          behavior: "smooth",
-                          block: "center",
-                        })
-                    }
-                  >
-                    Create Post
-                  </button>
-                )}
-
-                {isOwnProfile && (
-                  <button
-                    type="button"
-                    className="profile-action-btn profile-link-btn"
-                    onClick={() => openEditModal("bio")}
-                  >
-                    Edit Profile
-                  </button>
-                )}
-              </div>
-            </div>
+            <ProfileHeader
+              displayName={displayName}
+              username={viewedProfile.username}
+              bio={viewedProfile.bio}
+              isOwnProfile={isOwnProfile}
+              viewedProfilePictureUrl={viewedProfilePictureUrl}
+              initialImagePath={viewedProfile.profile_pic_key ?? null}
+              onEditBio={() => openEditModal("bio")}
+              onEditProfile={() => navigate("/settings")}
+              onCreatePostScroll={scrollToCreatePost}
+              onProfileImageUploaded={(newImagePath) =>
+                setViewedProfile((prev) =>
+                  prev ? { ...prev, profile_pic_key: newImagePath } : prev,
+                )
+              }
+            />
 
             <div className="profile-tabs">
               <button
@@ -546,177 +500,76 @@ export default function Profile() {
                 Activity
               </button>
             </div>
-
-            <div className="profile-content-grid">
-              <aside className="profile-left-panel">
-                <div className="profile-side-card">
-                  <div className="profile-card-header-row">
-                    <h3>About Me</h3>
-                    {isOwnProfile && (
-                      <button
-                        type="button"
-                        className="profile-pencil-btn"
-                        onClick={() => openEditModal("about_me")}
-                        aria-label="Edit about me"
-                      >
-                        ✏️
-                      </button>
-                    )}
-                  </div>
-
-                  <p>
-                    {viewedProfile.about_me?.trim()
-                      ? viewedProfile.about_me
-                      : "Tell people a little more about yourself."}
-                  </p>
-                </div>
-
-                <div className="profile-side-card">
-                  <div className="profile-card-header-row">
-                    <h3>Interests</h3>
-                    {isOwnProfile && (
-                      <button
-                        type="button"
-                        className="profile-pencil-btn"
-                        onClick={() => openEditModal("interests")}
-                        aria-label="Edit interests"
-                      >
-                        ✏️
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="profile-tags">
-                    {interests.length > 0 ? (
-                      interests.map((interest) => (
-                        <span key={interest}>{interest}</span>
-                      ))
-                    ) : (
-                      <span className="profile-empty-chip">
-                        No interests added yet
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="profile-side-card">
-                  <h3>
-                    {posts.length} Post{posts.length === 1 ? "" : "s"}
-                  </h3>
-                </div>
-              </aside>
+            {/*<div className="profile-content-grid">*/}
+              {/*<aside className="profile-left-panel">
+                      </aside>*/}
 
               <main className="profile-center-panel">
-                {activeTab === "bulletin" && (
+                {activeTab === "activity" && (
                   <>
                     {isOwnProfile && (
-                      <form
-                        id="create-post-box"
-                        className="profile-compose-card"
-                        onSubmit={handleCreatePost}
-                      >
-                        <div className="profile-compose-avatar" />
-                        <textarea
-                          className="profile-compose-input"
-                          placeholder="What’s on your mind?"
-                          value={newPostContent}
-                          onChange={(e) => setNewPostContent(e.target.value)}
-                          rows={2}
-                        />
-                        <button
-                          className="profile-post-btn"
-                          type="submit"
-                          disabled={posting}
-                        >
-                          {posting ? "Posting..." : "Post"}
-                        </button>
-                      </form>
+                      <CreatePostBox
+                      value={newPostContent}
+                      posting={posting}
+                      onChange={setNewPostContent}
+                      onSubmit={handleCreatePost}
+                      />
                     )}
 
-                    {pinnedPost && (
-                      <div className="profile-feed-section">
-                        <div className="profile-section-label">📌 Pinned</div>
+                    <PinnedPostsSection
+                      post={pinnedPost}
+                      displayName={displayName}
+                      username={viewedProfile.username}
+                      isOwnProfile={isOwnProfile}
+                      onOpenMenu={openPostMenu}
+                      />
 
-                        <PostCard
-                          id={pinnedPost.id}
-                          name={displayName || viewedProfile.username}
-                          username={viewedProfile.username}
-                          content={pinnedPost.content}
-                          createdAt={pinnedPost.created_at}
-                          pinned={true}
-                          canManage={isOwnProfile}
-                          onOpenMenu={openPostMenu}
-                        />
-                      </div>
-                    )}
-
-                    <div className="profile-feed-section">
-                      {loadingPosts ? (
-                        <p>Loading posts...</p>
-                      ) : posts.length === 0 ? (
-                        <p>No posts yet.</p>
-                      ) : feedPosts.length === 0 ? (
-                        <p>No additional posts yet.</p>
-                      ) : (
-                        feedPosts.map((post) => (
-                          <PostCard
-                            key={post.id}
-                            id={post.id}
-                            name={displayName || viewedProfile.username}
-                            username={viewedProfile.username}
-                            content={post.content}
-                            createdAt={post.created_at}
-                            pinned={!!post.is_pinned}
-                            canManage={isOwnProfile}
-                            onOpenMenu={openPostMenu}
-                          />
-                        ))
-                      )}
-                    </div>
+                    <PostFeed
+                      loadingPosts={loadingPosts}
+                      allPostsCount={posts.length}
+                      posts={feedPosts}
+                      displayName={displayName}
+                      username={viewedProfile.username}
+                      isOwnProfile={isOwnProfile}
+                      onOpenMenu={openPostMenu}
+                      />
                   </>
                 )}
 
-                {activeTab === "activity" && (
-                  <div className="profile-side-card">
-                    <h3>Activity</h3>
-                    <p>For now, blank not sure what to put here</p>
+                {activeTab === "bulletin" && (
+                  <div className="profile-center-card">
+                    
+                      <AboutMeCard
+                        aboutMe={viewedProfile.about_me}
+                        isOwnProfile={isOwnProfile}
+                        onEdit={() => openEditModal("about_me")}
+                        />
+
+                      <InterestsCard
+                        interests={interests}
+                        isOwnProfile={isOwnProfile}
+                        onEdit={() => openEditModal("interests")}
+                        />
+
+                      <RecentPostsPanel
+                        newestPost={newestPost}
+                        displayName={displayName}
+                        username={viewedProfile.username}
+                      />
+                      {/*<PostCountCard postCount={posts.length} />*/}
+                      
+                    
+                    {/*<Bulletin show={true} isOwnProfile={isOwnProfile} profileUserId={viewedProfile?.id} />*/}
                   </div>
                 )}
               </main>
-
-              <aside className="profile-right-panel">
-                <div className="profile-side-card">
-                  <h3>Recent Post</h3>
-
-                  {!newestPost ? (
-                    <p>No recent posts yet.</p>
-                  ) : (
-                    <button
-                      type="button"
-                      className="profile-recent-item"
-                      onClick={() =>
-                        document
-                          .getElementById(`profile-post-${newestPost.id}`)
-                          ?.scrollIntoView({
-                            behavior: "smooth",
-                            block: "start",
-                          })
-                      }
-                    >
-                      <div className="profile-recent-name">
-                        {displayName || viewedProfile.username}
-                      </div>
-                      <div className="profile-recent-handle">
-                        @{viewedProfile.username}
-                      </div>
-                      <div className="profile-recent-preview">
-                        {newestPost.content}
-                      </div>
-                    </button>
-                  )}
-                </div>
-              </aside>
-            </div>
+              
+              {/*<aside className="profile-right-panel">
+                
+                
+                
+              </aside>*/}
+            {/*</div>*/}
           </div>
         </div>
       ) : null}
@@ -801,7 +654,7 @@ export default function Profile() {
                 onClick={handleTogglePinPost}
                 disabled={savingPostAction}
               >
-                {selectedPost.is_pinned ? "Unpin Post" : "Pin Post To Top"}
+                {selectedPost.is_pinned ? "Unpin Post" : "Pin Post"}
               </button>
 
               <button

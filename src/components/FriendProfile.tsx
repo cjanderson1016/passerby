@@ -11,6 +11,7 @@
 
 import type { Friend } from "../types";
 import { useNavigate } from "react-router-dom";
+import { getPublicUrl } from "../services/dataService";
 
 function formatMinutes(m: number) {
   if (m < 60) return `${m}m`;
@@ -24,6 +25,9 @@ interface FriendProfileProps {
 
 export default function FriendProfile({ friend }: FriendProfileProps) {
   const navigate = useNavigate();
+  const friendAvatarUrl = friend.profile_pic_key
+    ? getPublicUrl(friend.profile_pic_key)
+    : null;
 
   const goToFriendProfile = () => {
     navigate(`/profile/${friend.username}`); // navigate to the friend's profile page when the card is clicked
@@ -39,7 +43,15 @@ export default function FriendProfile({ friend }: FriendProfileProps) {
         if (e.key === "Enter" || e.key === " ") goToFriendProfile(); // navigate to the friend's profile page when Enter or Space is pressed
       }}
     >
-      <div className="dash-avatar" />
+      {friendAvatarUrl ? (
+        <img
+          src={friendAvatarUrl}
+          alt={`${friend.name}'s profile`}
+          className="dash-avatar"
+        />
+      ) : (
+        <div className="dash-avatar" />
+      )}
 
       <div className="dash-card-main">
         <div className="dash-card-header">

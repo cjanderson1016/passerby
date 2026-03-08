@@ -18,11 +18,13 @@ const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 // We accept an optional initialImagePath prop which is the storage key of the user's current profile picture, so we can show it before they upload a new one. This would come from the user's profile data when we fetch it.
 type ProfilePictureUploadProps = {
   initialImagePath?: string | null;
+  onUploadComplete?: (newImagePath: string) => void; // callback to notify parent component of the new image path after a successful upload, in case it needs to update its state or refetch profile data
 };
 
 // This component handles the entire flow of choosing a file, validating it, uploading it to R2, and updating the user's profile with the new picture. It also shows a preview of the current or newly uploaded profile picture.
 export default function ProfilePictureUpload({
   initialImagePath = null,
+  onUploadComplete, // this callback allows the parent component to react to a successful upload, such as by updating its state or refetching the user's profile data to get the new picture URL
 }: ProfilePictureUploadProps) {
   const { user } = useUser();
 
@@ -71,6 +73,7 @@ export default function ProfilePictureUpload({
       }
 
       setImagePath(key); // update the local state to show the new profile picture immediately after upload
+      onUploadComplete?.(key); // call the callback to let the parent component know about the new image path, in case it needs to update its state or refetch profile data.
       // Optionally, you could also show a success message here or trigger a refetch of the user's profile data if needed.
     } catch (error) {
       console.error("Upload error:", error);

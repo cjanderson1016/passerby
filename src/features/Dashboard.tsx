@@ -70,6 +70,7 @@ export default function Dashboard() {
 
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
+  const [friendsRefreshTick, setFriendsRefreshTick] = useState(0); // this is a simple way to trigger a refresh of the friends feed when something changes, like accepting a friend request. We increment this tick to cause the useEffect that loads the friends feed to re-run.
 
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -77,6 +78,10 @@ export default function Dashboard() {
   // obtain the authenticated user from our UserContext via the useUser hook.
   const { user } = useUser();
   const currentUserId = user?.id ?? null; // derived value used by other effects/components
+
+  const handleFriendRequestAccepted = () => {
+    setFriendsRefreshTick((prev) => prev + 1);
+  };
 
   // Pull friends + latest posts from Supabase
   useEffect(() => {
@@ -121,7 +126,7 @@ export default function Dashboard() {
       // 2) Load friend user profiles
       const { data: friendUsers, error: usersError } = await supabase
         .from("users")
-        .select("id, username, first_name, last_name")
+        .select("id, username, first_name, last_name, profile_pic_key")
         .in("id", friendIds);
 
       if (usersError) {
@@ -169,6 +174,7 @@ export default function Dashboard() {
             id: u.id,
             username: u.username,
             name,
+            profile_pic_key: u.profile_pic_key ?? null,
             text: latest?.content ?? "(No posts yet)",
             lastUpdatedMinutesAgo: minutesAgo,
             unreadMessages: false, // you can wire this later
@@ -181,7 +187,7 @@ export default function Dashboard() {
     };
 
     void fetchFriendsFeed();
-  }, [currentUserId]);
+  }, [currentUserId, friendsRefreshTick]);
 
   const filteredFriends = useMemo(() => {
     return applyFilter(friends, filterOption);
@@ -224,8 +230,8 @@ export default function Dashboard() {
               textDecoration: "none",
               display: "flex",
               alignItems: "center",
-              fontSize: "48px",
-              padding: "0 10px",
+              justifyContent: "center",
+              fontSize: "28px",
             }}
             title="Messages"
           >
@@ -238,7 +244,12 @@ export default function Dashboard() {
       </div>
 
       {/* Incoming friend requests — stacks vertically, pushes feed down */}
-      {currentUserId && <FriendRequestList currentUserId={currentUserId} />}
+      {currentUserId && (
+        <FriendRequestList
+          currentUserId={currentUserId}
+          onRequestAccepted={handleFriendRequestAccepted}
+        />
+      )}
 
       {/* Feed */}
       {loadingFriends ? (
