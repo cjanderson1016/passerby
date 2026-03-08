@@ -70,6 +70,7 @@ export default function Dashboard() {
 
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
+  const [friendsRefreshTick, setFriendsRefreshTick] = useState(0); // this is a simple way to trigger a refresh of the friends feed when something changes, like accepting a friend request. We increment this tick to cause the useEffect that loads the friends feed to re-run.
 
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -77,6 +78,10 @@ export default function Dashboard() {
   // obtain the authenticated user from our UserContext via the useUser hook.
   const { user } = useUser();
   const currentUserId = user?.id ?? null; // derived value used by other effects/components
+
+  const handleFriendRequestAccepted = () => {
+    setFriendsRefreshTick((prev) => prev + 1);
+  };
 
   // Pull friends + latest posts from Supabase
   useEffect(() => {
@@ -182,7 +187,7 @@ export default function Dashboard() {
     };
 
     void fetchFriendsFeed();
-  }, [currentUserId]);
+  }, [currentUserId, friendsRefreshTick]);
 
   const filteredFriends = useMemo(() => {
     return applyFilter(friends, filterOption);
@@ -239,7 +244,12 @@ export default function Dashboard() {
       </div>
 
       {/* Incoming friend requests — stacks vertically, pushes feed down */}
-      {currentUserId && <FriendRequestList currentUserId={currentUserId} />}
+      {currentUserId && (
+        <FriendRequestList
+          currentUserId={currentUserId}
+          onRequestAccepted={handleFriendRequestAccepted}
+        />
+      )}
 
       {/* Feed */}
       {loadingFriends ? (

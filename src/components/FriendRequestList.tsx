@@ -23,10 +23,12 @@ interface FriendRequest {
 
 interface FriendRequestListProps {
   currentUserId: string;
+  onRequestAccepted?: () => void;
 }
 
 export default function FriendRequestList({
   currentUserId,
+  onRequestAccepted,
 }: FriendRequestListProps) {
   const [requests, setRequests] = useState<FriendRequest[]>([]);
 
@@ -94,6 +96,7 @@ export default function FriendRequestList({
 
     // Remove from local state immediately for snappy UI
     setRequests((prev) => prev.filter((r) => r.id !== requestId));
+    onRequestAccepted?.();
   };
 
   const handleDecline = async (requestId: string) => {
