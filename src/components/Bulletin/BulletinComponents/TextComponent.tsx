@@ -8,6 +8,8 @@
 
 import type { BulletinComponent } from "./BulletinComponent";
 import "../EditBulletin.css"
+import { useState } from "react";
+import { supabase } from "../../../lib/supabase";
 
 export type TextComponentType = BulletinComponent & {
   text: string;
@@ -17,21 +19,46 @@ interface textProps {
   component: TextComponentType;
   isOwnProfile: boolean;
   editMode: boolean;
+  loadBulletin: (isActive: boolean) => Promise<void>
 }
 
 export default function TextComponent({
   component, 
   isOwnProfile, 
-  editMode
+  editMode,
+  loadBulletin
 }: textProps) {
 
+  const [editComponent, setEditComponent] = useState(false)
+
   const onEdit = () => {
-    console.log("Edit Text clicked");
+    setEditComponent(true)
   }
 
     return (
         <div className="component">
-            {component.text}
+            {!editComponent? (
+              <p>
+                {component.text}
+              </p>
+            ): (
+              <input
+                type="text"
+                className="edit-box"
+                defaultValue={component.text}
+                onKeyDown={async (e: React.KeyboardEvent<HTMLInputElement>)=>{
+                  if (e.key === "Enter") {
+                    console.log("Save Text Component with text: " + e.currentTarget.value);
+                    await supabase
+                      .from("text_components")
+                      .update({text: e.currentTarget.value})
+                      .eq("component_id", component.component_id)
+                    setEditComponent(false)
+                    await loadBulletin(true);
+                  }
+                }}
+              />
+            )}
             {isOwnProfile && editMode && (
           <button
             type="button"

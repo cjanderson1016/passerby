@@ -29,7 +29,7 @@ export default function TitleComponent({
     }
     return (
         <div className="component">
-            <h2>{component.title}</h2>
+            <h1>{component.title}</h1>
             {isOwnProfile && editMode && (
           <button
             type="button"

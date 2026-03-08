@@ -166,6 +166,7 @@ export default function Bulletin({
                       component={component as TextComponentType}
                       isOwnProfile={isOwnProfile}
                       editMode={editMode}
+                      loadBulletin={loadBulletin}
                     />
                   )}
                   {component.child_table == "title_card_components" && (
@@ -196,7 +197,7 @@ export default function Bulletin({
               ))}
             </div>
           {/* Edit Menu */}
-          <button onClick={() => setEditMode(!editMode)}>Edit Order</button>
+          <button onClick={() => setEditMode(!editMode)}>Edit Bulletin</button>
           {isOwnProfile && (
             <EditBulletin
               show={editMode}
