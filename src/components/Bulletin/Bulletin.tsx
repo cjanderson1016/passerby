@@ -7,8 +7,8 @@
 */
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import type { TextComponentType } from "./BulletinComponents/TextComponent";
-import type { TitleComponentType } from "./BulletinComponents/TitleComponent.tsx";
+//import type { TextComponentType } from "./BulletinComponents/TextComponent";
+//import type { TitleComponentType } from "./BulletinComponents/TitleComponent.tsx";
 import EditBulletin from "./EditBulletin.tsx";
 import "./Bulletin.css"
 import type { BulletinComponentsUnionType } from "./BulletinComponents/BulletinComponent.tsx";

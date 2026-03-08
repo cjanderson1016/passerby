@@ -16,12 +16,12 @@ import { getPublicUrl } from "../services/dataService";
 import ProfileHeader from "../components/profile/ProfileHeader";
 import AboutMeCard from "../components/profile/AboutMeCard";
 import InterestsCard from "../components/profile/InterestsCard";
-import PostCountCard from "../components/profile/PostCountCard";
+//import PostCountCard from "../components/profile/PostCountCard";
 import CreatePostBox from "../components/profile/CreatePostBox";
 import PinnedPostsSection from "../components/profile/PinnedPostsSection";
 import PostFeed from "../components/profile/PostFeed";
 import RecentPostsPanel from "../components/profile/RecentPostsPanel";
-import Bulletin from "../components/Bulletin/Bulletin";
+//import Bulletin from "../components/Bulletin/Bulletin";
 
 type ViewedProfile = {
   id: string;

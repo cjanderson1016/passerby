@@ -6,9 +6,9 @@
   Author(s): Matthew Eagleman
 */
 
-import { useState } from "react";
+//import { useState } from "react";
 import "./EditBulletin.css"
-import { type BulletinComponent, type BulletinComponentsUnionType } from "./BulletinComponents/BulletinComponent";
+import { type BulletinComponentsUnionType } from "./BulletinComponents/BulletinComponent";
 import { supabase } from "../../lib/supabase";
 
 interface EditBulletinProps {
