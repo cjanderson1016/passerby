@@ -225,8 +225,8 @@ export default function Dashboard() {
               textDecoration: "none",
               display: "flex",
               alignItems: "center",
-              fontSize: "48px",
-              padding: "0 10px",
+              justifyContent: "center",
+              fontSize: "28px",
             }}
             title="Messages"
           >
