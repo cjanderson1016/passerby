@@ -249,6 +249,9 @@
 .profile-center-panel,
 .profile-right-panel {
   min-width: 0;
+
+  /*muffin addition*/
+  padding: 20px
 }
 
 /* Shared cards */
