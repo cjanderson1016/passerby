@@ -107,6 +107,37 @@ export async function uploadFileToR2(
 }
 
 /**
+ * Delete a file from Cloudflare R2 using a Supabase Edge Function
+ */
+export async function deleteFileFromR2(key: string) {
+  if (!key) {
+    throw new Error("Missing file key");
+  }
+
+  const accessToken = await getAccessToken();
+
+  const { data, error } = await supabase.functions.invoke("delete-media", {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: {
+      key,
+    },
+  });
+
+  if (error) {
+    console.error("Delete edge function error:", error);
+    throw new Error(error.message || "Failed to delete media from R2");
+  }
+
+  if (data && typeof data === "object" && "error" in data && data.error) {
+    throw new Error(String(data.error));
+  }
+
+  return data;
+}
+
+/**
  * Generate a public URL from the key (assuming R2 bucket is public or uses CDN)
  */
 export function getPublicUrl(key: string) {

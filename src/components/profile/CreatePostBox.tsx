@@ -28,6 +28,8 @@ export default function CreatePostBox({
   onMediaChange, // callback to update the selected media file in the parent component when the user chooses a file or removes it
   onSubmit,
 }: CreatePostBoxProps) {
+  const canSubmit = value.trim().length > 0 || !!mediaFile; // we allow submitting a post if it has text content or if it has a media file, so the user can create a post with just an image/video if they want
+
   // We use useMemo to create a preview URL for the selected media file, which allows us to show a preview of the image or video before it's uploaded. We also clean up the object URL when the component unmounts or when a new file is selected to prevent memory leaks.
   const mediaPreviewUrl = useMemo(() => {
     if (!mediaFile) return null;
@@ -117,7 +119,7 @@ export default function CreatePostBox({
           <button
             type="submit"
             className="profile-primary-btn"
-            disabled={posting || !value.trim()}
+            disabled={posting || !canSubmit}
           >
             {posting ? "Posting..." : "Post"}
           </button>

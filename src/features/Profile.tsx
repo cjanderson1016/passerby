@@ -12,7 +12,11 @@ import { useUser } from "../hooks/useUser";
 import ProfileMenu from "../components/ProfileMenu";
 import "./Profile.css";
 import { supabase } from "../lib/supabase";
-import { getPublicUrl, uploadFileToR2 } from "../services/dataService";
+import {
+  deleteFileFromR2,
+  getPublicUrl,
+  uploadFileToR2,
+} from "../services/dataService";
 import ProfileHeader from "../components/profile/ProfileHeader";
 import AboutMeCard from "../components/profile/AboutMeCard";
 import InterestsCard from "../components/profile/InterestsCard";
@@ -270,12 +274,13 @@ export default function Profile() {
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newPostContent.trim() || !user?.id || !isOwnProfile) return;
+    const content = newPostContent.trim();
+    if ((!content && !newPostMediaFile) || !user?.id || !isOwnProfile) return;
 
     setPosting(true);
 
     try {
-      const content = newPostContent.trim(); // we trim the content to remove any leading or trailing whitespace before saving it to the database. This helps ensure that we don't end up with posts that are just spaces or have unintended whitespace around them. We also use this trimmed content when creating the post in the database.
+      // we trim the content to remove any leading or trailing whitespace before saving it to the database. This helps ensure that we don't end up with posts that are just spaces or have unintended whitespace around them. We also use this trimmed content when creating the post in the database.
 
       // first we create the post in the database without the media information, since we want to have the post ID generated before we upload the media so that we can associate the media with the post in storage. We set is_pinned to false by default for new posts.
       const { data, error } = await supabase
@@ -531,6 +536,17 @@ export default function Profile() {
     setSavingPostAction(true);
 
     try {
+      // if the post has attached media, we attempt to delete the media from R2 first before deleting the post from the database. This ensures that we don't leave orphaned media files in storage if a post is deleted. If the media deletion fails, we alert the user and do not proceed with deleting the post, since we want to avoid a situation where the post is deleted but the media remains in storage.
+      if (selectedPost.media_key) {
+        try {
+          await deleteFileFromR2(selectedPost.media_key);
+        } catch (deleteMediaError) {
+          console.error("Error deleting post media:", deleteMediaError);
+          alert("Could not delete post media. Please try again.");
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from("posts")
         .delete()
