@@ -117,6 +117,9 @@ export default function Profile() {
   const [editValue, setEditValue] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
+  const [isFriend, setIsFriend] = useState(false);
+  const [unfriending, setUnfriending] = useState(false);
+
   const [postMenuPostId, setPostMenuPostId] = useState<string | null>(null);
   const [savingPostAction, setSavingPostAction] = useState(false);
 
@@ -158,6 +161,18 @@ export default function Profile() {
 
           if (isActive) {
             setViewedProfile(data as ViewedProfile);
+
+            if (user?.id && data.id !== user.id) {
+              const { data: friendRow } = await supabase
+                .from("friend_requests")
+                .select("id")
+                .eq("status", "accepted")
+                .or(
+                  `and(requester_id.eq.${user.id},recipient_id.eq.${data.id}),and(requester_id.eq.${data.id},recipient_id.eq.${user.id})`,
+                )
+                .maybeSingle();
+              if (isActive) setIsFriend(!!friendRow);
+            }
           }
         } else if (user?.id) {
           const { data, error } = await supabase
@@ -560,6 +575,27 @@ export default function Profile() {
       ? "Enter interests separated by commas. Example: UI Design, Coding, Gaming"
       : "";
 
+  const handleUnfriend = async () => {
+    if (!viewedProfile?.id || !user?.id || unfriending) return;
+
+    setUnfriending(true);
+
+    try {
+      const { error } = await supabase.rpc("unfriend", {
+        other_user: viewedProfile.id,
+      });
+
+      if (error) {
+        console.error("Error unfriending:", error);
+        return;
+      }
+
+      navigate("/");
+    } finally {
+      setUnfriending(false);
+    }
+  };
+
   const scrollToCreatePost = () => {
     document.getElementById("create-post-box")?.scrollIntoView({
       behavior: "smooth",
@@ -592,6 +628,9 @@ export default function Profile() {
               username={viewedProfile.username}
               bio={viewedProfile.bio}
               isOwnProfile={isOwnProfile}
+              isFriend={isFriend}
+              unfriending={unfriending}
+              onUnfriend={handleUnfriend}
               viewedProfilePictureUrl={viewedProfilePictureUrl}
               initialImagePath={viewedProfile.profile_pic_key ?? null}
               onEditBio={() => openEditModal("bio")}

@@ -214,6 +214,31 @@
   cursor: not-allowed;
 }
 
+/* Unfriend button */
+.profile-unfriend-btn {
+  display: block;
+  margin-top: 12px;
+  padding: 0 18px;
+  height: 42px;
+  border: none;
+  border-radius: 8px;
+  background: #b42318;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.profile-unfriend-btn:hover {
+  background: #912018;
+}
+
+.profile-unfriend-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 /* Tabs */
 .profile-tabs {
   display: flex;
