@@ -327,5 +327,14 @@ html, body {
   cursor: not-allowed;
 }
 
+.fr-pending-dot {
+  width: 10px;
+  height: 10px;
+  background: orange;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
 .dash-card { cursor: pointer; }
 .dash-card:hover { background: #fafafa; }
