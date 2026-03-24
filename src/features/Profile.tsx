@@ -12,7 +12,11 @@ import { useUser } from "../hooks/useUser";
 import ProfileMenu from "../components/ProfileMenu";
 import "./Profile.css";
 import { supabase } from "../lib/supabase";
-import { getPublicUrl } from "../services/dataService";
+import {
+  deleteFileFromR2,
+  getPublicUrl,
+  uploadFileToR2,
+} from "../services/dataService";
 import ProfileHeader from "../components/profile/ProfileHeader";
 import AboutMeCard from "../components/profile/AboutMeCard";
 import InterestsCard from "../components/profile/InterestsCard";
@@ -43,9 +47,47 @@ type PostRow = {
   updated_at?: string | null;
   user_id: string;
   is_pinned?: boolean | null; // we make this optional here because when we fetch posts from the database, the is_pinned field might come back as null if it's not set, but we want to treat that as false. In our normalizePost function below, we will convert any null or undefined is_pinned values to false to ensure our Post type always has a boolean for is_pinned.
+  media_key?: string | null; // optional storage key for any media attached to the post, which we can use to generate a URL when displaying the post
+  media_content_type?: string | null; // the content type of the attached media, which we can use to determine how to display it (e.g. image vs video)
 };
 
 type EditField = "bio" | "about_me" | "interests" | null;
+
+// We define a set of allowed media types and extensions for post uploads. This is used both for the file input accept attribute and for validating files before upload to ensure users can only upload supported media types for their posts.
+const ALLOWED_POST_MEDIA_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "video/mp4",
+  "video/quicktime",
+  "video/webm",
+]);
+
+// We also define a set of allowed file extensions as a fallback in case the file type is not provided or is unreliable. This allows us to still validate files based on their extension if needed, while primarily relying on the MIME type for validation.
+const ALLOWED_POST_MEDIA_EXTENSIONS = new Set([
+  "jpg",
+  "jpeg",
+  "png",
+  "webp",
+  "heic",
+  "heif",
+  "mp4",
+  "mov",
+  "webm",
+]);
+
+// This helper function checks if a given file is an allowed media type for posts by checking both its MIME type and its file extension against our defined sets of allowed types and extensions
+function isAllowedPostMedia(file: File) {
+  // first we check the MIME type of the file against our allowed types. If it matches, we consider it valid and return true.
+  if (ALLOWED_POST_MEDIA_TYPES.has(file.type)) {
+    return true;
+  }
+  // if the MIME type is not in our allowed list, we then check the file extension as a fallback. We extract the extension from the file name, convert it to lowercase, and check if it's in our allowed extensions set. If it matches, we consider it valid and return true. If neither the MIME type nor the extension is allowed, we return false.
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return ALLOWED_POST_MEDIA_EXTENSIONS.has(extension);
+}
 
 function normalizePost(row: PostRow): Post {
   // this function takes a raw PostRow from the database and converts it into our Post type that has a guaranteed boolean for is_pinned. If is_pinned is null or undefined, we treat it as false.
@@ -72,11 +114,15 @@ export default function Profile() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
+  const [newPostMediaFile, setNewPostMediaFile] = useState<File | null>(null); // state to hold the currently selected media file for a new post, which can be an image or video that the user wants to attach to their post. This is used in the CreatePostBox component and is validated before upload.
   const [posting, setPosting] = useState(false);
 
   const [editField, setEditField] = useState<EditField>(null);
   const [editValue, setEditValue] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
+
+  const [isFriend, setIsFriend] = useState(false);
+  const [unfriending, setUnfriending] = useState(false);
 
   const [postMenuPostId, setPostMenuPostId] = useState<string | null>(null);
   const [savingPostAction, setSavingPostAction] = useState(false);
@@ -119,6 +165,18 @@ export default function Profile() {
 
           if (isActive) {
             setViewedProfile(data as ViewedProfile);
+
+            if (user?.id && data.id !== user.id) {
+              const { data: friendRow } = await supabase
+                .from("friend_requests")
+                .select("id")
+                .eq("status", "accepted")
+                .or(
+                  `and(requester_id.eq.${user.id},recipient_id.eq.${data.id}),and(requester_id.eq.${data.id},recipient_id.eq.${user.id})`,
+                )
+                .maybeSingle();
+              if (isActive) setIsFriend(!!friendRow);
+            }
           }
         } else if (user?.id) {
           const { data, error } = await supabase
@@ -170,7 +228,9 @@ export default function Profile() {
       try {
         const { data, error } = await supabase
           .from("posts")
-          .select("id, content, created_at, updated_at, user_id, is_pinned")
+          .select(
+            "id, content, created_at, updated_at, user_id, is_pinned, media_key, media_content_type",
+          )
           .eq("user_id", viewedProfile.id)
           .order("is_pinned", { ascending: false })
           .order("created_at", { ascending: false });
@@ -210,16 +270,19 @@ export default function Profile() {
     ? getPublicUrl(viewedProfile.profile_pic_key)
     : "";
 
+  // this function is called when the user submits the form to create a new post. It validates the input, creates the post in the database, uploads any attached media to R2, updates the post with the media information, and then updates the local state to show the new post in the feed.
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newPostContent.trim() || !user?.id || !isOwnProfile) return;
+    const content = newPostContent.trim();
+    if ((!content && !newPostMediaFile) || !user?.id || !isOwnProfile) return;
 
     setPosting(true);
 
     try {
-      const content = newPostContent.trim();
+      // we trim the content to remove any leading or trailing whitespace before saving it to the database. This helps ensure that we don't end up with posts that are just spaces or have unintended whitespace around them. We also use this trimmed content when creating the post in the database.
 
+      // first we create the post in the database without the media information, since we want to have the post ID generated before we upload the media so that we can associate the media with the post in storage. We set is_pinned to false by default for new posts.
       const { data, error } = await supabase
         .from("posts")
         .insert({
@@ -227,7 +290,9 @@ export default function Profile() {
           content,
           is_pinned: false,
         })
-        .select("id, content, created_at, updated_at, user_id, is_pinned")
+        .select(
+          "id, content, created_at, updated_at, user_id, is_pinned, media_key, media_content_type",
+        )
         .single();
 
       if (error) {
@@ -235,13 +300,72 @@ export default function Profile() {
         return;
       }
 
-      if (data) {
-        setPosts((prev) => [normalizePost(data as PostRow), ...prev]);
+      if (!data) {
+        console.error("Post creation returned no data.");
+        return;
       }
-      setNewPostContent("");
+
+      let postToAdd = data as PostRow; // we use the PostRow type here because this is the raw data from the database, which may have is_pinned as null. We will normalize it to our Post type later when we add it to state.
+
+      // if there is a media file attached, we upload it to R2 and then update the post with the media key and content type so we can display it later. We do this after creating the post so that we have a post ID to associate the media with in storage.
+      if (newPostMediaFile) {
+        try {
+          const { key } = await uploadFileToR2(newPostMediaFile, {
+            target: "post_media",
+            postId: postToAdd.id,
+          });
+
+          const { data: updatedPost, error: updateError } = await supabase
+            .from("posts")
+            .update({
+              media_key: key,
+              media_content_type: newPostMediaFile.type,
+            })
+            .eq("id", postToAdd.id)
+            .eq("user_id", user.id)
+            .select(
+              "id, content, created_at, updated_at, user_id, is_pinned, media_key, media_content_type",
+            )
+            .single();
+
+          if (updateError) {
+            console.error("Error attaching media to post:", updateError);
+            alert("Post created, but media could not be attached.");
+          } else if (updatedPost) {
+            postToAdd = updatedPost as PostRow;
+          }
+        } catch (uploadError) {
+          console.error("Error uploading post media:", uploadError);
+          alert("Post created, but media upload failed.");
+        }
+      }
+
+      if (postToAdd) {
+        setPosts((prev) => [normalizePost(postToAdd), ...prev]);
+      }
+
+      setNewPostContent(""); // we clear the new post content state after successfully creating the post
+      setNewPostMediaFile(null); // we also clear the selected media file state after creating the post, so that the CreatePostBox component will reset and be ready for a new post
     } finally {
       setPosting(false);
     }
+  };
+
+  // this function is called when the user selects a file using the file input in the CreatePostBox component. It updates the selected media file in the parent component using the onMediaChange callback and resets the file input value to allow selecting the same file again if needed. We also validate the selected file's type and size before allowing it to be set as the mediaFile, showing an alert if it's invalid.
+  const handlePostMediaChange = (file: File | null) => {
+    if (!file) {
+      // if the file is null, it means the user has cleared the selected file, so we update the state to reflect that and return early.
+      setNewPostMediaFile(null);
+      return;
+    }
+
+    if (!isAllowedPostMedia(file)) {
+      // we validate the selected file's type and extension using our isAllowedPostMedia helper function. If the file is not an allowed media type, we show an alert to the user and do not update the state with the invalid file.
+      alert("Invalid media type. Please select a supported image or video.");
+      return;
+    }
+
+    setNewPostMediaFile(file); // if the file is valid, we update the state with the selected file so that it can be uploaded when the post is created. The CreatePostBox component will also show a preview of the selected media based on this state.
   };
 
   const openEditModal = (field: EditField) => {
@@ -412,6 +536,17 @@ export default function Profile() {
     setSavingPostAction(true);
 
     try {
+      // if the post has attached media, we attempt to delete the media from R2 first before deleting the post from the database. This ensures that we don't leave orphaned media files in storage if a post is deleted. If the media deletion fails, we alert the user and do not proceed with deleting the post, since we want to avoid a situation where the post is deleted but the media remains in storage.
+      if (selectedPost.media_key) {
+        try {
+          await deleteFileFromR2(selectedPost.media_key);
+        } catch (deleteMediaError) {
+          console.error("Error deleting post media:", deleteMediaError);
+          alert("Could not delete post media. Please try again.");
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from("posts")
         .delete()
@@ -456,6 +591,27 @@ export default function Profile() {
       ? "Enter interests separated by commas. Example: UI Design, Coding, Gaming"
       : "";
 
+  const handleUnfriend = async () => {
+    if (!viewedProfile?.id || !user?.id || unfriending) return;
+
+    setUnfriending(true);
+
+    try {
+      const { error } = await supabase.rpc("unfriend", {
+        other_user: viewedProfile.id,
+      });
+
+      if (error) {
+        console.error("Error unfriending:", error);
+        return;
+      }
+
+      navigate("/");
+    } finally {
+      setUnfriending(false);
+    }
+  };
+
   const scrollToCreatePost = () => {
     document.getElementById("create-post-box")?.scrollIntoView({
       behavior: "smooth",
@@ -488,6 +644,9 @@ export default function Profile() {
               username={viewedProfile.username}
               bio={viewedProfile.bio}
               isOwnProfile={isOwnProfile}
+              isFriend={isFriend}
+              unfriending={unfriending}
+              onUnfriend={handleUnfriend}
               viewedProfilePictureUrl={viewedProfilePictureUrl}
               initialImagePath={viewedProfile.profile_pic_key ?? null}
               onEditBio={() => openEditModal("bio")}
@@ -525,7 +684,9 @@ export default function Profile() {
                     <CreatePostBox
                       value={newPostContent}
                       posting={posting}
+                      mediaFile={newPostMediaFile}
                       onChange={setNewPostContent}
+                      onMediaChange={handlePostMediaChange}
                       onSubmit={handleCreatePost}
                     />
                   )}

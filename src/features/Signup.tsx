@@ -7,6 +7,7 @@
   */
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
+import "./Signup.css";
 
 interface SignupProps {
   onSwitchToLogin: () => void;
@@ -171,212 +172,133 @@ function Signup({ onSwitchToLogin }: SignupProps) {
   };
 
   return (
-    <div
-      style={{
-        maxWidth: "400px",
-        margin: "0",
-        padding: "2rem",
-        border: "1px solid #ccc",
-        borderRadius: "8px",
-      }}
-    >
-      <h2>Sign Up</h2>
-      <form onSubmit={handleSignup}>
-        <div style={{ marginBottom: "1rem" }}>
-          <label
-            htmlFor="firstName"
-            style={{ display: "block", marginBottom: "0.5rem" }}
-          >
-            First Name:
-          </label>
-          <input
-            id="firstName"
-            type="text"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-            }}
-          />
-        </div>
-        <div style={{ marginBottom: "1rem" }}>
-          <label
-            htmlFor="lastName"
-            style={{ display: "block", marginBottom: "0.5rem" }}
-          >
-            Last Name:
-          </label>
-          <input
-            id="lastName"
-            type="text"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-            }}
-          />
-        </div>
-        <div style={{ marginBottom: "1rem" }}>
-          <label
-            htmlFor="username"
-            style={{ display: "block", marginBottom: "0.5rem" }}
-          >
-            Username:
-          </label>
-          <input
-            id="username"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              border: `1px solid ${
-                usernameValid === true
-                  ? "#28a745"
-                  : usernameValid === false
-                    ? "#dc3545"
-                    : "#ccc"
-              }`,
-              borderRadius: "4px",
-            }}
-          />
-          {usernameCheckLoading && (
-            <p
-              style={{
-                fontSize: "0.875rem",
-                color: "#666",
-                marginTop: "0.25rem",
-              }}
+    <div className="signup-shell">
+      <div className="signup-container">
+        <h1 className="signup-logo">PASSERBY</h1>
+
+        <form className="signup-form" onSubmit={handleSignup}>
+          <div className="signup-row">
+            <label className="signup-label" htmlFor="firstName">
+              First Name:
+            </label>
+            <input
+              className="signup-input"
+              id="firstName"
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="signup-row">
+            <label className="signup-label" htmlFor="lastName">
+              Last Name:
+            </label>
+            <input
+              className="signup-input"
+              id="lastName"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="signup-row">
+            <label className="signup-label" htmlFor="username">
+              Username:
+            </label>
+            <div className="signup-input-wrap">
+              <input
+                className="signup-input"
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+              {usernameCheckLoading && (
+                <p className="signup-hint">Checking availability...</p>
+              )}
+              {usernameMessage && (
+                <p
+                  className={`signup-hint ${
+                    usernameValid === true
+                      ? "signup-hint-valid"
+                      : "signup-hint-invalid"
+                  }`}
+                >
+                  {usernameMessage}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="signup-row">
+            <label className="signup-label" htmlFor="email">
+              Email:
+            </label>
+            <input
+              className="signup-input"
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="signup-row">
+            <label className="signup-label" htmlFor="password">
+              Password:
+            </label>
+            <input
+              className="signup-input"
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+            />
+          </div>
+
+          <div className="signup-row">
+            <label className="signup-label" htmlFor="confirmPassword">
+              Confirm Password:
+            </label>
+            <input
+              className="signup-input"
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          {error && <p className="signup-error">{error}</p>}
+
+          <div className="signup-actions">
+            <button
+              className="signup-btn"
+              type="submit"
+              disabled={loading || usernameValid !== true || usernameCheckLoading}
             >
-              Checking availability...
-            </p>
-          )}
-          {usernameMessage && (
-            <p
-              style={{
-                fontSize: "0.875rem",
-                color: usernameValid === true ? "#28a745" : "#dc3545",
-                marginTop: "0.25rem",
-              }}
+              {loading ? "Signing up..." : "Sign Up"}
+            </button>
+
+            <button
+              className="signup-btn signup-btn-secondary"
+              type="button"
+              onClick={onSwitchToLogin}
             >
-              {usernameMessage}
-            </p>
-          )}
-        </div>
-        <div style={{ marginBottom: "1rem" }}>
-          <label
-            htmlFor="email"
-            style={{ display: "block", marginBottom: "0.5rem" }}
-          >
-            Email:
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-            }}
-          />
-        </div>
-        <div style={{ marginBottom: "1rem" }}>
-          <label
-            htmlFor="password"
-            style={{ display: "block", marginBottom: "0.5rem" }}
-          >
-            Password:
-          </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-            }}
-          />
-        </div>
-        <div style={{ marginBottom: "1rem" }}>
-          <label
-            htmlFor="confirmPassword"
-            style={{ display: "block", marginBottom: "0.5rem" }}
-          >
-            Confirm Password:
-          </label>
-          <input
-            id="confirmPassword"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-            }}
-          />
-        </div>
-        {error && (
-          <div style={{ color: "red", marginBottom: "1rem" }}>{error}</div>
-        )}
-        <button
-          type="submit"
-          disabled={loading || usernameValid !== true || usernameCheckLoading}
-          style={{
-            width: "100%",
-            padding: "0.75rem",
-            backgroundColor:
-              loading || usernameValid !== true || usernameCheckLoading
-                ? "#ccc"
-                : "#28a745",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor:
-              loading || usernameValid !== true || usernameCheckLoading
-                ? "not-allowed"
-                : "pointer",
-          }}
-        >
-          {loading ? "Signing up..." : "Sign Up"}
-        </button>
-      </form>
-      <p style={{ textAlign: "center", marginTop: "1rem" }}>
-        Already have an account?{" "}
-        <button
-          onClick={onSwitchToLogin}
-          style={{
-            background: "none",
-            border: "none",
-            color: "#007bff",
-            cursor: "pointer",
-            textDecoration: "underline",
-          }}
-        >
-          Login
-        </button>
-      </p>
+              Or: Login
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

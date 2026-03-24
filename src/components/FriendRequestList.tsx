@@ -22,6 +22,15 @@ interface FriendRequest {
   };
 }
 
+interface OutgoingRequest {
+  id: string;
+  recipient: {
+    username: string;
+    first_name: string;
+    last_name: string;
+  };
+}
+
 interface FriendRequestListProps {
   currentUserId: string;
   onRequestAccepted?: () => void;
@@ -32,11 +41,22 @@ type FriendRequestRow = {
   requester: FriendRequest["requester"] | FriendRequest["requester"][] | null;
 };
 
+type OutgoingRequestRow = {
+  id: string;
+  recipient:
+    | OutgoingRequest["recipient"]
+    | OutgoingRequest["recipient"][]
+    | null;
+};
+
 export default function FriendRequestList({
   currentUserId,
   onRequestAccepted,
 }: FriendRequestListProps) {
   const [requests, setRequests] = useState<FriendRequest[]>([]);
+  const [outgoingRequests, setOutgoingRequests] = useState<OutgoingRequest[]>(
+    [],
+  );
 
   const fetchRequests = useCallback(async () => {
     const { data, error } = await supabase
@@ -70,10 +90,41 @@ export default function FriendRequestList({
     setRequests(parsed);
   }, [currentUserId]);
 
+  const fetchOutgoingRequests = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("friend_requests")
+      .select(
+        "id, recipient_id, created_at, recipient:users!recipient_id(username, first_name, last_name)",
+      )
+      .eq("requester_id", currentUserId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching outgoing friend requests:", error);
+      return;
+    }
+
+    const parsed: OutgoingRequest[] =
+      (data as OutgoingRequestRow[] | null)
+        ?.map((row) => ({
+          id: row.id,
+          recipient: Array.isArray(row.recipient)
+            ? row.recipient[0]
+            : row.recipient,
+        }))
+        .filter(
+          (row): row is OutgoingRequest =>
+            row.recipient !== null && row.recipient !== undefined,
+        ) ?? [];
+
+    setOutgoingRequests(parsed);
+  }, [currentUserId]);
+
   useEffect(() => {
     // Subscribe to realtime changes on friend_requests for this user
-    const channel = supabase
-      .channel(`friend-requests-incoming:${currentUserId}`) // we use a unique channel name to avoid conflicts with other subscriptions, but the important part is the filter which ensures we only get events relevant to this user's incoming friend requests
+    const incomingChannel = supabase
+      .channel(`friend-requests-incoming:${currentUserId}`)
       .on(
         "postgres_changes",
         {
@@ -83,30 +134,48 @@ export default function FriendRequestList({
           filter: `recipient_id=eq.${currentUserId}`,
         },
         () => {
-          // Re-fetch the full list on any change
           void fetchRequests();
         },
       )
       .subscribe((status) => {
-        // Initial load once subscription is ready
         if (status === "SUBSCRIBED") {
           void fetchRequests();
         }
       });
 
+    const outgoingChannel = supabase
+      .channel(`friend-requests-outgoing:${currentUserId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "friend_requests",
+          filter: `requester_id=eq.${currentUserId}`,
+        },
+        () => {
+          void fetchOutgoingRequests();
+        },
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          void fetchOutgoingRequests();
+        }
+      });
+
     return () => {
-      // Clean up subscription on unmount
-      const realtimeState = supabase.realtime.connectionState(); // Check if we're still connecting before trying to unsubscribe, to avoid errors about unsubscribing from a channel that isn't fully set up yet.
+      const realtimeState = supabase.realtime.connectionState();
 
       if (realtimeState === "connecting") {
-        // If we're still connecting, we can just remove the channel from the Supabase client, which will prevent it from ever being subscribed in the first place and avoid any issues with trying to unsubscribe from a channel that isn't fully set up.
-        void channel.unsubscribe();
+        void incomingChannel.unsubscribe();
+        void outgoingChannel.unsubscribe();
         return;
       }
 
-      void supabase.removeChannel(channel); // If we're already subscribed, we can safely remove the channel which will unsubscribe us from it and clean up any resources associated with it.
+      void supabase.removeChannel(incomingChannel);
+      void supabase.removeChannel(outgoingChannel);
     };
-  }, [currentUserId, fetchRequests]);
+  }, [currentUserId, fetchRequests, fetchOutgoingRequests]);
 
   const handleAccept = async (requestId: string) => {
     const { error } = await supabase.rpc("accept_friend_request", {
@@ -136,7 +205,7 @@ export default function FriendRequestList({
     setRequests((prev) => prev.filter((r) => r.id !== requestId));
   };
 
-  if (requests.length === 0) return null;
+  if (requests.length === 0 && outgoingRequests.length === 0) return null;
 
   return (
     <div className="fr-list">
@@ -148,6 +217,17 @@ export default function FriendRequestList({
           onAccept={handleAccept}
           onDecline={handleDecline}
         />
+      ))}
+      {outgoingRequests.map((req) => (
+        <div key={req.id} className="fr-card">
+          <div className="fr-info">
+            <span className="fr-name">
+              Friend request to {req.recipient.first_name}{" "}
+              {req.recipient.last_name} pending
+            </span>
+          </div>
+          <span className="fr-pending-dot" />
+        </div>
       ))}
     </div>
   );

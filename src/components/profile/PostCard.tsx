@@ -4,9 +4,10 @@ import { FaHeart, FaRegHeart } from "react-icons/fa"; // icons for liked/unliked
 import { FaRegCommentDots } from "react-icons/fa6"; // icon for comments
 
 import { supabase } from "../../lib/supabase";
+import { getPublicUrl } from "../../services/dataService";
 import { getItem, setItem } from "../LocalStorage";
 import { Replies } from "../replies"; // component for handling replies.
-
+import type { ProfilePost } from "./types";
 
 // Type definition for a comment.
 type Comment = {
@@ -17,38 +18,39 @@ type Comment = {
   replies?: Comment[]; // replies are also comments, but nested under a parent comment.
 };
 
+type CommentRow = {
+  // this type represents the raw comment data we get from the database, which includes the joined user data for the comment's author. We will transform this into our Comment type for use in the UI.
+  id: string;
+  content: string;
+  user_id: string;
+  parent_id: string | null;
+  users?: { username?: string | null } | { username?: string | null }[] | null;
+};
+
 type PostCardProps = {
-  post: {
-    id: string;
-    content: string;
-    created_at: string | null;
-    is_pinned: boolean;
-  };
+  post: ProfilePost;
   displayName: string;
   username: string;
   isOwnProfile: boolean;
   onOpenMenu?: (postId: string) => void;
 };
 
-
-
 /* ---------------- FETCH COMMENTS (When the user makes a new post/reply, automatically update the page) ---------------- */
 
-export const fetchComments = async (
+const fetchComments = async (
   postId: string, // arg1 : The ID of the post for which we want to fetch comments
-  setComments: React.Dispatch<React.SetStateAction<Comment[]>> // arg2: the function to update the comments.
+  setComments: React.Dispatch<React.SetStateAction<Comment[]>>, // arg2: the function to update the comments.
 ) => {
-
   // Fetch comments from the database for the given the post ID, including the username of the commenter.
   const { data, error } = await supabase
     .from("comments")
     .select(
-      "id, content, created_at, user_id, parent_id, users:users!comments_user_id_fkey1(username)"
+      "id, content, created_at, user_id, parent_id, users:users!comments_user_id_fkey1(username)",
     )
     .eq("post_id", postId)
     .order("created_at", { ascending: true });
 
-    // If there's an error during fetching, just exit and log the error
+  // If there's an error during fetching, just exit and log the error
   if (error) {
     console.error("error loading comments", error);
     return;
@@ -59,12 +61,14 @@ export const fetchComments = async (
   const top: Comment[] = []; // This array holds the top-level comments (parent-id = null)
 
   // Loop through each comment in the database and organize them into top-level comments and their replies.
-  (data || []).forEach((row: any) => {
+  ((data as CommentRow[] | null) || []).forEach((row) => {
+    const joinedUser = Array.isArray(row.users) ? row.users[0] : row.users;
+
     const c: Comment = {
       id: row.id,
       text: row.content,
       user_id: row.user_id,
-      username: row.users?.username || "",
+      username: joinedUser?.username || "",
       replies: [],
     };
 
@@ -73,7 +77,7 @@ export const fetchComments = async (
     if (!row.parent_id) {
       top.push(c); // if the comment has no parent, it's a top-level comment, so we add it to the 'top' array.
     } else {
-      map[row.parent_id]?.replies?.push(c);  // if the comment has a parent, we find its parent in the map and add it to the parent's 'replies' array.
+      map[row.parent_id]?.replies?.push(c); // if the comment has a parent, we find its parent in the map and add it to the parent's 'replies' array.
     }
   });
 
@@ -98,19 +102,24 @@ export default function PostCard({
     return saved !== undefined ? saved : false;
   });
 
-    // State for storing hover effects on the like and comment icons
+  // State for storing hover effects on the like and comment icons
   const [heartHover, setHeartHover] = useState(false);
   const [commentHover, setCommentHover] = useState(false);
-
 
   // states for comments
   const [comments, setComments] = useState<Comment[]>([]); // stores all of the comments for the post.
   const [showComments, setShowComments] = useState(false); // hides and unhides comments
-  const [newComment, setNewComment] = useState("");// Stores new comment text before it's submitted.
+  const [newComment, setNewComment] = useState(""); // Stores new comment text before it's submitted.
 
   const formattedDate = post.created_at
     ? new Date(post.created_at).toLocaleDateString()
     : "";
+  const trimmedContent = post.content.trim();
+  const mediaUrl = post.media_key ? getPublicUrl(post.media_key) : "";
+  const mediaContentType = post.media_content_type?.toLowerCase() ?? "";
+  const isVideoMedia =
+    mediaContentType.startsWith("video/") ||
+    /\.(mp4|mov|webm)$/i.test(post.media_key ?? "");
 
   /* ---------------- LIKE HANDLING ---------------- */
 
@@ -125,14 +134,18 @@ export default function PostCard({
   /* ---------------- HIDE/UNHIDE COMMENTS ---------------- */
 
   const handleShowComments = () => {
-    setShowComments((prev) => !prev);
+    setShowComments((prev) => {
+      if (prev) {
+        setComments([]);
+      }
+
+      return !prev;
+    });
   };
 
   useEffect(() => {
-    if (!showComments) {
-      setComments([]); // clear comments when hiding.
-      return;
-    }
+    if (!showComments) return;
+
     fetchComments(id, setComments); // show comments
   }, [showComments, id]);
 
@@ -161,7 +174,9 @@ export default function PostCard({
         content: newComment,
         user_id: user.id,
       })
-      .select("id, content, user_id, users:users!comments_user_id_fkey1(username)") // also get the username of the commenter 
+      .select(
+        "id, content, user_id, users:users!comments_user_id_fkey1(username)",
+      ) // also get the username of the commenter
       .single();
 
     if (error) {
@@ -169,7 +184,7 @@ export default function PostCard({
       return;
     }
 
-    // if the comment was added successfully, create a new Comment object and add it to the comments state to update the UI. We also call fetchComments 
+    // if the comment was added successfully, create a new Comment object and add it to the comments state to update the UI. We also call fetchComments
     // to refresh the comments from the database, which will include any server-side processing (like counting replies) that we want to reflect in the UI.
     const newC: Comment = {
       id: data.id,
@@ -185,8 +200,6 @@ export default function PostCard({
     // refresh to rebuild nested structure
     fetchComments(id, setComments);
   };
-
-
 
   return (
     <article
@@ -209,7 +222,27 @@ export default function PostCard({
         <div className="profile-post-pinned-label">📌 Pinned Post</div>
       )}
 
-      <p className="profile-post-content">{post.content}</p>
+      {trimmedContent && <p className="profile-post-content">{post.content}</p>}
+
+      {mediaUrl && (
+        <div className="profile-post-media-wrap">
+          {isVideoMedia ? (
+            <video
+              className="profile-post-media"
+              src={mediaUrl}
+              controls
+              preload="metadata"
+            />
+          ) : (
+            <img
+              className="profile-post-media"
+              src={mediaUrl}
+              alt={`${displayName}'s post media`}
+              loading="lazy"
+            />
+          )}
+        </div>
+      )}
 
       <div className="profile-post-actions">
         {/* LIKE BUTTON */}
@@ -270,7 +303,16 @@ export default function PostCard({
 
       {showComments && (
         <div className="comments-section">
-          <div className="add-comment" style={{ padding: "20px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "5px" }}>
+          <div
+            className="add-comment"
+            style={{
+              padding: "20px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              gap: "5px",
+            }}
+          >
             <textarea
               rows={3}
               style={{
@@ -326,8 +368,8 @@ export default function PostCard({
                       prev.map((c) =>
                         c.id === comment.id
                           ? { ...c, replies: [...(c.replies || []), newReply] }
-                          : c
-                      )
+                          : c,
+                      ),
                     );
                   }}
                   fetchComments={() => fetchComments(id, setComments)}
