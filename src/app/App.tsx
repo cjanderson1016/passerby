@@ -26,11 +26,6 @@ function App() {
   const [view, setView] = useState<"login" | "signup">("login");
   const { user, loading } = useUser();
 
-  // Get app name from environment variable, with a fallback for development
-  const appName =
-    import.meta.env.VITE_APP_NAME ||
-    "No Name Found (missing VITE_APP_NAME env var)";
-
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -40,17 +35,12 @@ function App() {
   }
 
   return (
-    <div className="auth-layout">
-      <div className="auth-left">
-        <h1>{appName}</h1>
-      </div>
-      <div className="auth-right">
-        {view === "login" ? (
-          <Login onSwitchToSignup={() => setView("signup")} />
-        ) : (
-          <Signup onSwitchToLogin={() => setView("login")} />
-        )}
-      </div>
+    <div className="auth-layout auth-layout--login">
+      {view === "login" ? (
+        <Login onSwitchToSignup={() => setView("signup")} />
+      ) : (
+        <Signup onSwitchToLogin={() => setView("login")} />
+      )}
     </div>
   );
 }
