@@ -73,7 +73,7 @@ export default function FriendRequestList({
   useEffect(() => {
     // Subscribe to realtime changes on friend_requests for this user
     const channel = supabase
-      .channel("friend-requests-incoming")
+      .channel(`friend-requests-incoming:${currentUserId}`) // we use a unique channel name to avoid conflicts with other subscriptions, but the important part is the filter which ensures we only get events relevant to this user's incoming friend requests
       .on(
         "postgres_changes",
         {
@@ -95,7 +95,16 @@ export default function FriendRequestList({
       });
 
     return () => {
-      supabase.removeChannel(channel);
+      // Clean up subscription on unmount
+      const realtimeState = supabase.realtime.connectionState(); // Check if we're still connecting before trying to unsubscribe, to avoid errors about unsubscribing from a channel that isn't fully set up yet.
+
+      if (realtimeState === "connecting") {
+        // If we're still connecting, we can just remove the channel from the Supabase client, which will prevent it from ever being subscribed in the first place and avoid any issues with trying to unsubscribe from a channel that isn't fully set up.
+        void channel.unsubscribe();
+        return;
+      }
+
+      void supabase.removeChannel(channel); // If we're already subscribed, we can safely remove the channel which will unsubscribe us from it and clean up any resources associated with it.
     };
   }, [currentUserId, fetchRequests]);
 

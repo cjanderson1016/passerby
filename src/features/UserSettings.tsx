@@ -28,7 +28,7 @@ export default function Settings(){
     const [user, setUser] = useState("");
     const [newUser, setNewUser] = useState("");
     const [openModal_pass, setOpenModal_pass] = useState(false);
-    //const [openModal_delete, setOpenModal_delete] = useState(false);
+    const [openModal_delete, setOpenModal_delete] = useState(false);
     const [openModal_user, setOpenModal_user] = useState(false);
 
 
@@ -41,7 +41,7 @@ const settings_list = [
 
     content: [
       [<button  className = "settings-btn" onClick={() => setOpenModal_pass(true)}>Change Password</button>],
-      [<button  className = "settings-btn-important">Delete Account</button>],
+      [<button className="settings-btn-important" onClick={() => setOpenModal_delete(true)}>Delete Account</button>],
     ],
   },
   {
@@ -93,33 +93,42 @@ const settings_list = [
           {/* profile button/dropdown moved into its own component */}
           <ProfileMenu />
         </div>
-
         <div className="settings-title">
           <h1>Profile Settings</h1>
         </div>
 
         <div className="settings-body">
           <div className="change_user">
-          <form onSubmit={(e) => e.preventDefault()}
-          
-          
-          >Username: 
-            <input type="textbox" placeholder={user}
-            value={newUser}
-            onChange={(e) => setNewUser(e.target.value)} style={{ marginLeft: "5px", padding: "5px"}}>
-            </input>
-            <button onClick={() => setOpenModal_user(true)} style={{ marginLeft: "5px", padding: "5px", cursor: "pointer" }}
-            >Change Username</button>
-          </form>
+            <form onSubmit={(e) => e.preventDefault()}>
+              Username:
+              <input
+                type="textbox"
+                placeholder={user}
+                value={newUser}
+                onChange={(e) => setNewUser(e.target.value)}
+                style={{ marginLeft: "5px", padding: "5px" }}
+              />
+              <button
+                onClick={() => setOpenModal_user(true)}
+                style={{ marginLeft: "5px", padding: "5px", cursor: "pointer" }}
+              >
+                Change Username
+              </button>
+            </form>
           </div>
-          <br/>
-          <Accordion_Component list={settings_list}/>
-          
+          <br />
+          <Accordion_Component list={settings_list} />
         </div>
         <Modal is_open={openModal_pass} current_state={setOpenModal_pass} component={<ResetPass/>}/>
         <Modal is_open={openModal_user} current_state={setOpenModal_user} component={<ConfirmChangeUsername newUser={newUser}
                                                                                                             setUser={setUser}
-                                                                                                            setNewUser={setNewUser}/>}/>
+                                                                                                            setNewUser={setNewUser}
+                                                                                                            closeModal={() => setOpenModal_user(false)}/>}/>
+      <Modal is_open={openModal_delete} current_state={setOpenModal_delete} component={<ConfirmDeleteUser
+      closeModal={() => setOpenModal_delete(false)}
+    />
+  }
+/>
 
       </div>
     </div>
@@ -131,10 +140,11 @@ interface ConfirmUserParams {
   newUser: string;
   setUser: React.Dispatch<React.SetStateAction<string>>;
   setNewUser: React.Dispatch<React.SetStateAction<string>>;
+  closeModal: () => void;
 }
 
-function ConfirmChangeUsername ({newUser, setUser, setNewUser} : ConfirmUserParams){
-
+function ConfirmChangeUsername ({newUser, setUser, setNewUser, closeModal} : ConfirmUserParams){
+const [confirmPassword, setConfirmPassword] = useState("");
 const handleUsernameReset = async (e: React.FormEvent) => {
   e.preventDefault();
 
@@ -152,13 +162,22 @@ const handleUsernameReset = async (e: React.FormEvent) => {
   }
 
   try{
-  // Get logged-in user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user?.email) {
+        alert("Could not get user info. Please try again.");
+        return;
+      }
 
+      // Reauthenticate user with current password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: confirmPassword,
+      });
 
-  const userId = user!.id;
+      if (signInError) {
+        alert("Current password is incorrect.");
+        return;
+      }
   
    const { data: existing } = await supabase
    .from("users")
@@ -173,13 +192,15 @@ const handleUsernameReset = async (e: React.FormEvent) => {
   await supabase
     .from("users")
     .update({ username: normalizedUsername })
-    .eq("id", userId);
+    .eq("id", user.id);
 
   // Update thelocal state
   setUser(normalizedUsername);
   setNewUser("");
 
+
   alert("Username Changed Successfully!");
+  closeModal();
 }
 catch(error){
   alert("Sorry, Could not Change your Username...")
@@ -190,6 +211,20 @@ return (
   <div className="confirm_box">
     <h2> Attention</h2>
     You are about to change your username. Would you like to proceed?
+              <input
+            type="password"
+            placeholder="Enter your password..."
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            style={{
+              width: "50%",
+              padding: "0.5rem",
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              marginTop: "30px"
+            }}
+          />
     <div>
       <button onClick={handleUsernameReset} className="confirm_accept">
         Yes
@@ -199,42 +234,85 @@ return (
 )
 }
 
-/*
-function ConfirmDeleteUser (){
-  const handleUserDelete = async (e: React.FormEvent) => {
-  e.preventDefault();
-
-  try{
-  // Get logged-in user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-    const userId = user!.id;
-      await supabase
-    .from("users")
-    .delete()
-    .eq("id", userId);
-
-    alert("User deleted successfully!");
 
 
 
-  }catch (error) {
+function ConfirmDeleteUser({ closeModal }: { closeModal: () => void }) {
+  const [password, setPassword] = useState("");
 
-    alert("Something Went Wrong. Cannot Delete User")
-  }
-  }
+  const handleUserDelete = async () => {
+    try {
+      // Get logged-in user
+      const {
+        data: { user },
+        error: userError
+      } = await supabase.auth.getUser();
 
-return (
-  <div>
-    are you sure you want to delete your profile?
-    <div>
-      <button onClick={handleUserDelete}>
-        Yes
-      </button>
+      if (userError || !user?.email) {
+        alert("Could not verify user session.");
+        return;
+      }
+
+      //Re-authenticate
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: password,
+      });
+
+      if (signInError) {
+        alert("Incorrect password.");
+        return;
+      }
+
+      // delete from auth.users
+      const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(user.id);
+
+      if (deleteAuthError) {
+        alert("Could not delete user from authentication.");
+        return;
+      }
+
+      //Delete from public.users table
+      await supabase.from("users").delete().eq("id", user.id);
+
+      alert("Your account has been deleted.");
+
+      closeModal();
+
+      //Log out
+      await supabase.auth.signOut();
+
+    } catch (error) {
+      alert("Something went wrong. Could not delete user.");
+    }
+  };
+
+  return (
+    <div className="confirm_box">
+      <h2
+      style = {{ color : "red"}}>Delete Account</h2>
+      <p>This action is permanent. Please enter your password to confirm.</p>
+
+      <input
+        type="password"
+        placeholder="Enter your password..."
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+        style={{
+          width: "60%",
+          padding: "0.5rem",
+          border: "1px solid #ccc",
+          borderRadius: "4px",
+          marginTop: "20px"
+        }}
+      />
+
+      <div style={{ marginTop: "20px" }}>
+        <button className="confirm_accept" onClick={handleUserDelete}>
+          Yes, Delete My Account
+        </button>
+      </div>
     </div>
-  </div>
-)
+  );
 }
-*/

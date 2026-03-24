@@ -1,16 +1,9 @@
-/*
-  File Name: ResetPassword.tsx
-
-  Description: Allows the user to reset their password if they wish. 
-
-  Author(s): Owen Berkholtz
-*/
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
 export default function ResetPass() {
-  // useState hooks
-  const [password, setPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,27 +14,52 @@ export default function ResetPass() {
     setError(null);
     setSuccess(null);
 
-    if (password.length < 6) {
+    if (newPassword.length < 6) {
       setError("Password must be at least 6 characters");
       return;
     }
-    if (password !== confirmPassword) {
+    if (newPassword !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
+
     setLoading(true);
 
     try {
+      // Get current user email
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user?.email) {
+        setError("Unable to verify user session");
+        setLoading(false);
+        return;
+      }
+
+      // Re-authenticate with current password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        setError("Current password is incorrect");
+        setLoading(false);
+        return;
+      }
+
+      // Update password
       const { error } = await supabase.auth.updateUser({
-        password: password,
+        password: newPassword,
       });
 
       if (error) {
         setError(error.message);
-      } 
-      else {
+      } else {
         setSuccess("Password updated successfully!");
-        setPassword("");
+        setCurrentPassword("");
+        setNewPassword("");
         setConfirmPassword("");
       }
     } catch (err) {
@@ -67,11 +85,27 @@ export default function ResetPass() {
 
       <form onSubmit={handlePasswordReset}>
         <div style={{ marginBottom: "1rem" }}>
-          <label>Password:</label>
+          <label>Current Password:</label>
           <input
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            required
+            style={{
+              width: "100%",
+              padding: "0.5rem",
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: "1rem" }}>
+          <label>New Password:</label>
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
             required
             minLength={6}
             style={{
@@ -82,6 +116,7 @@ export default function ResetPass() {
             }}
           />
         </div>
+
         <div style={{ marginBottom: "1rem" }}>
           <label>Confirm Password:</label>
           <input
@@ -99,15 +134,11 @@ export default function ResetPass() {
         </div>
 
         {error && (
-          <div style={{ color: "red", marginBottom: "1rem" }}>
-            {error}
-          </div>
+          <div style={{ color: "red", marginBottom: "1rem" }}>{error}</div>
         )}
 
         {success && (
-          <div style={{ color: "green", marginBottom: "1rem" }}>
-            {success}
-          </div>
+          <div style={{ color: "green", marginBottom: "1rem" }}>{success}</div>
         )}
 
         <button

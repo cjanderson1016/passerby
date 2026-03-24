@@ -11,5 +11,5 @@ export type ProfilePost = {
   created_at: string;
   updated_at?: string | null;
   user_id: string;
-  is_pinned?: boolean | null;
+  is_pinned: boolean;
 };
