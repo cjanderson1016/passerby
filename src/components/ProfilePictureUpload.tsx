@@ -13,7 +13,13 @@ import { getPublicUrl, uploadFileToR2 } from "../services/dataService";
 
 // We enforce a max file size of 5 MB for profile pictures to prevent abuse and ensure fast uploads. We also restrict to common image types.
 const MAX_FILE_SIZE_MB = 5;
-const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ACCEPTED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+];
 
 // We accept an optional initialImagePath prop which is the storage key of the user's current profile picture, so we can show it before they upload a new one. This would come from the user's profile data when we fetch it.
 type ProfilePictureUploadProps = {
@@ -45,7 +51,7 @@ export default function ProfilePictureUpload({
 
     // Validate file type and size before attempting upload
     if (!ACCEPTED_TYPES.includes(file.type)) {
-      alert("Invalid file type. Only JPG, PNG, or WEBP allowed.");
+      alert("Invalid file type. Only JPG, PNG, WEBP, HEIC, or HEIF allowed.");
       e.target.value = "";
       return;
     }
@@ -60,7 +66,7 @@ export default function ProfilePictureUpload({
     setUploading(true);
 
     try {
-      const { key } = await uploadFileToR2(file); // this function handles uploading the file to R2 and returns the storage key
+      const { key } = await uploadFileToR2(file, { target: "profile_photo" }); // this function handles uploading the file to R2 and returns the storage key
 
       const { error: updateError } = await supabase
         .from("users")

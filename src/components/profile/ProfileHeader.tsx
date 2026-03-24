@@ -13,12 +13,15 @@ type ProfileHeaderProps = {
   username: string;
   bio?: string | null;
   isOwnProfile: boolean;
+  isFriend?: boolean;
+  unfriending?: boolean;
   viewedProfilePictureUrl?: string;
   initialImagePath?: string | null;
   onEditBio: () => void;
   onEditProfile: () => void;
   onCreatePostScroll: () => void;
   onProfileImageUploaded?: (newImagePath: string) => void;
+  onUnfriend?: () => void;
 };
 
 export default function ProfileHeader({
@@ -26,12 +29,15 @@ export default function ProfileHeader({
   username,
   bio,
   isOwnProfile,
+  isFriend,
+  unfriending,
   viewedProfilePictureUrl,
   initialImagePath,
   onEditBio,
   onEditProfile,
   onCreatePostScroll,
   onProfileImageUploaded,
+  onUnfriend,
 }: ProfileHeaderProps) {
   return (
     <div className="profile-header-card">
@@ -97,6 +103,17 @@ export default function ProfileHeader({
             Edit Profile
           </button>
         </div>
+      )}
+
+      {!isOwnProfile && isFriend && onUnfriend && (
+        <button
+          type="button"
+          className="profile-unfriend-btn"
+          onClick={onUnfriend}
+          disabled={unfriending}
+        >
+          {unfriending ? "Unfriending..." : "Unfriend"}
+        </button>
       )}
     </div>
   );
