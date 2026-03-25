@@ -154,6 +154,10 @@ export default function Bulletin({
             <p>No posts yet.</p>
           ) : (
           )*/}
+            {/*
+            Render each component mapped to its respective component type
+            There may be room to make this look a little prettier
+            */}
             <div className="bulletin-content">
               {bulletinComponents.map((component) => (
                 <div

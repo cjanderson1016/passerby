@@ -6,14 +6,13 @@
   Author(s): Matthew Eagleman
 */
 
-// i will comment this i promise
-
 //import { useState } from "react";
 import "./EditBulletin.css"
 import { type BulletinComponentsUnionType } from "./BulletinComponents/BulletinComponent";
 import { supabase } from "../../lib/supabase";
 
 interface EditBulletinProps {
+  //Things to pass in to the bulletin editor
   show: boolean
   components: Array<BulletinComponentsUnionType>
   profileUserId: string | null
@@ -21,12 +20,13 @@ interface EditBulletinProps {
 }
 
 export default function EditBulletin({show, components, profileUserId, loadBulletin}: EditBulletinProps) {
-  
+  //Render the edit bulletin menu
   interface SpecificComponentEditorProps {
     component: BulletinComponentsUnionType
   }
 
   function SpecificComponentEditor({component}: SpecificComponentEditorProps){
+    // This component renders each component with some basic information, and the ability to move it up or down
     return(
       <div className="specific-component-editor">
         <p>{component.name}</p>
@@ -39,11 +39,13 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
   }
 
   const moveComponentUp = async (componentToMove: BulletinComponentsUnionType) => {
+    //Take the given component and move it one position up
     if (componentToMove.position-1 < 0) {
       console.log("Component already at highest possible position")
       return 
     }
     let tempComponent = components[componentToMove.position-1]
+    //Update the component in the database
     const { error: moveComponentError } = await supabase
       .from("bulletin_components")
       .upsert([
@@ -68,11 +70,13 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
   }
 
   const moveComponentDown = async(componentToMove: BulletinComponentsUnionType) => {
+    //Take the given component and move it one position down
     if (componentToMove.position+1 > components.length-1) {
       console.log("Component already at lowest possible position")
       return 
     }
     let tempComponent = components[componentToMove.position+1]
+    //Update the component in the database
     const { error: moveComponentError } = await supabase
       .from("bulletin_components")
       .upsert([
@@ -99,12 +103,14 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
   return (
     <>
       {show && (
+        //Render the editor full of tools and such for changing your bulletin
         <div className = "edit-bulletin">
           {components.map((component) => (
             <div key = {component.component_id}>
               <SpecificComponentEditor component = {component}/>
             </div>
           ))}
+          <button>save</button>
         </div>
       )}
     </>
