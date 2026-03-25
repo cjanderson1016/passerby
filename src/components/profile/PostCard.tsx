@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
-//import { FaHeart, FaRegHeart } from "react-icons/fa"; // icons for liked/unliked heart
-//import { FaRegCommentDots } from "react-icons/fa6"; // icon for comments
+import { FaHeart, FaRegHeart } from "react-icons/fa"; // icons for liked/unliked heart
+import { FaRegCommentDots } from "react-icons/fa6"; // icon for comments
 
 import { supabase } from "../../lib/supabase";
 import { getPublicUrl } from "../../services/dataService";
@@ -252,7 +252,7 @@ export default function PostCard({
           style={{ cursor: "pointer" }}
           onClick={handleLikes}
         >
-          {/*!isLiked ? (
+          {!isLiked ? (
             <FaRegHeart
               style={{
                 fontSize: heartHover ? 19 : 18,
@@ -268,7 +268,7 @@ export default function PostCard({
                 transition: "all 0.1s ease",
               }}
             />
-          )*/}
+          )}
         </div>
 
         {/* COMMENT BUTTON */}
@@ -278,13 +278,13 @@ export default function PostCard({
           onMouseLeave={() => setCommentHover(false)}
           style={{ cursor: "pointer" }}
         >
-          {/*<FaRegCommentDots
+          <FaRegCommentDots
             style={{
               fontSize: commentHover ? 19 : 18,
               color: commentHover ? "blue" : "darkgrey",
               transition: "all 0.1s ease",
             }}
-          />*/}
+          />
         </div>
 
         {isOwnProfile && (
