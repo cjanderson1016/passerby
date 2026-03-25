@@ -6,7 +6,7 @@
   Author(s): Matthew Eagleman
 */
 
-//import { useState } from "react";
+import { useState } from "react";
 import "./EditBulletin.css"
 import { type BulletinComponentsUnionType } from "./BulletinComponents/BulletinComponent";
 import { supabase } from "../../lib/supabase";
@@ -17,10 +17,12 @@ interface EditBulletinProps {
   components: Array<BulletinComponentsUnionType>
   profileUserId: string | null
   loadBulletin: (isActive: boolean) => Promise<void>
+  setBulletinComponents: React.Dispatch<React.SetStateAction<BulletinComponentsUnionType[]>>
 }
 
-export default function EditBulletin({show, components, profileUserId, loadBulletin}: EditBulletinProps) {
+export default function EditBulletin({show, components, profileUserId, loadBulletin, setBulletinComponents}: EditBulletinProps) {
   //Render the edit bulletin menu
+
   interface SpecificComponentEditorProps {
     component: BulletinComponentsUnionType
   }
@@ -38,15 +40,24 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
     )
   }
 
-  const moveComponentUp = async (componentToMove: BulletinComponentsUnionType) => {
+  const moveComponentUp = async (component: BulletinComponentsUnionType) => {
     //Take the given component and move it one position up
-    if (componentToMove.position-1 < 0) {
+    if (component.position-1 < 0) {
       console.log("Component already at highest possible position")
       return 
     }
-    let tempComponent = components[componentToMove.position-1]
+    // Swap components in the array
+    let tempComponent = components[component.position-1] //save component thats about to get overwritten
+    components[component.position-1] = component //Moves the component up one position
+    components[component.position] = tempComponent //Restors the overwritten component to the position below where it was origionally
+    // Update the position values in the components to reflect their new positions
+    components[component.position-1].position = component.position-1
+    components[component.position].position = component.position
+    // Render the new component order
+    setBulletinComponents([...components])
+    
     //Update the component in the database
-    const { error: moveComponentError } = await supabase
+    /*const { error: moveComponentError } = await supabase
       .from("bulletin_components")
       .upsert([
         {
@@ -66,15 +77,25 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
     }
     else {
       await loadBulletin(true);
-    }
+    }*/
   }
 
-  const moveComponentDown = async(componentToMove: BulletinComponentsUnionType) => {
+  const moveComponentDown = async(component: BulletinComponentsUnionType) => {
     //Take the given component and move it one position down
-    if (componentToMove.position+1 > components.length-1) {
+    if (component.position+1 > components.length-1) {
       console.log("Component already at lowest possible position")
       return 
     }
+    // Swap components in the array
+    let tempComponent = components[component.position+1] //save component thats about to get overwritten
+    components[component.position+1] = component //Moves the component down one position
+    components[component.position] = tempComponent //Restors the overwritten component to the position above where it was origionally
+    // Update the position values in the components to reflect their new positions
+    components[component.position+1].position = component.position+1
+    components[component.position].position = component.position
+    // Render the new component order
+    setBulletinComponents([...components])
+    /*
     let tempComponent = components[componentToMove.position+1]
     //Update the component in the database
     const { error: moveComponentError } = await supabase
@@ -97,7 +118,7 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
     }
     else {
       await loadBulletin(true);
-    }
+    }*/
   }
   
   return (

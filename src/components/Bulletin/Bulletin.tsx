@@ -208,6 +208,7 @@ export default function Bulletin({
               components={bulletinComponents}
               profileUserId={profileUserId}
               loadBulletin={loadBulletin}
+              setBulletinComponents={setBulletinComponents}
             />
           )}
         </div>
