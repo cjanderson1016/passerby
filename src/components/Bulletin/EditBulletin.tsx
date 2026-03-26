@@ -6,7 +6,7 @@
   Author(s): Matthew Eagleman
 */
 
-import { Children, useState } from "react";
+//import { Children, useState } from "react";
 import "./EditBulletin.css"
 import { type BulletinComponentsUnionType } from "./BulletinComponents";
 import { supabase } from "../../lib/supabase";
@@ -23,7 +23,7 @@ interface EditBulletinProps {
   setBulletinComponents: React.Dispatch<React.SetStateAction<BulletinComponentsUnionType[]>>
 }
 
-export default function EditBulletin({show, components, profileUserId, loadBulletin, setBulletinComponents}: EditBulletinProps) {
+export default function EditBulletin({show, components, setBulletinComponents}: EditBulletinProps) {
   //Render the edit bulletin menu
   //console.log("Rendering EditBulletin with components: ", components)
 
@@ -168,6 +168,7 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
       if (moveComponentParentError){
         console.error("Failed saving component changes for bulletin_components table")
       }
+      console.log(`Saved component changes for bulletin_components table, now saving changes for child table ${table}`) 
       /*const { error: moveComponentChildError } = await supabase
         .from(table)
         .upsert(components.map(compoonent => ({
