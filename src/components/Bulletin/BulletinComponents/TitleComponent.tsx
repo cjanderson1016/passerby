@@ -18,7 +18,7 @@ interface titleProps {
   editMode: boolean;
 }
 
-export default function TitleComponent({
+export function TitleComponent({
   component, 
   isOwnProfile, 
   editMode

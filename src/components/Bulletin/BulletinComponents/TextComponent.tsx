@@ -22,7 +22,7 @@ interface textProps {
   loadBulletin: (isActive: boolean) => Promise<void>
 }
 
-export default function TextComponent({
+export function TextComponent({
   component, 
   isOwnProfile, 
   editMode,

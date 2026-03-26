@@ -8,7 +8,7 @@
   
 */
 
-import "./InterestsComponent.css";
+import "./Style/InterestsComponent.css";
 import { type BulletinComponent } from "./BulletinComponent";
 import "../EditBulletin.css"
 
@@ -27,7 +27,7 @@ interface InterestsComponentProps {
   editMode: boolean;
 };
 
-export default function InterestsComponent({
+export function InterestsComponent({
   /*interests,
   isOwnProfile,
   onEdit,*/ 

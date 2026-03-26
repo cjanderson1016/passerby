@@ -8,7 +8,7 @@
   Author(s): Matthew Eagleman
 */
 
-import "./AboutMeComponent.css";
+import "./Style/AboutMeComponent.css";
 import { type BulletinComponent } from "./BulletinComponent";
 import "../EditBulletin.css"
 
@@ -27,7 +27,7 @@ interface AboutMeCardProps {
   editMode: boolean;
 };
 
-export default function AboutMeComponent({
+export function AboutMeComponent({
   //aboutMe,
   //onEdit,
   component,
