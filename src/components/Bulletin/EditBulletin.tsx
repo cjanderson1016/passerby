@@ -12,7 +12,6 @@ import { type BulletinComponentsUnionType } from "./BulletinComponents";
 import { supabase } from "../../lib/supabase";
 
 const updatedComponents: Record<string, Array<BulletinComponentsUnionType>> = {}; //Keeps track of the components that need to be updated when save is pressed
-console.log("reset updatedComponents to empty object: ", updatedComponents)
 
 interface EditBulletinProps {
   //Things to pass in to the bulletin editor
@@ -25,7 +24,6 @@ interface EditBulletinProps {
 
 export default function EditBulletin({show, components, profileUserId, loadBulletin, setBulletinComponents}: EditBulletinProps) {
   //Render the edit bulletin menu
-  //console.log("Rendering EditBulletin with components: ", components)
 
   interface SpecificComponentEditorProps {
     component: BulletinComponentsUnionType
@@ -33,7 +31,6 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
 
   const cleanAdd = (component: BulletinComponentsUnionType) => {
     //Adds the given component to updatedComponents, without adding dupicates
-    console.log("Adding component to updatedComponents: ", component)
     if (!updatedComponents[component.child_table]) {
       updatedComponents[component.child_table] = [];
     }
@@ -44,7 +41,6 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
       }
     });
     updatedComponents[component.child_table].push(component)
-    console.log("updatedComponents is now: ", updatedComponents)
   };
 
   function SpecificComponentEditor({component}: SpecificComponentEditorProps){
@@ -68,7 +64,6 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
     }
     let pos = component.position
     let targetPos = pos-1
-    console.log(`Moving component ${component.component_id} from position ${pos} to position ${targetPos}`) 
     // Swap components in the array
     let tempComponent = components[targetPos] //save component thats about to get overwritten
     components[targetPos] = component //Moves the component up one position
@@ -81,29 +76,6 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
     cleanAdd(components[pos])
     // Render the new component order
     setBulletinComponents([...components])
-    
-    //Update the component in the database
-    /*const { error: moveComponentError } = await supabase
-      .from("bulletin_components")
-      .upsert([
-        {
-          component_id: componentToMove.component_id, 
-          position: componentToMove.position-1,
-          child_table: componentToMove.child_table,
-          user_id: profileUserId
-        },{
-          component_id: tempComponent.component_id, 
-          position: componentToMove.position,
-          child_table: tempComponent.child_table,
-          user_id: profileUserId
-        }
-      ])
-    if (moveComponentError){
-      console.error("Failed moving component up")
-    }
-    else {
-      await loadBulletin(true);
-    }*/
   }
 
   const moveComponentDown = async(component: BulletinComponentsUnionType) => {
@@ -126,33 +98,10 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
     cleanAdd(components[pos])
     // Render the new component order
     setBulletinComponents([...components])
-    /*
-    let tempComponent = components[componentToMove.position+1]
-    //Update the component in the database
-    const { error: moveComponentError } = await supabase
-      .from("bulletin_components")
-      .upsert([
-        {
-          component_id: componentToMove.component_id, 
-          position: componentToMove.position+1,
-          child_table: componentToMove.child_table,
-          user_id: profileUserId
-        },{
-          component_id: tempComponent.component_id, 
-          position: componentToMove.position,
-          child_table: tempComponent.child_table,
-          user_id: profileUserId
-        }
-      ])
-    if (moveComponentError){
-      console.error("Failed moving component down")
-    }
-    else {
-      await loadBulletin(true);
-    }*/
   }
   
   const saveBulletin = async () => {
+    //Upload all the changed elements to the database
     console.log("Saving bulletin with the following component changes: ", updatedComponents)
     Object.entries(updatedComponents).map(async ([table, components]) => {
       const { error: moveComponentParentError } = await supabase

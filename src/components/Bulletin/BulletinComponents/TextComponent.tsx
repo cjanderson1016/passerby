@@ -6,7 +6,7 @@
   Author(s): Matthew Eagleman
 */
 
-import type { BulletinComponent } from "./BulletinComponent";
+import type { BulletinComponent, BulletinComponentsUnionType } from "./BulletinComponent";
 import "../EditBulletin.css"
 import { useState } from "react";
 import { supabase } from "../../../lib/supabase";
@@ -20,6 +20,8 @@ interface textProps {
   isOwnProfile: boolean;
   editMode: boolean;
   loadBulletin: (isActive: boolean) => Promise<void>
+  components: BulletinComponentsUnionType[];
+  setBulletinComponents: React.Dispatch<React.SetStateAction<BulletinComponentsUnionType[]>>
 }
 
 export function TextComponent({
@@ -46,6 +48,7 @@ export function TextComponent({
                 type="text"
                 className="edit-box"
                 defaultValue={component.text}
+                /*
                 onKeyDown={async (e: React.KeyboardEvent<HTMLInputElement>)=>{
                   if (e.key === "Enter") {
                     console.log("Save Text Component with text: " + e.currentTarget.value);
@@ -57,6 +60,7 @@ export function TextComponent({
                     await loadBulletin(true);
                   }
                 }}
+                */
               />
             )}
             {isOwnProfile && editMode && (

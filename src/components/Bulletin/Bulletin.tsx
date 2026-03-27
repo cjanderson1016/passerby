@@ -163,6 +163,8 @@ export default function Bulletin({
                     isOwnProfile={isOwnProfile}
                     editMode={editMode}
                     loadBulletin={loadBulletin}
+                    components={bulletinComponents}
+                    setBulletinComponents={setBulletinComponents}
                   />
                 )}
                 {component.child_table == "title_card_components" && (
