@@ -10,6 +10,7 @@ import { useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useUser } from "../hooks/useUser";
 import { getPublicUrl, uploadFileToR2 } from "../services/dataService";
+import MediaLibraryModal from "./MediaLibraryModal";
 
 // We enforce a max file size of 5 MB for profile pictures to prevent abuse and ensure fast uploads. We also restrict to common image types.
 const MAX_FILE_SIZE_MB = 5;
@@ -38,6 +39,7 @@ export default function ProfilePictureUpload({
 
   const [uploading, setUploading] = useState(false);
   const [imagePath, setImagePath] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   const handleChooseFile = () => {
     fileInputRef.current?.click();
@@ -66,7 +68,8 @@ export default function ProfilePictureUpload({
     setUploading(true);
 
     try {
-      const { key } = await uploadFileToR2(file, { target: "profile_photo" }); // this function handles uploading the file to R2 and returns the storage key
+      // Upload to the user's media library so it can be reused later, then set as profile picture
+      const { key } = await uploadFileToR2(file, { target: "user_media" });
 
       const { error: updateError } = await supabase
         .from("users")
@@ -90,6 +93,24 @@ export default function ProfilePictureUpload({
     }
   };
 
+  async function handleSelectFromLibrary(media: { id: string; key: string }) {
+    if (!user?.id) return;
+    try {
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({ profile_pic_key: media.key })
+        .eq("id", user.id);
+      if (updateError) {
+        console.error("Database update error:", updateError);
+        return;
+      }
+      setImagePath(media.key);
+      setLibraryOpen(false);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   // We determine the active image path to show in the preview. If the user has just uploaded a new picture, we use that; otherwise, we fall back to the initial image path from their profile. We then generate the public URL for that image to display it.
   const activeImagePath = imagePath ?? initialImagePath;
   const imageUrl = activeImagePath ? getPublicUrl(activeImagePath) : null;
@@ -112,6 +133,16 @@ export default function ProfilePictureUpload({
       >
         {uploading ? "Uploading..." : "Upload Photo"}
       </button>
+
+      <button type="button" onClick={() => setLibraryOpen(true)} style={{ marginLeft: 8 }}>
+        Choose From Library
+      </button>
+
+      <MediaLibraryModal
+        open={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        onSelect={handleSelectFromLibrary}
+      />
 
       <input
         ref={fileInputRef}
