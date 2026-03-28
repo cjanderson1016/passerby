@@ -3,6 +3,7 @@
     height: 100%;
     border-left: #cdcdcd solid 2px;
     padding-left: 20px;
+    font-family: "Handjet", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
 
 .specific-component-editor{
@@ -29,10 +30,23 @@
     text-align: left;
     width: 100%;
     padding: 20px;
-    border: 1px solid #cdcdcd;
+    border: 1px solid #c6c6c6;
     border-radius: 4px;
+    background: #efefef;
 }
 
 .component-text{
     padding-bottom: 10px
+}
+
+.specific-component-editor button,
+.component button {
+    border: 1px solid #bcbcbc;
+    background: #d8d8d8;
+    color: #222222;
+}
+
+.specific-component-editor button:hover,
+.component button:hover {
+    background: #cbcbcb;
 }

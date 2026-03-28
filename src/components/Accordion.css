@@ -6,10 +6,11 @@
   Author(s): Owen Berkholtz
 */
 .accordion_container {
-    border: 1px solid black;  
-  padding: 1rem; 
-  background-color: rgb(214, 214, 214);
-  width: 50%;
+    border: 1px solid #bdbdbd;
+    padding: 1rem; 
+    background-color: #e5e5e5;
+    width: 50%;
+    font-family: "Handjet", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
 
 .container_title {
@@ -51,4 +52,6 @@
 
 .accordion_button {
     padding-left: 10px;
+    border: 1px solid #bdbdbd;
+    background: #dddddd;
 }

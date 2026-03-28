@@ -9,7 +9,7 @@ html, body {
   min-height: 100vh;
   background: #ececec;
   padding-bottom: 24px;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Handjet", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
 
 .dash-topbar {
@@ -26,8 +26,9 @@ html, body {
   justify-self: center;
   font-size: 30px;
   font-weight: 800;
+  font-family: "Major Mono Display", monospace;
   letter-spacing: 0.5px;
-  color: #0c2b4a;
+  color: #151515;
 }
 
 /* keep profile button on the far right */
@@ -97,12 +98,15 @@ html, body {
 .dash-add-btn {
   height: 30px;
   padding: 0 14px;
-  border: none;
+  border: 1px solid #c7c7c7;
   border-radius: 8px;
-  background: #f5f5f5;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  background: #e0e0e0;
   cursor: pointer;
   font-weight: 700;
+}
+
+.dash-add-btn:hover {
+  background: #d3d3d3;
 }
 
 /* Feed */
@@ -256,7 +260,7 @@ html, body {
 .fr-list-title {
   font-weight: 700;
   font-size: 14px;
-  color: #0c2b4a;
+  color: #2c2c2c;
   margin-bottom: 2px;
 }
 
@@ -296,13 +300,17 @@ html, body {
 .fr-accept-btn {
   height: 26px;
   padding: 0 10px;
-  border: none;
+  border: 1px solid #c5c5c5;
   border-radius: 6px;
-  background: #2e7d32;
-  color: #ffffff;
+  background: #d6d6d6;
+  color: #1f1f1f;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.fr-accept-btn:hover:not(:disabled) {
+  background: #c8c8c8;
 }
 
 .fr-accept-btn:disabled {
@@ -330,7 +338,7 @@ html, body {
 .fr-pending-dot {
   width: 10px;
   height: 10px;
-  background: orange;
+  background: #787878;
   border-radius: 50%;
   display: inline-block;
   flex-shrink: 0;

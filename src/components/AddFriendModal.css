@@ -13,7 +13,8 @@
   border-radius: 12px;
   width: 400px;
   max-width: 90vw;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid #d5d5d5;
+  font-family: "Handjet", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
 
 .afm-header {
@@ -27,7 +28,7 @@
 .afm-title {
   font-weight: 700;
   font-size: 18px;
-  color: #0c2b4a;
+  color: #1f1f1f;
 }
 
 .afm-close {
@@ -63,18 +64,22 @@
 
 .afm-input:focus {
   outline: none;
-  border-color: #0c2b4a;
+  border-color: #8f8f8f;
 }
 
 .afm-search-btn {
   height: 36px;
   padding: 0 16px;
-  border: none;
+  border: 1px solid #bdbdbd;
   border-radius: 6px;
-  background: #0c2b4a;
-  color: #ffffff;
+  background: #d8d8d8;
+  color: #222222;
   font-weight: 600;
   cursor: pointer;
+}
+
+.afm-search-btn:hover:not(:disabled) {
+  background: #cbcbcb;
 }
 
 .afm-search-btn:disabled {
@@ -91,7 +96,7 @@
 
 .afm-success {
   margin-top: 12px;
-  color: #2e7d32;
+  color: #3f3f3f;
   font-size: 14px;
   font-weight: 600;
 }
@@ -127,12 +132,16 @@
 .afm-send-btn {
   height: 34px;
   padding: 0 16px;
-  border: none;
+  border: 1px solid #bdbdbd;
   border-radius: 6px;
-  background: #2e7d32;
-  color: #ffffff;
+  background: #d8d8d8;
+  color: #222222;
   font-weight: 600;
   cursor: pointer;
+}
+
+.afm-send-btn:hover:not(:disabled) {
+  background: #cbcbcb;
 }
 
 .afm-send-btn:disabled {

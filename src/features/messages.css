@@ -6,7 +6,7 @@
 .msg-page {
   min-height: 100vh;
   background: #ececec;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Handjet", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
 
 .msg-content {
@@ -25,16 +25,16 @@
 .msg-inbox-title {
   font-size: 20px;
   font-weight: 700;
-  color: #0c2b4a;
+  color: #1f1f1f;
 }
 
 .msg-new-btn {
   width: 36px;
   height: 36px;
-  border: none;
+  border: 1px solid #c4c4c4;
   border-radius: 50%;
-  background: #0c2b4a;
-  color: #ffffff;
+  background: #d5d5d5;
+  color: #222222;
   font-size: 22px;
   font-weight: 700;
   cursor: pointer;
@@ -45,7 +45,7 @@
 }
 
 .msg-new-btn:hover {
-  background: #0a2240;
+  background: #c6c6c6;
 }
 
 /* Conversation list items */
@@ -129,7 +129,7 @@
   max-height: 70vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  border: 1px solid #d5d5d5;
 }
 
 .msg-picker-header {
@@ -143,7 +143,7 @@
 .msg-picker-title {
   font-weight: 700;
   font-size: 18px;
-  color: #0c2b4a;
+  color: #1f1f1f;
 }
 
 .msg-picker-close {
@@ -222,7 +222,7 @@
   border: none;
   font-size: 22px;
   cursor: pointer;
-  color: #0c2b4a;
+  color: #2b2b2b;
   padding: 0;
   line-height: 1;
 }
@@ -234,7 +234,7 @@
 .msg-thread-name {
   font-weight: 700;
   font-size: 18px;
-  color: #0c2b4a;
+  color: #1f1f1f;
   flex: 1;
 }
 
@@ -260,8 +260,8 @@
 
 .msg-mine {
   align-self: flex-end;
-  background: #0c2b4a;
-  color: #ffffff;
+  background: #d8d8d8;
+  color: #222222;
   border-bottom-right-radius: 4px;
 }
 
@@ -280,7 +280,7 @@
 }
 
 .msg-mine .msg-bubble-time {
-  color: rgba(255, 255, 255, 0.65);
+  color: #5b5b5b;
   text-align: right;
 }
 
@@ -317,16 +317,16 @@
 
 .msg-input:focus {
   outline: none;
-  border-color: #0c2b4a;
+  border-color: #8f8f8f;
 }
 
 .msg-send-btn {
   height: 40px;
   padding: 0 20px;
-  border: none;
+  border: 1px solid #bdbdbd;
   border-radius: 20px;
-  background: #0c2b4a;
-  color: #ffffff;
+  background: #d8d8d8;
+  color: #222222;
   font-weight: 600;
   cursor: pointer;
   font-size: 14px;
@@ -338,5 +338,5 @@
 }
 
 .msg-send-btn:hover:not(:disabled) {
-  background: #0a2240;
+  background: #cbcbcb;
 }

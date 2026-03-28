@@ -7,6 +7,7 @@
     /*height: 100vh;*/
     margin-left: 20px;
     margin-right: 20px;
+    font-family: "Handjet", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
 .bulletin-content {
     display: flex;
@@ -16,4 +17,6 @@
     gap: 12px;
     width: 100%;
     padding: 20px;
+    background: #efefef;
+    border: 1px solid #d4d4d4;
 }

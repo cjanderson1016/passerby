@@ -17,7 +17,7 @@
     justify-content: center;
     align-items: center;
 
-    background-color: rgba(0, 0, 0, 0.5); 
+    background-color: rgba(0, 0, 0, 0.45);
 
     z-index: 9999;
 }
@@ -26,13 +26,13 @@
 /* Actual modal box */
 .modal_container {
     position: relative;
-    background: white;
+    background: #f3f3f3;
     padding: 32px;
     border-radius: 15px;
+    border: 1px solid #cccccc;
     min-width: 400px;
     max-width: 90vw;
-
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    font-family: "Handjet", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
 
 
@@ -52,5 +52,5 @@
 }
 
 .exit_btn:hover {
-    color: pink;
+    color: #c34747;
 }
