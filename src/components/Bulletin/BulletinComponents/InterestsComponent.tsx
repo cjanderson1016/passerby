@@ -11,6 +11,7 @@
 import "./Style/InterestsComponent.css";
 import { type BulletinComponent } from "./BulletinComponent";
 import "../EditBulletin.css"
+import { useBulletin } from "../../../hooks/useBulletin";
 
 export type InterestsComponentType = BulletinComponent & {
   component_id: string;
@@ -24,7 +25,6 @@ interface InterestsComponentProps {
   onEdit: () => void;*/
   component: InterestsComponentType
   isOwnProfile: boolean;
-  editMode: boolean;
 };
 
 export function InterestsComponent({
@@ -32,9 +32,10 @@ export function InterestsComponent({
   isOwnProfile,
   onEdit,*/ 
   component,  
-  isOwnProfile,
-  editMode
+  isOwnProfile
 }: InterestsComponentProps) {
+
+  const {editMode} = useBulletin()
 
   const onEdit = () => {
     console.log("Edit Interests clicked");

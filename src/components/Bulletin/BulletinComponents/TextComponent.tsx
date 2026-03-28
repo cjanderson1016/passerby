@@ -9,7 +9,7 @@
 import type { BulletinComponent, BulletinComponentsUnionType } from "./BulletinComponent";
 import "../EditBulletin.css"
 import { useState } from "react";
-import { supabase } from "../../../lib/supabase";
+import { useBulletin } from "../../../hooks/useBulletin";
 
 export type TextComponentType = BulletinComponent & {
   text: string;
@@ -18,7 +18,6 @@ export type TextComponentType = BulletinComponent & {
 interface textProps {
   component: TextComponentType;
   isOwnProfile: boolean;
-  editMode: boolean;
   loadBulletin: (isActive: boolean) => Promise<void>
   components: BulletinComponentsUnionType[];
   setBulletinComponents: React.Dispatch<React.SetStateAction<BulletinComponentsUnionType[]>>
@@ -26,12 +25,14 @@ interface textProps {
 
 export function TextComponent({
   component, 
-  isOwnProfile, 
-  editMode,
-  loadBulletin
+  isOwnProfile,
+  components,
+  setBulletinComponents
 }: textProps) {
 
   const [editComponent, setEditComponent] = useState(false)
+
+  const {editMode, cleanAdd} = useBulletin()
 
   const onEdit = () => {
     setEditComponent(true)
@@ -48,19 +49,22 @@ export function TextComponent({
                 type="text"
                 className="edit-box"
                 defaultValue={component.text}
-                /*
+                
                 onKeyDown={async (e: React.KeyboardEvent<HTMLInputElement>)=>{
                   if (e.key === "Enter") {
                     console.log("Save Text Component with text: " + e.currentTarget.value);
-                    await supabase
-                      .from("text_components")
-                      .update({text: e.currentTarget.value})
-                      .eq("component_id", component.component_id)
-                    setEditComponent(false)
-                    await loadBulletin(true);
+                    const updatedComponent = { ...component }
+                    updatedComponent.text =  e.currentTarget.value
+                    cleanAdd(updatedComponent)
+                    setBulletinComponents(components.map(item => {
+                      if (item.component_id === component.component_id){
+                        return updatedComponent
+                      }  
+                      else return item
+                    }))
                   }
                 }}
-                */
+                
               />
             )}
             {isOwnProfile && editMode && (

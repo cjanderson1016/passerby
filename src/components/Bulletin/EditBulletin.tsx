@@ -6,42 +6,29 @@
   Author(s): Matthew Eagleman
 */
 
-import { Children, useState } from "react";
 import "./EditBulletin.css"
 import { type BulletinComponentsUnionType } from "./BulletinComponents";
 import { supabase } from "../../lib/supabase";
-
-const updatedComponents: Record<string, Array<BulletinComponentsUnionType>> = {}; //Keeps track of the components that need to be updated when save is pressed
+import { useBulletin } from "../../hooks/useBulletin";
 
 interface EditBulletinProps {
   //Things to pass in to the bulletin editor
-  show: boolean
   components: Array<BulletinComponentsUnionType>
   profileUserId: string | null
   loadBulletin: (isActive: boolean) => Promise<void>
   setBulletinComponents: React.Dispatch<React.SetStateAction<BulletinComponentsUnionType[]>>
 }
 
-export default function EditBulletin({show, components, profileUserId, loadBulletin, setBulletinComponents}: EditBulletinProps) {
+export default function EditBulletin({components: components, setBulletinComponents}: EditBulletinProps) {
   //Render the edit bulletin menu
+
+  const componentsCopy = [...components] //Creates a copy so vscode doesn't yell at me
+
+  const {cleanAdd, updatedComponents, editMode} = useBulletin()
 
   interface SpecificComponentEditorProps {
     component: BulletinComponentsUnionType
   }
-
-  const cleanAdd = (component: BulletinComponentsUnionType) => {
-    //Adds the given component to updatedComponents, without adding dupicates
-    if (!updatedComponents[component.child_table]) {
-      updatedComponents[component.child_table] = [];
-    }
-    updatedComponents[component.child_table].forEach(item => {
-      if (item.component_id === component.component_id) {
-        //remove the old version of the component from updatedComponents
-        updatedComponents[component.child_table] = updatedComponents[component.child_table].filter(c => c.component_id !== component.component_id) 
-      }
-    });
-    updatedComponents[component.child_table].push(component)
-  };
 
   function SpecificComponentEditor({component}: SpecificComponentEditorProps){
     // This component renders each component with some basic information, and the ability to move it up or down
@@ -62,42 +49,42 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
       console.log("Component already at highest possible position")
       return 
     }
-    let pos = component.position
-    let targetPos = pos-1
+    const pos = component.position
+    const targetPos = pos-1
     // Swap components in the array
-    let tempComponent = components[targetPos] //save component thats about to get overwritten
-    components[targetPos] = component //Moves the component up one position
-    components[pos] = tempComponent //Restors the overwritten component to the position below where it was origionally
+    const tempComponent = componentsCopy[targetPos] //save component thats about to get overwritten
+    componentsCopy[targetPos] = component //Moves the component up one position
+    componentsCopy[pos] = tempComponent //Restors the overwritten component to the position below where it was origionally
     // Update the position values in the components to reflect their new positions
-    components[targetPos].position = targetPos
-    components[pos].position = pos
+    componentsCopy[targetPos].position = targetPos
+    componentsCopy[pos].position = pos
     // Add the updated components to updatedComponents to be saved when the user clicks save
-    cleanAdd(components[targetPos])
-    cleanAdd(components[pos])
+    cleanAdd(componentsCopy[targetPos])
+    cleanAdd(componentsCopy[pos])
     // Render the new component order
-    setBulletinComponents([...components])
+    setBulletinComponents([...componentsCopy])
   }
 
   const moveComponentDown = async(component: BulletinComponentsUnionType) => {
     //Take the given component and move it one position down
-    if (component.position+1 > components.length-1) {
+    if (component.position+1 > componentsCopy.length-1) {
       console.log("Component already at lowest possible position")
       return 
     }
-    let pos = component.position
-    let targetPos = pos+1
+    const pos = component.position
+    const targetPos = pos+1
     // Swap components in the array
-    let tempComponent = components[targetPos] //save component thats about to get overwritten
-    components[targetPos] = component //Moves the component down one position
-    components[pos] = tempComponent //Restors the overwritten component to the position above where it was origionally
+    const tempComponent = componentsCopy[targetPos] //save component thats about to get overwritten
+    componentsCopy[targetPos] = component //Moves the component down one position
+    componentsCopy[pos] = tempComponent //Restors the overwritten component to the position above where it was origionally
     // Update the position values in the components to reflect their new positions
-    components[targetPos].position = targetPos
-    components[pos].position = pos
+    componentsCopy[targetPos].position = targetPos
+    componentsCopy[pos].position = pos
     // Add the updated components to updatedComponents to be saved when the user clicks save
-    cleanAdd(components[targetPos])
-    cleanAdd(components[pos])
+    cleanAdd(componentsCopy[targetPos])
+    cleanAdd(componentsCopy[pos])
     // Render the new component order
-    setBulletinComponents([...components])
+    setBulletinComponents([...componentsCopy])
   }
   
   const saveBulletin = async () => {
@@ -115,7 +102,7 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
           name: component.name
         })))
       if (moveComponentParentError){
-        console.error("Failed saving component changes for bulletin_components table")
+        console.error("Failed saving component changes for bulletin_components table, now updating table " + table)
       }
       /*const { error: moveComponentChildError } = await supabase
         .from(table)
@@ -130,10 +117,10 @@ export default function EditBulletin({show, components, profileUserId, loadBulle
 
   return (
     <>
-      {show && (
+      {editMode && (
         //Render the editor full of tools and such for changing your bulletin
         <div className = "edit-bulletin">
-          {components.map((component) => (
+          {componentsCopy.map((component) => (
             <div key = {component.component_id}>
               <SpecificComponentEditor component = {component}/>
             </div>

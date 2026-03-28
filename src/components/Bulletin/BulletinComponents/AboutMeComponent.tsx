@@ -11,6 +11,7 @@
 import "./Style/AboutMeComponent.css";
 import { type BulletinComponent } from "./BulletinComponent";
 import "../EditBulletin.css"
+import { useBulletin } from "../../../hooks/useBulletin";
 
 export type AboutMeComponentType = BulletinComponent & {
   component_id: string;
@@ -24,16 +25,16 @@ interface AboutMeCardProps {
   onEdit: () => void;*/
   component: AboutMeComponentType
   isOwnProfile: boolean
-  editMode: boolean;
 };
 
 export function AboutMeComponent({
   //aboutMe,
   //onEdit,
   component,
-  isOwnProfile,
-  editMode
+  isOwnProfile
 }: AboutMeCardProps) {
+
+  const {editMode} = useBulletin()
 
   const onEdit = () => {
     console.log("Edit About Me clicked");

@@ -11,6 +11,7 @@ import EditBulletin from "./EditBulletin.tsx";
 import * as BulletinComponents from "./BulletinComponents";
 // Style
 import "./Bulletin.css";
+import { useBulletin } from "../../hooks/useBulletin.ts";
 
 interface BulletinProps {
   //Things to pass in to the bulletin component
@@ -27,7 +28,8 @@ export default function Bulletin({
   //React hooks
   const [bulletinComponents, setBulletinComponents] = useState<BulletinComponents.BulletinComponentsUnionType[]>([]);
   const [loadingComponents, setLoadingComponents] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+
+  const {editMode, setEditMode} = useBulletin()
 
   const cleanAddComponents = useCallback(
     (
@@ -92,6 +94,7 @@ export default function Bulletin({
               }
               //console.log(`loaded ${componentType} data:`, componentTypeData);
               // Flatten the nested data from the join so that child table fields are at the top level
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const flattened = (componentTypeData ?? []).map((item: any) => ({
                 ...item,
                 ...item[componentType],
@@ -161,7 +164,6 @@ export default function Bulletin({
                     key={component.component_id}
                     component={component as BulletinComponents.TextComponentType}
                     isOwnProfile={isOwnProfile}
-                    editMode={editMode}
                     loadBulletin={loadBulletin}
                     components={bulletinComponents}
                     setBulletinComponents={setBulletinComponents}
@@ -172,7 +174,6 @@ export default function Bulletin({
                     key={component.component_id}
                     component={component as BulletinComponents.TitleComponentType}
                     isOwnProfile={isOwnProfile}
-                    editMode={editMode}
                   />
                 )}
                 {component.child_table == "about_me_components" && (
@@ -180,7 +181,6 @@ export default function Bulletin({
                     key={component.component_id}
                     component={component as BulletinComponents.AboutMeComponentType}
                     isOwnProfile={isOwnProfile}
-                    editMode={editMode}
                   />
                 )}
                 {component.child_table == "interests_components" && (
@@ -188,7 +188,6 @@ export default function Bulletin({
                     key={component.component_id}
                     component={component as BulletinComponents.InterestsComponentType}
                     isOwnProfile={isOwnProfile}
-                    editMode={editMode}
                   />
                 )}
               </div>
@@ -198,14 +197,12 @@ export default function Bulletin({
           <button onClick={() => setEditMode(!editMode)}>Edit Bulletin</button>
           {isOwnProfile && (
             <EditBulletin
-              show={editMode}
               components={bulletinComponents}
               profileUserId={profileUserId}
               loadBulletin={loadBulletin}
               setBulletinComponents={setBulletinComponents}
             />
           )}
-          
         </div>
       )}
     </>

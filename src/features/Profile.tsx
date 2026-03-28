@@ -18,15 +18,16 @@ import {
   uploadFileToR2,
 } from "../services/dataService";
 import ProfileHeader from "../components/profile/ProfileHeader";
-import AboutMeCard from "../components/profile/AboutMeCard";
-import InterestsCard from "../components/profile/InterestsCard";
+//import AboutMeCard from "../components/profile/AboutMeCard";
+//import InterestsCard from "../components/profile/InterestsCard";
 //import PostCountCard from "../components/profile/PostCountCard";
 import CreatePostBox from "../components/profile/CreatePostBox";
 import PinnedPostsSection from "../components/profile/PinnedPostsSection";
 import PostFeed from "../components/profile/PostFeed";
-import RecentPostsPanel from "../components/profile/RecentPostsPanel";
+//import RecentPostsPanel from "../components/profile/RecentPostsPanel";
 import type { ProfilePost as Post } from "../components/profile/types"; // we define a more specific Post type for the profile page that includes the is_pinned field, since we need that for the pinned posts feature. This way we don't have to use the more general Post type from our global types which doesn't include is_pinned.
 import Bulletin from "../components/Bulletin/Bulletin";
+import { BulletinProvider } from "../contexts/BulletinContext";
 
 type ViewedProfile = {
   id: string;
@@ -567,7 +568,7 @@ export default function Profile() {
 
   const pinnedPost = posts.find((post) => post.is_pinned) ?? null;
   const feedPosts = posts.filter((post) => !post.is_pinned);
-  const newestPost =
+  /*const newestPost =
     [...posts].sort(
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
@@ -575,7 +576,7 @@ export default function Profile() {
   const interests = useMemo(
     () => viewedProfile?.interests ?? [],
     [viewedProfile?.interests],
-  );
+  );*/
 
   const modalTitle =
     editField === "bio"
@@ -733,11 +734,13 @@ export default function Profile() {
                       />
                       <PostCountCard postCount={posts.length} />*/}
                     {/**/}
-                    <Bulletin 
-                    show={true} 
-                    isOwnProfile={isOwnProfile} 
-                    profileUserId={viewedProfile?.id} 
-                    />
+                    <BulletinProvider>
+                      <Bulletin 
+                      show={true} 
+                      isOwnProfile={isOwnProfile} 
+                      profileUserId={viewedProfile?.id} 
+                      />
+                    </BulletinProvider>
                   </div>
                 )}
               </main>
