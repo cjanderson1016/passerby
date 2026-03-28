@@ -15,11 +15,13 @@ import MediaLibraryModal from "./MediaLibraryModal";
 // We accept an optional initialImagePath prop which is the storage key of the user's current profile picture, so we can show it before they upload a new one. This would come from the user's profile data when we fetch it.
 type ProfilePictureUploadProps = {
   initialImagePath?: string | null;
+  onSelected?: (newImagePath: string) => void;
 };
 
 // This component handles the entire flow of choosing a file, validating it, uploading it to R2, and updating the user's profile with the new picture. It also shows a preview of the current or newly uploaded profile picture.
 export default function ProfilePictureUpload({
   initialImagePath = null,
+  onSelected,
 }: ProfilePictureUploadProps) {
   const { user } = useUser();
 
@@ -42,6 +44,7 @@ export default function ProfilePictureUpload({
         return;
       }
       setImagePath(media.key);
+        if (onSelected) onSelected(media.key);
       setLibraryOpen(false);
     } catch (e) {
       console.error(e);

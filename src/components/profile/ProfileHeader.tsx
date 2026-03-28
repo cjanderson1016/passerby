@@ -46,7 +46,7 @@ export default function ProfileHeader({
           {isOwnProfile ? (
             <ProfilePictureUpload
               initialImagePath={initialImagePath ?? null}
-              onUploadComplete={onProfileImageUploaded}
+              onSelected={onProfileImageUploaded}
             />
           ) : viewedProfilePictureUrl ? (
             <img
