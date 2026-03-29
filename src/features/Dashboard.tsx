@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import "./dashboard.css";
 import type { Friend, Post, AcceptedFriendRequest, FriendUser } from "../types";
 import ProfileMenu from "../components/ProfileMenu";
+import Button from "../components/Button";
 import FriendTable from "../components/FriendTable";
 import FriendRequestList from "../components/FriendRequestList";
 import AddFriendModal from "../components/AddFriendModal";
@@ -237,9 +238,9 @@ export default function Dashboard() {
           >
             ✉
           </Link>
-          <button className="dash-add-btn" onClick={() => setModalOpen(true)}>
+          <Button size="sm" onClick={() => setModalOpen(true)}>
             Add Friend
-          </button>
+          </Button>
         </div>
       </div>
 
