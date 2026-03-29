@@ -7,6 +7,7 @@
 */
 
 import { useState } from "react";
+import type { UserProfile } from "../contexts/UserContextData";
 import { supabase } from "../lib/supabase";
 import { useUser } from "../hooks/useUser";
 import { getPublicUrl } from "../services/dataService";
@@ -23,7 +24,7 @@ export default function ProfilePictureUpload({
   initialImagePath = null,
   onSelected,
 }: ProfilePictureUploadProps) {
-  const { user } = useUser();
+  const { user, userProfile, setUserProfile } = useUser();
 
   const uploading = false;
   const [imagePath, setImagePath] = useState<string | null>(null);
@@ -44,7 +45,26 @@ export default function ProfilePictureUpload({
         return;
       }
       setImagePath(media.key);
-        if (onSelected) onSelected(media.key);
+      // update central userProfile context so other components (e.g., ProfileMenu) update immediately
+      try {
+        if (setUserProfile) {
+          // We create a new user profile object with the updated profile_pic_key. If userProfile is null for some reason, we create a new one with just the id and profile_pic_key (though ideally userProfile should never be null if the user is logged in).
+          const newProfile: UserProfile = userProfile
+            ? { ...userProfile, profile_pic_key: media.key }
+            : {
+                id: user.id,
+                username: "",
+                first_name: null,
+                last_name: null,
+                profile_pic_key: media.key,
+              };
+          setUserProfile(newProfile); // this will update the context and cause any components that consume userProfile (like ProfileMenu) to re-render with the new profile picture immediately
+        }
+      } catch (e) {
+        console.error("Failed to update user profile context", e);
+      }
+
+      if (onSelected) onSelected(media.key); // callback for parent component to know about the new profile picture (e.g., to update state or trigger other actions)
       setLibraryOpen(false);
     } catch (e) {
       console.error(e);
