@@ -10,24 +10,25 @@ import { supabase } from "../../lib/supabase";
 import EditBulletin from "./EditBulletin.tsx";
 import * as BulletinComponents from "./BulletinComponents";
 // Style
-import "./Bulletin.css";
+import "./Style/Bulletin.css";
+import { useBulletin } from "../../hooks/useBulletin.ts";
 
 interface BulletinProps {
   //Things to pass in to the bulletin component
   show: boolean; // whether to show this tab or not, passed from parent
   profileUserId: string | null; // the user ID of the profile we are viewing, used to fetch the correct bulletin components
-  isOwnProfile: boolean;
+  isOwnProfileInput: boolean;
 }
 
 export default function Bulletin({
   show,
   profileUserId,
-  isOwnProfile,
+  isOwnProfileInput,
 }: BulletinProps) {
   //React hooks
-  const [bulletinComponents, setBulletinComponents] = useState<BulletinComponents.BulletinComponentsUnionType[]>([]);
   const [loadingComponents, setLoadingComponents] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+
+  const {editMode, setEditMode,setBulletinComponents,bulletinComponents, isOwnProfile, setIsOwnProfile} = useBulletin()
 
   const cleanAddComponents = useCallback(
     (
@@ -92,6 +93,7 @@ export default function Bulletin({
               }
               //console.log(`loaded ${componentType} data:`, componentTypeData);
               // Flatten the nested data from the join so that child table fields are at the top level
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const flattened = (componentTypeData ?? []).map((item: any) => ({
                 ...item,
                 ...item[componentType],
@@ -115,7 +117,7 @@ export default function Bulletin({
         }
       }
     },
-    [cleanAddComponents, profileUserId],
+    [setBulletinComponents, cleanAddComponents, profileUserId],
   ); // we include cleanAddComponents in the dependency array since it is defined outside of useEffect, but it is memoized with useCallback so it won't cause unnecessary re-renders
 
   useEffect(() => {
@@ -127,12 +129,14 @@ export default function Bulletin({
     // we use a flag and check it in the async function to prevent setting state on an unmounted component
     let isActive = true;
 
+    setIsOwnProfile(isOwnProfileInput)
+
     void loadBulletin(isActive); // we call the async function but don't await it since useEffect can't be async
 
     return () => {
       isActive = false; // when the component unmounts, set isActive to false to prevent setting state on an unmounted component
     };
-  }, [loadBulletin, profileUserId]); // we include loadBulletin in the dependency array since it is defined outside of useEffect, but it is memoized with useCallback so it won't cause unnecessary re-renders
+  }, [setIsOwnProfile, isOwnProfileInput, setBulletinComponents, loadBulletin, profileUserId]); // we include loadBulletin in the dependency array since it is defined outside of useEffect, but it is memoized with useCallback so it won't cause unnecessary re-renders
 
   return (
     <>
@@ -160,33 +164,24 @@ export default function Bulletin({
                   <BulletinComponents.TextComponent
                     key={component.component_id}
                     component={component as BulletinComponents.TextComponentType}
-                    isOwnProfile={isOwnProfile}
-                    editMode={editMode}
-                    loadBulletin={loadBulletin}
                   />
                 )}
                 {component.child_table == "title_card_components" && (
                   <BulletinComponents.TitleComponent
                     key={component.component_id}
                     component={component as BulletinComponents.TitleComponentType}
-                    isOwnProfile={isOwnProfile}
-                    editMode={editMode}
                   />
                 )}
                 {component.child_table == "about_me_components" && (
                   <BulletinComponents.AboutMeComponent
                     key={component.component_id}
                     component={component as BulletinComponents.AboutMeComponentType}
-                    isOwnProfile={isOwnProfile}
-                    editMode={editMode}
                   />
                 )}
                 {component.child_table == "interests_components" && (
                   <BulletinComponents.InterestsComponent
                     key={component.component_id}
                     component={component as BulletinComponents.InterestsComponentType}
-                    isOwnProfile={isOwnProfile}
-                    editMode={editMode}
                   />
                 )}
               </div>
@@ -196,14 +191,11 @@ export default function Bulletin({
           <button onClick={() => setEditMode(!editMode)}>Edit Bulletin</button>
           {isOwnProfile && (
             <EditBulletin
-              show={editMode}
               components={bulletinComponents}
               profileUserId={profileUserId}
               loadBulletin={loadBulletin}
-              setBulletinComponents={setBulletinComponents}
             />
           )}
-          
         </div>
       )}
     </>

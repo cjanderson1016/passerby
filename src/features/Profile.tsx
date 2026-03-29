@@ -23,6 +23,7 @@ import PostFeed from "../components/profile/PostFeed";
 //import RecentPostsPanel from "../components/profile/RecentPostsPanel";
 import type { ProfilePost as Post } from "../components/profile/types"; // we define a more specific Post type for the profile page that includes the is_pinned field, since we need that for the pinned posts feature. This way we don't have to use the more general Post type from our global types which doesn't include is_pinned.
 import Bulletin from "../components/Bulletin/Bulletin";
+import { BulletinProvider } from "../contexts/BulletinContext";
 
 type ViewedProfile = {
   id: string;
@@ -554,15 +555,15 @@ export default function Profile() {
 
   const pinnedPost = posts.find((post) => post.is_pinned) ?? null;
   const feedPosts = posts.filter((post) => !post.is_pinned);
-  // const newestPost =
-  //   [...posts].sort(
-  //     (a, b) =>
-  //       new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  //   )[0] ?? null;
-  // const interests = useMemo(
-  //   () => viewedProfile?.interests ?? [],
-  //   [viewedProfile?.interests],
-  // );
+  /*const newestPost =
+    [...posts].sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    )[0] ?? null;
+  const interests = useMemo(
+    () => viewedProfile?.interests ?? [],
+    [viewedProfile?.interests],
+  );*/
 
   const modalTitle =
     editField === "bio"
@@ -717,17 +718,19 @@ export default function Profile() {
                         username={viewedProfile.username}
                       />
                       <PostCountCard postCount={posts.length} />*/}
-                  {/**/}
-                  <Bulletin
-                    show={true}
-                    isOwnProfile={isOwnProfile}
-                    profileUserId={viewedProfile?.id}
-                  />
-                </div>
-              )}
-            </main>
-
-            {/*<aside className="profile-right-panel">
+                    {/**/}
+                    <BulletinProvider>
+                      <Bulletin 
+                      show={true} 
+                      isOwnProfileInput={isOwnProfile} 
+                      profileUserId={viewedProfile?.id} 
+                      />
+                    </BulletinProvider>
+                  </div>
+                )}
+              </main>
+              
+              {/*<aside className="profile-right-panel">
                 
                 
                 
