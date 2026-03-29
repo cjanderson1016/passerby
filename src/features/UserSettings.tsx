@@ -16,11 +16,11 @@ import { supabase } from "../lib/supabase";
 //import { useNavigate } from "react-router-dom";
 import ProfileMenu from "../components/ProfileMenu";
 import "./settings.css"
-import Toggle from "../components/ToggleButton";
 import Accordion_Component from "../components/Accordion";
+import { Privacy_Dropdown} from "../components/Accordion";
 import Modal from "../components/Modal";
 import ResetPass from "./ResetPassword";
-
+import { FaRegUser, FaUnlockAlt } from "react-icons/fa";
 
 
 export default function Settings(){
@@ -37,7 +37,7 @@ const settings_list = [
   // Container 1: Account settings --> reset password, delete account
   {
     id: "1",
-    title: "Account Settings",
+    title: [<FaRegUser style={{ color: "red", margin: "0 5px" }} />, "Account Settings"],
 
     content: [
       [<button  className = "settings-btn" onClick={() => setOpenModal_pass(true)}>Change Password</button>],
@@ -47,14 +47,14 @@ const settings_list = [
   {
     // Container 2: Privacy & Visibilty --> Others can see my posts/comments/likes
     id: "2",
-    title: "Privacy and Visibility",
+    title: [<FaUnlockAlt style={{ color: "blue", margin: "0 5px" }}/>, "Privacy and Visibility"],
 
     content: [
-      ["Other users can see: "],
+      [<strong>Who can see my content:</strong>],
 
-      ["  Posts", <Toggle storageKey="toggle_posts"/>],
-      ["  Comments", <Toggle storageKey="toggle_comments"/>],
-      ["  Likes",<Toggle storageKey="toggle_likes"/>],
+      ["  Posts", <Privacy_Dropdown data_field ={ 0 } storageKey="store_posts_privacy"/>],
+      ["  Comments", <Privacy_Dropdown data_field ={ 1 } storageKey="store_comments_privacy"/>],
+      ["  Profile",<Privacy_Dropdown data_field ={ 2 } storageKey="store_profile_privacy"/>],
 
 
     ],
@@ -116,8 +116,8 @@ const settings_list = [
               </button>
             </form>
           </div>
+          <Accordion_Component settings_list={settings_list}/>
           <br />
-          <Accordion_Component list={settings_list} />
         </div>
         <Modal is_open={openModal_pass} current_state={setOpenModal_pass} component={<ResetPass/>}/>
         <Modal is_open={openModal_user} current_state={setOpenModal_user} component={<ConfirmChangeUsername newUser={newUser}
@@ -234,9 +234,6 @@ return (
 )
 }
 
-
-
-
 function ConfirmDeleteUser({ closeModal }: { closeModal: () => void }) {
   const [password, setPassword] = useState("");
 
@@ -316,3 +313,4 @@ function ConfirmDeleteUser({ closeModal }: { closeModal: () => void }) {
     </div>
   );
 }
+

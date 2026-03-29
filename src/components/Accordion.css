@@ -5,50 +5,111 @@
 
   Author(s): Owen Berkholtz
 */
-.accordion_container {
-    border: 1px solid black;  
-  padding: 1rem; 
-  background-color: rgb(214, 214, 214);
-  width: 50%;
+.accordion-container{
+  background: #ffffff;
+  border: 1px solid #dddddd;
+  border-radius: 12px;
+  overflow: hidden;
+  width: 35%;
+
 }
 
-.container_title {
-    font-weight: bold;
-    padding-bottom: 3px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+
+
+.accordion-trigger{
     width: 100%;
-    
-}
-
-.accordion_row{
+    border: none;
+    background-color: whitesmoke;
+    font-size: large;
     display: flex;
+    border-bottom: 1px solid lightgray;
     padding-bottom: 10px;
+    padding-top: 10px;
+    border-radius: 12px;
 }
 
-.accordion_element{
-    display: "flex";
-    justify-content: "space-between";
-    width: 250px;
-    padding-left: 50px;
-}
 
-.container_title:hover{
+
+.accordion-trigger:hover{
     cursor: pointer;
+    border: black solid 1px;
+}
+
+
+.accordion-content{
+    display: grid;
+    padding: 15px;
+    gap: 15px;
     
+    }
+
+.accordion-row{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.container_arrow{
-    color: red;
-  margin-left: auto;
+
+.accordion-arrow{
+    margin-left: auto;
+    transition: transform 0.3s ease;
+    width: 20px;
+    height: 20px;
 }
 
-.accordion_item {
-    margin-left: 20px;
-    padding-top: 1rem;
+.accordion-arrow.rotated {
+  display: inline-block;
+  transform: rotate(90deg);
 }
 
-.accordion_button {
-    padding-left: 10px;
+.accordion-arrow:hover {
+    cursor: pointer;
+    background-color: lightgrey;
+    border-radius: 50%;
+}
+
+
+.dropdown-container {
+  width: 30%;
+  display: flex;
+}
+
+.dropdown-button {
+  display: block;
+  width: 70%;
+  background-color: grey;
+  padding: 0.25rem 0;
+  overflow: hidden;
+  max-height: 18rem;
+  cursor: pointer;
+  background: #f5f5f5;
+  border: grey solid 1px;
+  font-size: medium;
+}
+
+
+
+.dropdown-content {
+  min-width: 100%;
+  width: 100%;
+  background: white;
+
+  border-top: none;
+  border-radius: 0 0 0.75rem 0.75rem;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  padding: 0.75rem 0;
+}
+
+.dropdown-item {
+  width: 100%;
+  padding: 0.75rem 0;
+  background: white;
+  cursor: pointer;
+  border: grey solid 1px;
+  border-top: none;
+  margin-left: 0px;
+}
+
+.dropdown-item:hover {
+  background: #f5f5f5;
 }

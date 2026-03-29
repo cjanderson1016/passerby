@@ -37,6 +37,7 @@ type ViewedProfile = {
   bio?: string | null;
   about_me?: string | null;
   interests?: string[] | null;
+  profile_privacy: string;
 };
 
 type PostRow = {
@@ -182,7 +183,7 @@ export default function Profile() {
           const { data, error } = await supabase
             .from("users")
             .select(
-              "id, username, first_name, last_name, profile_pic_key, bio, about_me, interests",
+              "id, username, first_name, last_name, profile_pic_key, bio, about_me, interests, profile_privacy",
             )
             .eq("id", user.id)
             .maybeSingle();
