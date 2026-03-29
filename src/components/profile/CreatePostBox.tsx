@@ -5,60 +5,66 @@
   Input box for creating a new profile post.
 */
 
-import { useEffect, useMemo, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
+import MediaLibraryModal from "../MediaLibraryModal";
+import { getPublicUrl } from "../../services/dataService";
 
-// Accepted media types for post uploads. This is used both for the file input accept attribute and for validating files before upload.
-const POST_MEDIA_ACCEPT =
-  "image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm,.jpg,.jpeg,.png,.webp,.heic,.heif,.mp4,.mov,.webm";
+type MediaRow = {
+  id: string;
+  key: string;
+  file_name?: string;
+  content_type?: string;
+  size?: number | null;
+};
 
 type CreatePostBoxProps = {
   value: string;
   posting: boolean;
-  mediaFile: File | null; // the currently selected media file for the post, if any
   onChange: (value: string) => void;
-  onMediaChange: (file: File | null) => void; // callback to update the selected media file in the parent component when the user chooses a file or removes it
-  onSubmit: (e: FormEvent) => void;
+  // onSubmit receives the event and the selected media attachments (may be empty)
+  onSubmit: (e: FormEvent, attachments: MediaRow[]) => Promise<void> | void;
 };
 
 export default function CreatePostBox({
   value,
   posting,
-  mediaFile, // the currently selected media file for the post, if any
   onChange,
-  onMediaChange, // callback to update the selected media file in the parent component when the user chooses a file or removes it
   onSubmit,
 }: CreatePostBoxProps) {
-  const canSubmit = value.trim().length > 0 || !!mediaFile; // we allow submitting a post if it has text content or if it has a media file, so the user can create a post with just an image/video if they want
+  const [openLibrary, setOpenLibrary] = useState(false);
+  const [attachments, setAttachments] = useState<MediaRow[]>([]);
 
-  // We use useMemo to create a preview URL for the selected media file, which allows us to show a preview of the image or video before it's uploaded. We also clean up the object URL when the component unmounts or when a new file is selected to prevent memory leaks.
-  const mediaPreviewUrl = useMemo(() => {
-    if (!mediaFile) return null;
-    return URL.createObjectURL(mediaFile);
-  }, [mediaFile]);
+  const canSubmit = value.trim().length > 0 || attachments.length > 0;
 
-  // Clean up the object URL when the component unmounts or when a new file is selected to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      if (mediaPreviewUrl) {
-        URL.revokeObjectURL(mediaPreviewUrl);
+  function handleLibrarySelect(selected: MediaRow | MediaRow[]) {
+    const arr = Array.isArray(selected) ? selected : [selected];
+    setAttachments((prev) => {
+      // preserve existing order and append new selections in the order they were selected
+      const existingIds = new Set(prev.map((p) => p.id));
+      const toAppend: MediaRow[] = [];
+      for (const a of arr) {
+        if (!existingIds.has(a.id)) toAppend.push(a);
       }
-    };
-  }, [mediaPreviewUrl]);
+      return [...prev, ...toAppend];
+    });
+  }
 
-  // The handleFileChange function is called when the user selects a file using the file input. It updates the selected media file in the parent component using the onMediaChange callback and resets the file input value to allow selecting the same file again if needed. We also validate the selected file's type and size before allowing it to be set as the mediaFile, showing an alert if it's invalid.
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    onMediaChange(file);
-    e.target.value = "";
-  };
-
-  const isVideoPreview = mediaFile?.type.startsWith("video/") ?? false;
+  function removeAttachment(id: string) {
+    setAttachments((s) => s.filter((x) => x.id !== id));
+  }
 
   return (
     <section id="create-post-box" className="profile-create-post-card">
       <h3 className="profile-create-post-title">Create a Post</h3>
 
-      <form onSubmit={onSubmit} className="profile-create-post-form">
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          await Promise.resolve(onSubmit(e, attachments));
+          setAttachments([]);
+        }}
+        className="profile-create-post-form"
+      >
         <textarea
           className="profile-create-post-textarea"
           placeholder="What's on your mind?"
@@ -68,50 +74,53 @@ export default function CreatePostBox({
         />
 
         <div className="profile-create-post-media-row">
-          <label className="profile-outline-btn profile-create-post-media-trigger">
-            {mediaFile ? "Replace Media" : "Add Photo or Video"}
-            <input
-              type="file"
-              className="profile-create-post-media-input"
-              accept={POST_MEDIA_ACCEPT}
-              onChange={handleFileChange}
-              disabled={posting}
-            />
-          </label>
-
-          {mediaFile && (
-            <>
-              <span className="profile-create-post-media-name">
-                {mediaFile.name}
-              </span>
-              <button
-                type="button"
-                className="profile-outline-btn"
-                onClick={() => onMediaChange(null)}
-                disabled={posting}
-              >
-                Remove
-              </button>
-            </>
-          )}
+          <button
+            type="button"
+            className="profile-outline-btn profile-create-post-media-trigger"
+            onClick={() => setOpenLibrary(true)}
+            disabled={posting}
+          >
+            {attachments.length > 0
+              ? `Add More (${attachments.length})`
+              : "Add Photos or Videos"}
+          </button>
         </div>
 
-        {mediaPreviewUrl && (
-          <div className="profile-create-post-preview">
-            {isVideoPreview ? (
-              <video
-                src={mediaPreviewUrl}
-                className="profile-create-post-preview-media"
-                controls
-                preload="metadata"
-              />
-            ) : (
-              <img
-                src={mediaPreviewUrl}
-                className="profile-create-post-preview-media"
-                alt="Selected post media preview"
-              />
-            )}
+        {attachments.length > 0 && (
+          <div className="profile-create-post-preview-grid">
+            {attachments.map((a) => {
+              const url = getPublicUrl(a.key);
+              const isVideo =
+                !!a.content_type && a.content_type.startsWith("video/");
+              return (
+                <div key={a.id} className="profile-create-post-preview-item">
+                  {isVideo ? (
+                    <video
+                      src={url}
+                      className="profile-create-post-preview-media"
+                      controls
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img
+                      src={url}
+                      className="profile-create-post-preview-media"
+                      alt={a.file_name ?? "attachment"}
+                    />
+                  )}
+                  <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                    <button
+                      type="button"
+                      className="profile-outline-btn"
+                      onClick={() => removeAttachment(a.id)}
+                      disabled={posting}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -125,6 +134,14 @@ export default function CreatePostBox({
           </button>
         </div>
       </form>
+
+      <MediaLibraryModal
+        open={openLibrary}
+        onClose={() => setOpenLibrary(false)}
+        onSelect={handleLibrarySelect}
+        multiSelect
+        acceptTypes="images+videos"
+      />
     </section>
   );
 }
