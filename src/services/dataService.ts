@@ -11,11 +11,12 @@
 
 import { supabase } from "../lib/supabase";
 
-export type UploadTarget = "profile_photo" | "post_media"; // This type defines the possible targets for uploads, which can be used by the edge function to determine where to store the file and how to generate the key. For example, profile photos might go in a different folder or have different naming conventions than post media. The post_media target also allows for an optional postId to be included in the options when requesting a presigned URL, which can help organize media files by post.
+export type UploadTarget = "profile_photo" | "post_media" | "user_media"; // Added `user_media` target for account-scoped media library
 
 export type GetPresignedUrlOptions = { // This options object can be extended in the future if we need to pass additional information to the edge function when requesting a presigned URL. For now, it includes the target which indicates what the file will be used for (e.g., profile photo or post media), and an optional postId which can be used to associate uploaded media with a specific post if the target is post_media.
   target?: UploadTarget;
   postId?: string;
+  digest?: string | null; // client-computed digest (hex or base64) for deduplication
 };
 
 export interface UploadFileResponse {
@@ -53,7 +54,50 @@ export async function getPresignedUrl(
 
   const target = options.target ?? "profile_photo"; // default to profile_photo if no target is specified, but in practice the component calling this function should always specify the target so the edge function can generate the correct key and URL for the file.
 
+  // Enforce a size-based quota for account media. We query the user's current stored size (sum of ready items) and compare.
+  const QUOTA_BYTES = Number(import.meta.env.VITE_MEDIA_QUOTA_BYTES ?? (50 * 1024 * 1024)); // default 50MB
+  if (target === "user_media") {
+    // get current session user (to satisfy RLS) and then ask for sum(size)
+    const {
+      data: { session },
+      error: sessErr,
+    } = await supabase.auth.getSession();
+    if (sessErr || !session?.user) {
+      throw new Error("You must be signed in to upload files");
+    }
+
+    // Query sum of sizes for this user's media. RLS should ensure only their rows are returned.
+    const { data: sumData, error: sumErr } = await supabase
+      .from("user_media")
+      .select("sum(size)", { head: false })
+      .eq("status", "ready");
+
+    if (sumErr) {
+      console.warn("Could not determine current media usage", sumErr);
+    }
+
+    // sumData may be like [{ sum: "12345" }] or [{ sum: 12345 }]
+    let used = 0;
+    if (!sumErr && Array.isArray(sumData) && sumData.length > 0) {
+      const first = sumData[0] as Record<string, unknown>;
+      const raw = first.sum ?? first.sum_size ?? first[Object.keys(first)[0]];
+      if (typeof raw === "string") {
+        const parsed = Number(raw);
+        used = Number.isFinite(parsed) ? parsed : 0;
+      } else if (typeof raw === "number") {
+        used = raw;
+      } else {
+        used = 0;
+      }
+    }
+
+    if (used + file.size > QUOTA_BYTES) {
+      throw new Error(`Media quota exceeded. Available: ${Math.max(0, QUOTA_BYTES - used)} bytes`);
+    }
+  }
+
   // Call the edge function to get a presigned URL and key for the file
+  // Call the edge function. Pass digest when available so the server can deduplicate without upload.
   const { data, error } = await supabase.functions.invoke("upload-media", {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -63,6 +107,8 @@ export async function getPresignedUrl(
       postId: options.postId,
       fileName: file.name,
       contentType: file.type,
+      size: file.size,
+      digest: options.digest ?? null,
     },
   });
 
@@ -72,7 +118,7 @@ export async function getPresignedUrl(
     throw new Error(error.message || "Failed to get presigned URL");
   }
 
-  return data as { uploadUrl: string; key: string }; // Return the presigned URL and key from the edge function. The uploadUrl is used to upload the file directly to R2, and the key is stored in the database to reference the uploaded file later.
+  return data as { uploadUrl?: string; key: string; existing?: boolean; id?: string }; // server may return existing:true to indicate dedupe
 }
 
 /**
@@ -83,7 +129,19 @@ export async function uploadFileToR2(
   options: GetPresignedUrlOptions = {}, // options to pass to the edge function when requesting the presigned URL, such as the target and postId which can help the edge function generate the correct URL and key for the file.
 ) {
   // Get presigned URL and key from supabase edge function
-  const { uploadUrl, key } = await getPresignedUrl(file, options);
+  const res = await getPresignedUrl(file, options);
+
+  // If the server says this digest already exists for the user, reuse it without uploading
+  if (res && res.existing) {
+    return {
+      key: res.key,
+      publicUrl: getPublicUrl(res.key),
+    } as UploadFileResponse;
+  }
+
+  const uploadUrl = res.uploadUrl;
+  const key = res.key;
+  if (!uploadUrl) throw new Error("No upload URL returned from server");
 
   // Upload the file to R2 using the presigned URL
   const upload = await fetch(uploadUrl, {
@@ -99,7 +157,19 @@ export async function uploadFileToR2(
     throw new Error("Upload failed");
   }
 
-  // Return the key and the public URL for the uploaded file
+  // If the edge function created a pending DB row, finalize it so the server can verify and mark ready
+  if (res.id) {
+    const accessToken = await getAccessToken();
+    const { error: finalizeErr } = await supabase.functions.invoke("upload-media", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: { action: "finalize", id: res.id },
+    });
+    if (finalizeErr) {
+      console.warn("Finalize error:", finalizeErr);
+    }
+    // ignore finalize response; the modal/listing will refresh from DB
+  }
+
   return {
     key,
     publicUrl: getPublicUrl(key),
@@ -132,6 +202,14 @@ export async function deleteFileFromR2(key: string) {
 
   if (data && typeof data === "object" && "error" in data && data.error) {
     throw new Error(String(data.error));
+  }
+
+  // Also mark the DB row as deleted so it no longer appears in the user's library
+  try {
+    await supabase.from("user_media").update({ status: "deleted" }).eq("key", key);
+  } catch (e) {
+    // log but don't fail the whole operation if DB cleanup can't run
+    console.warn("Failed to mark user_media row deleted", e);
   }
 
   return data;

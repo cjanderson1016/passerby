@@ -6,89 +6,85 @@
     Author(s): Connor Anderson
 */
 
-import { useRef, useState } from "react";
+import { useState } from "react";
+import type { UserProfile } from "../contexts/UserContextData";
 import { supabase } from "../lib/supabase";
 import { useUser } from "../hooks/useUser";
-import { getPublicUrl, uploadFileToR2 } from "../services/dataService";
+import { getPublicUrl } from "../services/dataService";
+import MediaLibraryModal from "./MediaLibraryModal";
 
-// We enforce a max file size of 5 MB for profile pictures to prevent abuse and ensure fast uploads. We also restrict to common image types.
-const MAX_FILE_SIZE_MB = 5;
-const ACCEPTED_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/heic",
-  "image/heif",
-];
+// We use the same MediaLibraryModal for profile picture uploads to leverage the existing flow for requesting presigned URLs, handling uploads, and finalizing media in the database. This keeps the logic consistent and centralized in the modal and the dataService functions it calls. The ProfilePictureUpload component simply opens the modal and then updates the user's profile with the selected image once it's uploaded and finalized.
+type MediaRow = {
+  id: string;
+  key: string;
+  file_name?: string;
+  content_type?: string;
+  size?: number | null;
+};
 
 // We accept an optional initialImagePath prop which is the storage key of the user's current profile picture, so we can show it before they upload a new one. This would come from the user's profile data when we fetch it.
 type ProfilePictureUploadProps = {
   initialImagePath?: string | null;
-  onUploadComplete?: (newImagePath: string) => void; // callback to notify parent component of the new image path after a successful upload, in case it needs to update its state or refetch profile data
+  onSelected?: (newImagePath: string) => void;
 };
 
 // This component handles the entire flow of choosing a file, validating it, uploading it to R2, and updating the user's profile with the new picture. It also shows a preview of the current or newly uploaded profile picture.
 export default function ProfilePictureUpload({
   initialImagePath = null,
-  onUploadComplete, // this callback allows the parent component to react to a successful upload, such as by updating its state or refetching the user's profile data to get the new picture URL
+  onSelected,
 }: ProfilePictureUploadProps) {
-  const { user } = useUser();
+  const { user, userProfile, setUserProfile } = useUser();
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const [uploading, setUploading] = useState(false);
+  const uploading = false;
   const [imagePath, setImagePath] = useState<string | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
-  const handleChooseFile = () => {
-    fileInputRef.current?.click();
-  };
+  // Uploads for profile photos must go through the MediaLibraryModal. The modal handles
+  // presign, dedupe, finalize and then `handleSelectFromLibrary` will set the profile.
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!user?.id) return;
+  // When a user selects a photo from the library (which includes newly uploaded photos), we update their profile_pic_key in the database and then update our local state and context to reflect the new profile picture immediately.
+  function handleSelectFromLibrary(media: MediaRow | MediaRow[]) {
+    // We only expect a single media item for profile picture selection, but the modal could return an array if it was in multi-select mode (which would be wrong in this scenario). We take the first item from the array if it's an array, or just use the media directly if it's a single item. We then update the user's profile_pic_key in the database with the key of the selected media, and update our local state and context to show the new profile picture immediately.
+    const m = Array.isArray(media) ? media[0] : media;
+    if (!user?.id || !m) return;
 
-    const file = e.target.files?.[0];
-    if (!file) return;
+    // We use an IIFE here so we can use async/await syntax. We update the user's profile_pic_key in the database with the key of the selected media, and then update our local state and context to show the new profile picture immediately. We also call the onSelected callback prop if it's provided, so that the parent component can react to the new profile picture if needed.
+    (async () => {
+      try {
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({ profile_pic_key: m.key })
+          .eq("id", user.id);
+        if (updateError) {
+          console.error("Database update error:", updateError);
+          return;
+        }
+        setImagePath(m.key);
+        // update central userProfile context so other components (e.g., ProfileMenu) update immediately
+        try {
+          if (setUserProfile) {
+            const newProfile: UserProfile = userProfile
+              ? { ...userProfile, profile_pic_key: m.key }
+              : {
+                  id: user.id,
+                  username: "",
+                  first_name: null,
+                  last_name: null,
+                  profile_pic_key: m.key,
+                };
+            setUserProfile(newProfile);
+          }
+        } catch (e) {
+          console.error("Failed to update user profile context", e);
+        }
 
-    // Validate file type and size before attempting upload
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      alert("Invalid file type. Only JPG, PNG, WEBP, HEIC, or HEIF allowed.");
-      e.target.value = "";
-      return;
-    }
-
-    // We check the file size in megabytes and compare to our max. If it's too large, we show an error and don't attempt the upload.
-    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-      alert(`File too large. Maximum size is ${MAX_FILE_SIZE_MB} MB.`);
-      e.target.value = "";
-      return;
-    }
-
-    setUploading(true);
-
-    try {
-      const { key } = await uploadFileToR2(file, { target: "profile_photo" }); // this function handles uploading the file to R2 and returns the storage key
-
-      const { error: updateError } = await supabase
-        .from("users")
-        .update({ profile_pic_key: key }) // we store the R2 key in the user's profile so we can retrieve the image later
-        .eq("id", user.id);
-
-      if (updateError) {
-        console.error("Database update error:", updateError);
-        return;
+        if (onSelected) onSelected(m.key);
+        setLibraryOpen(false);
+      } catch (e) {
+        console.error(e);
       }
-
-      setImagePath(key); // update the local state to show the new profile picture immediately after upload
-      onUploadComplete?.(key); // call the callback to let the parent component know about the new image path, in case it needs to update its state or refetch profile data.
-      // Optionally, you could also show a success message here or trigger a refetch of the user's profile data if needed.
-    } catch (error) {
-      console.error("Upload error:", error);
-      alert("Failed to upload profile picture.");
-    } finally {
-      setUploading(false);
-      e.target.value = "";
-    }
-  };
+    })();
+  }
 
   // We determine the active image path to show in the preview. If the user has just uploaded a new picture, we use that; otherwise, we fall back to the initial image path from their profile. We then generate the public URL for that image to display it.
   const activeImagePath = imagePath ?? initialImagePath;
@@ -104,23 +100,19 @@ export default function ProfilePictureUpload({
         </div>
       )}
 
-      <button
-        type="button"
-        className="profile-avatar-upload-btn"
-        onClick={handleChooseFile}
-        disabled={uploading}
-      >
-        {uploading ? "Uploading..." : "Upload Photo"}
+      <button type="button" onClick={() => setLibraryOpen(true)}>
+        {uploading ? "Processing…" : "Choose Profile Photo"}
       </button>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept={ACCEPTED_TYPES.join(",")}
-        onChange={handleFileChange}
-        disabled={uploading}
-        style={{ display: "none" }}
+      <MediaLibraryModal
+        open={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        onSelect={handleSelectFromLibrary}
+        acceptTypes="images"
+        multiSelect={false}
       />
+
+      {/* Direct file input removed — uploads must use the media library modal */}
     </div>
   );
 }
