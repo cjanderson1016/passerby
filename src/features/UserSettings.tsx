@@ -21,6 +21,7 @@ import { Privacy_Dropdown} from "../components/Accordion";
 import Modal from "../components/Modal";
 import ResetPass from "./ResetPassword";
 import { FaRegUser, FaUnlockAlt } from "react-icons/fa";
+import RouteButton from "../components/RouteButton";
 
 
 export default function Settings(){
@@ -118,6 +119,7 @@ const settings_list = [
           </div>
           <Accordion_Component settings_list={settings_list}/>
           <br />
+          <RouteButton to="/">Back to Dashboard</RouteButton>
         </div>
         <Modal is_open={openModal_pass} current_state={setOpenModal_pass} component={<ResetPass/>}/>
         <Modal is_open={openModal_user} current_state={setOpenModal_user} component={<ConfirmChangeUsername newUser={newUser}

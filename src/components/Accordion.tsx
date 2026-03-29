@@ -84,17 +84,16 @@ type PrivacyDropdownProps = {
   storageKey: string;
 };
 
-export function Privacy_Dropdown({ data_field, storageKey = "Public" }: PrivacyDropdownProps) {
+export function Privacy_Dropdown({ data_field, storageKey }: PrivacyDropdownProps) {
       const options_list = [
       "Public",
       "Friends Only",
       "Only Me"
     ]
 
-  const [currentOption, setCurrentOption] = useState<string>(() => {
-    const saved = getItem(storageKey);
-    return saved !== undefined ? saved : true;
-  });
+    const [currentOption, setCurrentOption] = useState<string>(() =>
+      getItem(storageKey) ?? "Public"
+    );
 
 
   useEffect(() => {
@@ -138,23 +137,36 @@ export function Privacy_Dropdown({ data_field, storageKey = "Public" }: PrivacyD
         console.log("The users privacy has been updated to:", data)
       }
     };
-  return (
-    <div className="dropdown-container">
-      <DropdownMenu.Root>
-                    <DropdownMenu.Trigger asChild className="dropdown-button">
-          <button>{currentOption}</button>
-            </DropdownMenu.Trigger>
-        <DropdownMenu.Content className="dropdown-options">
-          {filter_list(options_list).map((option, option_index) => (
-            <DropdownMenu.Item 
-              className="dropdown-item"key={option_index}
-              onSelect={() => handlePrivacyChange(option)}>
+        return (
+          <div className="dropdown-container">
+            <Accordion.Root
+              type="single"
+              collapsible
+              className="accordion-inner"
+            >
+              <Accordion.Item value="privacy">
+                
+                {/* Trigger (replaces dropdown button) */}
+                <Accordion.Header>
+                  <Accordion.Trigger className="dropdown-button">
+                    {currentOption}
+                  </Accordion.Trigger>
+                </Accordion.Header>
 
-              {option}
-            </DropdownMenu.Item>)
-          )}
-        </DropdownMenu.Content>
-      </DropdownMenu.Root>
-    </div>
-  );
-}
+                {/* Content (replaces dropdown menu) */}
+                <Accordion.Content className="dropdown-options">
+                  {filter_list(options_list).map((option, option_index) => (
+                    <div
+                      key={option_index}
+                      className="dropdown-item"
+                      onClick={() => handlePrivacyChange(option)}
+                    >
+                      {option}
+                    </div>
+                  ))}
+                </Accordion.Content>
+
+              </Accordion.Item>
+            </Accordion.Root>
+          </div>
+        );}
