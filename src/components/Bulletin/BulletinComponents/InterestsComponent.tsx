@@ -10,7 +10,8 @@
 
 import "./Style/InterestsComponent.css";
 import { type BulletinComponent } from "./BulletinComponent";
-import "../EditBulletin.css"
+import "../Style/EditBulletin.css"
+import { useBulletin } from "../../../hooks/useBulletin";
 
 export type InterestsComponentType = BulletinComponent & {
   component_id: string;
@@ -19,22 +20,14 @@ export type InterestsComponentType = BulletinComponent & {
 };
 
 interface InterestsComponentProps {
-  /*interests: string[];
-  isOwnProfile: boolean;
-  onEdit: () => void;*/
   component: InterestsComponentType
-  isOwnProfile: boolean;
-  editMode: boolean;
 };
 
 export function InterestsComponent({
-  /*interests,
-  isOwnProfile,
-  onEdit,*/ 
-  component,  
-  isOwnProfile,
-  editMode
+  component
 }: InterestsComponentProps) {
+
+  const {editMode, isOwnProfile} = useBulletin()
 
   const onEdit = () => {
     console.log("Edit Interests clicked");
