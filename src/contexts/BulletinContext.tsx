@@ -2,12 +2,15 @@ import { useState, type ReactNode } from "react";
 import { type BulletinComponentsUnionType } from "../components/Bulletin/BulletinComponents";
 import { bulletinContext } from "./BulletinContextData";
 
+const updatedComponents: Record<string, Array<BulletinComponentsUnionType>> = {}; //Keeps track of the components that need to be updated when save is pressed
+
 export function BulletinProvider({children}: {children: ReactNode}) {
     //React Hooks
     const [editMode,setEditMode] = useState<boolean>(false)
+    const [bulletinComponents, setBulletinComponents] = useState<BulletinComponentsUnionType[]>([]);
     
-    const updatedComponents: Record<string, Array<BulletinComponentsUnionType>> = {}; //Keeps track of the components that need to be updated when save is pressed
-    
+    const [isOwnProfile, setIsOwnProfile] = useState<boolean>(false)
+
     const cleanAdd = (component: BulletinComponentsUnionType) => {
         //Adds the given component to updatedComponents, without adding dupicates
         if (!updatedComponents[component.child_table]) {
@@ -27,7 +30,11 @@ export function BulletinProvider({children}: {children: ReactNode}) {
             editMode,
             updatedComponents,
             setEditMode,
-            cleanAdd
+            cleanAdd,
+            bulletinComponents,
+            setBulletinComponents,
+            isOwnProfile,
+            setIsOwnProfile
         }}>{children}</bulletinContext.Provider>
     )
 }

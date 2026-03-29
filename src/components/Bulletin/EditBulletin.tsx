@@ -6,7 +6,7 @@
   Author(s): Matthew Eagleman
 */
 
-import "./EditBulletin.css"
+import "./Style/EditBulletin.css"
 import { type BulletinComponentsUnionType } from "./BulletinComponents";
 import { supabase } from "../../lib/supabase";
 import { useBulletin } from "../../hooks/useBulletin";
@@ -16,15 +16,14 @@ interface EditBulletinProps {
   components: Array<BulletinComponentsUnionType>
   profileUserId: string | null
   loadBulletin: (isActive: boolean) => Promise<void>
-  setBulletinComponents: React.Dispatch<React.SetStateAction<BulletinComponentsUnionType[]>>
 }
 
-export default function EditBulletin({components: components, setBulletinComponents}: EditBulletinProps) {
+export default function EditBulletin({components: components}: EditBulletinProps) {
   //Render the edit bulletin menu
 
   const componentsCopy = [...components] //Creates a copy so vscode doesn't yell at me
 
-  const {cleanAdd, updatedComponents, editMode} = useBulletin()
+  const {cleanAdd, updatedComponents, editMode, setBulletinComponents} = useBulletin()
 
   interface SpecificComponentEditorProps {
     component: BulletinComponentsUnionType
@@ -90,28 +89,29 @@ export default function EditBulletin({components: components, setBulletinCompone
   const saveBulletin = async () => {
     //Upload all the changed elements to the database
     console.log("Saving bulletin with the following component changes: ", updatedComponents)
-    Object.entries(updatedComponents).map(async ([table, components]) => {
-      const { error: moveComponentParentError } = await supabase
-        .from("bulletin_components")
-        .upsert(components.map(component => ({
-          user_id: component.user_id,
-          created_at: component.created_at,
-          position: component.position,
-          component_id: component.component_id,
-          child_table: component.child_table,
-          name: component.name
-        })))
-      if (moveComponentParentError){
-        console.error("Failed saving component changes for bulletin_components table, now updating table " + table)
-      }
-      /*const { error: moveComponentChildError } = await supabase
+    const flatUpdate = Object.values(updatedComponents).flat() //Get just the lists of each component type, and flatten it into a single list of values
+    const { error: moveComponentParentError } = await supabase
+      .from("bulletin_components")
+      .upsert(flatUpdate.map(component => ({
+        user_id: component.user_id,
+        created_at: component.created_at,
+        position: component.position,
+        component_id: component.component_id,
+        child_table: component.child_table,
+        name: component.name
+      })))
+    if (moveComponentParentError){
+      console.error("Failed saving component changes for bulletin_components table, now updating table ")
+    }
+    Object.entries(updatedComponents).map(async ([table, typedComponents]) => {
+      const { error: moveComponentChildError } = await supabase
         .from(table)
-        .upsert(components.map(compoonent => ({
-
+        .upsert((typedComponents).map(component => ({
+          component
         })), { onConflict: "component_id" })
       if (moveComponentChildError){
         console.error("Failed saving component changes for table " + table)
-      }*/
+      }
     })
   }
 

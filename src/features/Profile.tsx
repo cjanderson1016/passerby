@@ -737,7 +737,7 @@ export default function Profile() {
                     <BulletinProvider>
                       <Bulletin 
                       show={true} 
-                      isOwnProfile={isOwnProfile} 
+                      isOwnProfileInput={isOwnProfile} 
                       profileUserId={viewedProfile?.id} 
                       />
                     </BulletinProvider>

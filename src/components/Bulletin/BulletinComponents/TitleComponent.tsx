@@ -6,7 +6,7 @@
   Author(s): Matthew Eagleman
 */
 import type { BulletinComponent } from "./BulletinComponent";
-import "../EditBulletin.css"
+import "../Style/EditBulletin.css"
 import { useBulletin } from "../../../hooks/useBulletin";
 
 export type TitleComponentType = BulletinComponent & {
@@ -15,15 +15,13 @@ export type TitleComponentType = BulletinComponent & {
 
 interface titleProps {
   component: TitleComponentType;
-  isOwnProfile: boolean;
 }
 
 export function TitleComponent({
-  component, 
-  isOwnProfile, 
+  component
 }: titleProps) {
 
-  const { editMode } = useBulletin()
+  const { editMode, isOwnProfile } = useBulletin()
   
   const onEdit = () => { 
     console.log("Edit Title clicked");

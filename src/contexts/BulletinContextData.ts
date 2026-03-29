@@ -6,6 +6,10 @@ export interface BulletinContextType {
     setEditMode: (value: boolean) => void, 
     updatedComponents: Record<string, Array<BulletinComponentsUnionType>>
     cleanAdd: (component: BulletinComponentsUnionType) => void
+    bulletinComponents: BulletinComponentsUnionType[]
+    setBulletinComponents: React.Dispatch<React.SetStateAction<BulletinComponentsUnionType[]>>
+    isOwnProfile: boolean
+    setIsOwnProfile: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export const bulletinContext = createContext<BulletinContextType | undefined>(undefined)
