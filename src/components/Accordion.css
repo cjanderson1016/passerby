@@ -8,7 +8,6 @@
 .accordion-container{
   background: #ffffff;
   border: 1px solid #dddddd;
-  border-radius: 12px;
   overflow: hidden;
   width: 35%;
 
@@ -25,7 +24,6 @@
     border-bottom: 1px solid lightgray;
     padding-bottom: 10px;
     padding-top: 10px;
-    border-radius: 12px;
 }
 
 
@@ -72,7 +70,6 @@
     display: flex;
     height:fit-content;
     border: 1px solid #dddddd;
-  border-radius: 12px;
   overflow: hidden;
   margin-top: -10px;
 }

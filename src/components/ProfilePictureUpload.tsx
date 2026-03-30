@@ -12,6 +12,7 @@ import { supabase } from "../lib/supabase";
 import { useUser } from "../hooks/useUser";
 import { getPublicUrl } from "../services/dataService";
 import MediaLibraryModal from "./MediaLibraryModal";
+import Modal from "./Modal";
 
 // We use the same MediaLibraryModal for profile picture uploads to leverage the existing flow for requesting presigned URLs, handling uploads, and finalizing media in the database. This keeps the logic consistent and centralized in the modal and the dataService functions it calls. The ProfilePictureUpload component simply opens the modal and then updates the user's profile with the selected image once it's uploaded and finalized.
 type MediaRow = {
@@ -103,15 +104,13 @@ export default function ProfilePictureUpload({
       <button type="button" onClick={() => setLibraryOpen(true)}>
         {uploading ? "Processing…" : "Choose Profile Photo"}
       </button>
-
-      <MediaLibraryModal
+      <Modal is_open={libraryOpen} current_state={setLibraryOpen} component={<MediaLibraryModal
         open={libraryOpen}
         onClose={() => setLibraryOpen(false)}
         onSelect={handleSelectFromLibrary}
         acceptTypes="images"
         multiSelect={false}
-      />
-
+      />} title = {"Media Library"}/>
       {/* Direct file input removed — uploads must use the media library modal */}
     </div>
   );

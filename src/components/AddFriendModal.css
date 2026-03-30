@@ -1,28 +1,17 @@
 .afm-overlay {
-  position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
 }
 
 .afm-modal {
   background: #ffffff;
-  border-radius: 12px;
   width: 400px;
   max-width: 90vw;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
 }
 
-.afm-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid #e0e0e0;
-}
 
 .afm-title {
   font-weight: 700;

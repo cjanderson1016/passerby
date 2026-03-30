@@ -121,15 +121,16 @@ const settings_list = [
           <br />
           <RouteButton to="/">Back to Dashboard</RouteButton>
         </div>
-        <Modal is_open={openModal_pass} current_state={setOpenModal_pass} component={<ResetPass/>}/>
+        <Modal is_open={openModal_pass} current_state={setOpenModal_pass} component={<ResetPass/>} title = {"Reset Password"}/>
         <Modal is_open={openModal_user} current_state={setOpenModal_user} component={<ConfirmChangeUsername newUser={newUser}
                                                                                                             setUser={setUser}
                                                                                                             setNewUser={setNewUser}
-                                                                                                            closeModal={() => setOpenModal_user(false)}/>}/>
+                                                                                                            closeModal={() => setOpenModal_user(false)}
+                                                                                                            />}title = {"Reset Username"}/>
       <Modal is_open={openModal_delete} current_state={setOpenModal_delete} component={<ConfirmDeleteUser
-      closeModal={() => setOpenModal_delete(false)}
+      closeModal={() => setOpenModal_delete(false)} 
     />
-  }
+  } title = {"Attention! Delete Account?"}
 />
 
       </div>

@@ -17,6 +17,7 @@ import FriendRequestList from "../components/FriendRequestList";
 import AddFriendModal from "../components/AddFriendModal";
 import { useUser } from "../hooks/useUser"; // hook wraps UserContext and provides user/profile/loading
 import { supabase } from "../lib/supabase"; // still used for fetching friends/posts
+import Modal from "../components/Modal"
 
 type FilterOption =
   | "Most Recently Updated"
@@ -265,11 +266,11 @@ export default function Dashboard() {
 
       {/* Add Friend modal */}
       {currentUserId && (
-        <AddFriendModal
+         <Modal is_open={modalOpen} current_state={setModalOpen} component={        <AddFriendModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           currentUserId={currentUserId}
-        />
+        />   } title = {"Add Friend"}/>
       )}
     </div>
   );

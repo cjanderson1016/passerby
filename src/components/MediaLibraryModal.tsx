@@ -130,8 +130,6 @@ export default function MediaLibraryModal({
             alignItems: "center",
           }}
         >
-          <h3 style={{ margin: 0 }}>Media Library</h3>
-          <button onClick={onClose}>Close</button>
         </div>
 
         <div style={{ marginTop: 12 }}>
@@ -255,7 +253,6 @@ export default function MediaLibraryModal({
 }
 
 const overlayStyle: React.CSSProperties = {
-  position: "fixed",
   inset: 0,
   background: "rgba(0,0,0,0.4)",
   display: "flex",
@@ -268,8 +265,6 @@ const modalStyle: React.CSSProperties = {
   maxHeight: "80%",
   overflow: "auto",
   background: "white",
-  padding: 16,
-  borderRadius: 8,
 };
 const gridStyle: React.CSSProperties = {
   display: "grid",
