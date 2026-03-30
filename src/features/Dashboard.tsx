@@ -7,11 +7,9 @@
   */
 
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import "./dashboard.css";
 import type { Friend, Post, AcceptedFriendRequest, FriendUser } from "../types";
 import ProfileMenu from "../components/ProfileMenu";
-import Button from "../components/Button";
 import FriendTable from "../components/FriendTable";
 import FriendRequestList from "../components/FriendRequestList";
 import AddFriendModal from "../components/AddFriendModal";
@@ -198,6 +196,7 @@ export default function Dashboard() {
     <div className="dash-page">
       {/* Top bar */}
       <div className="dash-topbar">
+        <div className="dash-topbar-spacer" />
         <div className="dash-title">PASSERBY</div>
 
         {/* profile button/dropdown moved into its own component */}
@@ -223,24 +222,14 @@ export default function Dashboard() {
           </select>
         </div>
 
-        <div style={{ display: "flex", gap: "8px" }}>
-          <Link
-            to="/messages"
+        <div className="dash-filter-actions">
+          <button
+            type="button"
             className="dash-add-btn"
-            style={{
-              textDecoration: "none",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "28px",
-            }}
-            title="Messages"
+            onClick={() => setModalOpen(true)}
           >
-            ✉
-          </Link>
-          <Button size="sm" onClick={() => setModalOpen(true)}>
             Add Friend
-          </Button>
+          </button>
         </div>
       </div>
 

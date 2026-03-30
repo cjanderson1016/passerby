@@ -8,8 +8,8 @@
   Author(s): Bryson Toubassi
 */
 
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useUser } from "../hooks/useUser";
 import ProfileMenu from "../components/ProfileMenu";
@@ -20,13 +20,19 @@ import type {
 } from "../types";
 import "./messages.css";
 
+interface MessagesLocationState {
+  openFriendId?: string;
+}
+
 export default function Messages() {
   const { user } = useUser();
   const currentUserId = user?.id ?? null;
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [conversations, setConversations] = useState<ConversationPreview[]>([]);
   const [loading, setLoading] = useState(false);
+  const [conversationsLoaded, setConversationsLoaded] = useState(false);
 
   // Friend picker state
   const [showPicker, setShowPicker] = useState(false);
@@ -34,12 +40,18 @@ export default function Messages() {
   const [loadingFriends, setLoadingFriends] = useState(false);
   const [creatingConv, setCreatingConv] = useState<string | null>(null);
 
+  const autoOpenedFriendRef = useRef<string | null>(null);
+
+  const state = (location.state as MessagesLocationState | null) ?? null;
+  const openFriendIdFromState = state?.openFriendId ?? null;
+
   // Fetch conversations for the current user
   useEffect(() => {
     if (!currentUserId) return;
 
     const fetchConversations = async () => {
       setLoading(true);
+      setConversationsLoaded(false);
 
       // 1) Get conversation IDs the user participates in
       const { data: participantRows, error: partError } = await supabase
@@ -50,6 +62,7 @@ export default function Messages() {
       if (partError) {
         console.error("Error fetching conversation participants:", partError);
         setLoading(false);
+        setConversationsLoaded(true);
         return;
       }
 
@@ -57,6 +70,7 @@ export default function Messages() {
       if (convIds.length === 0) {
         setConversations([]);
         setLoading(false);
+        setConversationsLoaded(true);
         return;
       }
 
@@ -84,6 +98,7 @@ export default function Messages() {
       if (convResult.error) {
         console.error("Error fetching conversations:", convResult.error);
         setLoading(false);
+        setConversationsLoaded(true);
         return;
       }
 
@@ -118,6 +133,7 @@ export default function Messages() {
 
       setConversations(previews);
       setLoading(false);
+      setConversationsLoaded(true);
     };
 
     fetchConversations();
@@ -174,6 +190,18 @@ export default function Messages() {
 
   // Start or open a conversation with a friend
   const handlePickFriend = async (friendId: string) => {
+    const existingConversation = conversations.find(
+      (conv) => conv.other_user.id === friendId
+    );
+
+    if (existingConversation) {
+      setShowPicker(false);
+      navigate(`/messages/${existingConversation.conversation_id}`, {
+        replace: true,
+      });
+      return;
+    }
+
     setCreatingConv(friendId);
     const { data, error } = await supabase.rpc(
       "get_or_create_direct_conversation",
@@ -188,8 +216,16 @@ export default function Messages() {
 
     setShowPicker(false);
     setCreatingConv(null);
-    navigate(`/messages/${data}`);
+    navigate(`/messages/${data}`, { replace: true });
   };
+
+  useEffect(() => {
+    if (!currentUserId || !openFriendIdFromState || !conversationsLoaded) return;
+    if (autoOpenedFriendRef.current === openFriendIdFromState) return;
+
+    autoOpenedFriendRef.current = openFriendIdFromState;
+    void handlePickFriend(openFriendIdFromState);
+  }, [currentUserId, openFriendIdFromState, conversationsLoaded, conversations]);
 
   const formatTime = (timestamp: string | null) => {
     if (!timestamp) return "";

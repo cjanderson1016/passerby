@@ -33,6 +33,14 @@ export default function FriendProfile({ friend }: FriendProfileProps) {
     navigate(`/profile/${friend.username}`); // navigate to the friend's profile page when the card is clicked
   };
 
+  const goToMessages = () => {
+    navigate("/messages", {
+      state: {
+        openFriendId: friend.id,
+      },
+    }); // navigate to the messages tab and tell it which friend to open
+  };
+
   return (
     <div
       className="dash-card"
@@ -56,19 +64,64 @@ export default function FriendProfile({ friend }: FriendProfileProps) {
       <div className="dash-card-main">
         <div className="dash-card-header">
           <div className="dash-name">{friend.name}</div>
-          <div className="dash-time">
-            {formatMinutes(friend.lastUpdatedMinutesAgo)}
+
+          <div className="dash-card-header-right">
+            <div className="dash-time">
+              {formatMinutes(friend.lastUpdatedMinutesAgo)}
+            </div>
+
+            <div
+              className="dash-message-status"
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                goToMessages();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.stopPropagation();
+                  goToMessages();
+                }
+              }}
+            >
+              <svg
+                viewBox="0 0 48 36"
+                className="dash-message-status-icon"
+              >
+                <path
+                  d="M38 2
+                     H10
+                     Q4 2 4 8
+                     V22
+                     Q4 28 10 28
+                     H28
+                     L38 34
+                     V28
+                     H38
+                     Q44 28 44 22
+                     V8
+                     Q44 2 38 2
+                     Z"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinejoin="round"
+                />
+
+                {/* dots */}
+                <circle cx="14" cy="15" r="2.5" fill="currentColor" />
+                <circle cx="24" cy="15" r="2.5" fill="currentColor" />
+                <circle cx="34" cy="15" r="2.5" fill="currentColor" />
+              </svg>
+
+              {friend.unreadMessages && <span className="dash-unread-dot" />}
+            </div>
           </div>
         </div>
 
         <div className="dash-message-box">
           <div className="dash-message">{friend.text}</div>
-        </div>
-      </div>
-
-      <div className="dash-checkwrap">
-        <div className="dash-checkbox">
-          {friend.unreadMessages && <span className="dash-unread-dot" />}
         </div>
       </div>
     </div>

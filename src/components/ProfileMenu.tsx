@@ -30,6 +30,11 @@ export default function ProfileMenu() {
     ? getPublicUrl(userProfile.profile_pic_key)
     : null;
 
+  const displayName =
+    [userProfile?.first_name, userProfile?.last_name].filter(Boolean).join(" ") ||
+    userProfile?.username ||
+    "Profile";
+
   const toggle = () => setOpen((v) => !v);
 
   const handleSignOut = async () => {
@@ -82,6 +87,8 @@ export default function ProfileMenu() {
 
   return (
     <div className="dash-profile-wrap" ref={wrapRef}>
+      <span className="dash-profile-name">{displayName}</span>
+
       <button
         type="button"
         className="dash-profile"
