@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useUser } from "../hooks/useUser";
 import ProfileMenu from "../components/ProfileMenu";
 import "./Profile.css";
-import Modal from "../components/Modal";
+//import Modal from "../components/Modal";
 import { supabase } from "../lib/supabase";
 import { deleteFileFromR2, getPublicUrl } from "../services/dataService";
 import ProfileHeader from "../components/profile/ProfileHeader";
@@ -580,57 +580,58 @@ export default function Profile() {
       ? "Enter interests separated by commas. Example: UI Design, Coding, Gaming"
       : "";
 
-      function EditModal () {
-        return(
-                <div className="profile-modal-overlay" onClick={closeEditModal}>
-          <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="profile-modal-header">
-              <h3>{modalTitle}</h3>
+  function EditModal() {
+    return (
+      <div className="profile-modal-overlay" onClick={closeEditModal}>
+        <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="profile-modal-header">
+            <h3>{modalTitle}</h3>
+            <button
+              type="button"
+              className="exit_btn"
+              onClick={closeEditModal}
+              aria-label="Close modal"
+            >
+              &times;
+            </button>
+          </div>
+
+          <form onSubmit={handleSaveEdit} className="profile-modal-form">
+            <textarea
+              className="profile-modal-textarea"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              rows={editField === "interests" ? 4 : 5}
+              placeholder={
+                editField === "interests" ? "UI Design, Coding, Gaming" : ""
+              }
+            />
+
+            {modalHelpText && (
+              <p className="profile-modal-help">{modalHelpText}</p>
+            )}
+
+            <div className="profile-modal-actions">
               <button
                 type="button"
-                className="exit_btn"
+                className="profile-modal-secondary-btn"
                 onClick={closeEditModal}
-                aria-label="Close modal"
               >
-                &times;
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="profile-modal-primary-btn"
+                disabled={savingEdit}
+              >
+                {savingEdit ? "Saving..." : "Save"}
               </button>
             </div>
-
-            <form onSubmit={handleSaveEdit} className="profile-modal-form">
-              <textarea
-                className="profile-modal-textarea"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                rows={editField === "interests" ? 4 : 5}
-                placeholder={
-                  editField === "interests" ? "UI Design, Coding, Gaming" : ""
-                }
-              />
-
-              {modalHelpText && (
-                <p className="profile-modal-help">{modalHelpText}</p>
-              )}
-
-              <div className="profile-modal-actions">
-                <button
-                  type="button"
-                  className="profile-modal-secondary-btn"
-                  onClick={closeEditModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="profile-modal-primary-btn"
-                  disabled={savingEdit}
-                >
-                  {savingEdit ? "Saving..." : "Save"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>);
-      }
+          </form>
+        </div>
+      </div>
+    );
+  }
   const handleUnfriend = async () => {
     if (!viewedProfile?.id || !user?.id || unfriending) return;
 
@@ -770,19 +771,19 @@ export default function Profile() {
                         username={viewedProfile.username}
                       />
                       <PostCountCard postCount={posts.length} />*/}
-                    {/**/}
-                    <BulletinProvider>
-                      <Bulletin 
-                      show={true} 
-                      isOwnProfileInput={isOwnProfile} 
-                      profileUserId={viewedProfile?.id} 
-                      />
-                    </BulletinProvider>
-                  </div>
-                )}
-              </main>
-              
-              {/*<aside className="profile-right-panel">
+                  {/**/}
+                  <BulletinProvider>
+                    <Bulletin
+                      show={true}
+                      isOwnProfileInput={isOwnProfile}
+                      profileUserId={viewedProfile?.id}
+                    />
+                  </BulletinProvider>
+                </div>
+              )}
+            </main>
+
+            {/*<aside className="profile-right-panel">
                 
                 
                 
@@ -792,10 +793,7 @@ export default function Profile() {
         </div>
       ) : null}
 
-      {isOwnProfile && editField && (
-        
-        <EditModal></EditModal>
-      )}
+      {isOwnProfile && editField && <EditModal></EditModal>}
 
       {isOwnProfile && selectedPost && (
         <div className="profile-modal-overlay" onClick={closePostMenu}>
