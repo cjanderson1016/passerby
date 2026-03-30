@@ -31,7 +31,15 @@ export default function PostItem({ post }: PostItemProps) {
         }}
       >
         <div style={{ whiteSpace: "pre-wrap" }}>{post.content}</div>
-        <div style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.5rem" }}>{createdAtLabel}</div>
+        <div
+          style={{
+            fontSize: "0.8rem",
+            color: "var(--muted)",
+            marginTop: "0.5rem",
+          }}
+        >
+          {createdAtLabel}
+        </div>
       </div>
     </li>
   );

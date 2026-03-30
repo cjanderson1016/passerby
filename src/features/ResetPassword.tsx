@@ -64,8 +64,7 @@ export default function ResetPass() {
       }
     } catch (err) {
       setError(
-        "Unexpected error" +
-          (err instanceof Error ? `: ${err.message}` : "")
+        "Unexpected error" + (err instanceof Error ? `: ${err.message}` : ""),
       );
     } finally {
       setLoading(false);
@@ -86,7 +85,7 @@ export default function ResetPass() {
       <form onSubmit={handlePasswordReset}>
         <div style={{ marginBottom: "1rem" }}>
           <label>Current Password:</label>
-            <input
+          <input
             type="password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
@@ -94,7 +93,7 @@ export default function ResetPass() {
             style={{
               width: "100%",
               padding: "0.5rem",
-                border: "1px solid var(--glass-border)",
+              border: "1px solid var(--glass-border)",
               borderRadius: "4px",
             }}
           />
@@ -102,7 +101,7 @@ export default function ResetPass() {
 
         <div style={{ marginBottom: "1rem" }}>
           <label>New Password:</label>
-            <input
+          <input
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
@@ -111,7 +110,7 @@ export default function ResetPass() {
             style={{
               width: "100%",
               padding: "0.5rem",
-                border: "1px solid var(--glass-border)",
+              border: "1px solid var(--glass-border)",
               borderRadius: "4px",
             }}
           />
@@ -119,7 +118,7 @@ export default function ResetPass() {
 
         <div style={{ marginBottom: "1rem" }}>
           <label>Confirm Password:</label>
-            <input
+          <input
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -127,18 +126,22 @@ export default function ResetPass() {
             style={{
               width: "100%",
               padding: "0.5rem",
-                border: "1px solid var(--glass-border)",
+              border: "1px solid var(--glass-border)",
               borderRadius: "4px",
             }}
           />
         </div>
 
         {error && (
-          <div style={{ color: "var(--danger)", marginBottom: "1rem" }}>{error}</div>
+          <div style={{ color: "var(--danger)", marginBottom: "1rem" }}>
+            {error}
+          </div>
         )}
 
         {success && (
-          <div style={{ color: "var(--accent-2)", marginBottom: "1rem" }}>{success}</div>
+          <div style={{ color: "var(--accent-2)", marginBottom: "1rem" }}>
+            {success}
+          </div>
         )}
 
         <button

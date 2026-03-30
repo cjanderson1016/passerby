@@ -56,7 +56,9 @@ export default function ProfileHeader({
             />
           ) : (
             <div className="profile-avatar profile-avatar-placeholder">
-              <span className="material-icons" aria-hidden>person</span>
+              <span className="material-icons" aria-hidden>
+                person
+              </span>
             </div>
           )}
         </div>

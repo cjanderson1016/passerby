@@ -98,7 +98,9 @@ export default function ProfileMenu() {
           />
         ) : (
           <span className="dash-profile-circle dash-profile-circle--placeholder">
-            <span className="material-icons" aria-hidden>person</span>
+            <span className="material-icons" aria-hidden>
+              person
+            </span>
           </span>
         )}
       </button>

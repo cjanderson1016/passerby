@@ -70,7 +70,7 @@ export default function Messages() {
         supabase
           .from("conversation_participants")
           .select(
-            "conversation_id, user_id, user:users!user_id(id, username, first_name, last_name)"
+            "conversation_id, user_id, user:users!user_id(id, username, first_name, last_name)",
           )
           .in("conversation_id", convIds)
           .neq("user_id", currentUserId),
@@ -135,9 +135,7 @@ export default function Messages() {
       .from("friend_requests")
       .select("requester_id, recipient_id")
       .eq("status", "accepted")
-      .or(
-        `requester_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`
-      );
+      .or(`requester_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`);
 
     if (accError) {
       console.error("Error fetching friends:", accError);
@@ -147,7 +145,7 @@ export default function Messages() {
 
     const friendIds = ((accepted as AcceptedFriendRequest[] | null) ?? [])
       .map((r) =>
-        r.requester_id === currentUserId ? r.recipient_id : r.requester_id
+        r.requester_id === currentUserId ? r.recipient_id : r.requester_id,
       )
       .filter(Boolean);
 
@@ -177,7 +175,7 @@ export default function Messages() {
     setCreatingConv(friendId);
     const { data, error } = await supabase.rpc(
       "get_or_create_direct_conversation",
-      { other_user: friendId }
+      { other_user: friendId },
     );
 
     if (error) {
@@ -215,7 +213,11 @@ export default function Messages() {
     <div className="msg-page">
       {/* Top bar — matches Dashboard, with back button */}
       <div className="dash-topbar">
-        <button className="msg-back-btn" onClick={() => navigate("/")} title="Back to Dashboard">
+        <button
+          className="msg-back-btn"
+          onClick={() => navigate("/")}
+          title="Back to Dashboard"
+        >
           &#8592;
         </button>
         <div className="dash-title">PASSERBY</div>
@@ -225,7 +227,11 @@ export default function Messages() {
       <div className="msg-content">
         <div className="msg-inbox-header">
           <span className="msg-inbox-title">Messages</span>
-          <button className="msg-new-btn" onClick={openPicker} title="New conversation">
+          <button
+            className="msg-new-btn"
+            onClick={openPicker}
+            title="New conversation"
+          >
             +
           </button>
         </div>
@@ -238,14 +244,16 @@ export default function Messages() {
           </div>
         ) : (
           <div className="msg-conv-list">
-              {conversations.map((conv) => (
+            {conversations.map((conv) => (
               <div
                 key={conv.conversation_id}
                 className="msg-conv-item"
                 onClick={() => navigate(`/messages/${conv.conversation_id}`)}
               >
                 <div className="msg-conv-avatar msg-avatar--placeholder">
-                  <span className="material-icons" aria-hidden>person</span>
+                  <span className="material-icons" aria-hidden>
+                    person
+                  </span>
                 </div>
                 <div className="msg-conv-info">
                   <div className="msg-conv-name">
@@ -266,7 +274,10 @@ export default function Messages() {
 
       {/* Friend picker overlay */}
       {showPicker && (
-        <div className="msg-picker-overlay" onClick={() => setShowPicker(false)}>
+        <div
+          className="msg-picker-overlay"
+          onClick={() => setShowPicker(false)}
+        >
           <div className="msg-picker" onClick={(e) => e.stopPropagation()}>
             <div className="msg-picker-header">
               <span className="msg-picker-title">New Conversation</span>
@@ -291,16 +302,14 @@ export default function Messages() {
                     disabled={creatingConv === f.id}
                   >
                     <div className="msg-friend-avatar msg-avatar--placeholder">
-                      <span className="material-icons" aria-hidden>person</span>
+                      <span className="material-icons" aria-hidden>
+                        person
+                      </span>
                     </div>
                     <div>
-                      <div className="msg-friend-name">
-                        {getDisplayName(f)}
-                      </div>
+                      <div className="msg-friend-name">{getDisplayName(f)}</div>
                       {f.username && (
-                        <div className="msg-friend-username">
-                          @{f.username}
-                        </div>
+                        <div className="msg-friend-username">@{f.username}</div>
                       )}
                     </div>
                   </button>
