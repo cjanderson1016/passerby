@@ -7,38 +7,36 @@
 */
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
-//import type { TextComponentType } from "./BulletinComponents/TextComponent";
-//import type { TitleComponentType } from "./BulletinComponents/TitleComponent.tsx";
 import EditBulletin from "./EditBulletin.tsx";
-import "./Bulletin.css";
-import type { BulletinComponentsUnionType } from "./BulletinComponents/BulletinComponent.tsx";
+import * as BulletinComponents from "./BulletinComponents";
+// Style
+import "./Style/Bulletin.css";
+import { useBulletin } from "../../hooks/useBulletin.ts";
 
 interface BulletinProps {
+  //Things to pass in to the bulletin component
   show: boolean; // whether to show this tab or not, passed from parent
   profileUserId: string | null; // the user ID of the profile we are viewing, used to fetch the correct bulletin components
-  isOwnProfile: boolean;
+  isOwnProfileInput: boolean;
 }
 
 export default function Bulletin({
   show,
   profileUserId,
-  isOwnProfile,
+  isOwnProfileInput,
 }: BulletinProps) {
-  const [bulletinComponents, setBulletinComponents] = useState<
-    BulletinComponentsUnionType[]
-  >([]);
+  //React hooks
   const [loadingComponents, setLoadingComponents] = useState(false);
 
-  const [editMode, setEditMode] = useState(false);
+  const {editMode, setEditMode,setBulletinComponents,bulletinComponents, isOwnProfile, setIsOwnProfile} = useBulletin()
 
   const cleanAddComponents = useCallback(
     (
-      // this function takes in the current array of components and a new array of components to add, checks for duplicates based on component_id, and returns a new merged array sorted by position
-      components: Array<BulletinComponentsUnionType>,
-      additions: Array<BulletinComponentsUnionType>,
+      components: Array<BulletinComponents.BulletinComponentsUnionType>,
+      additions: Array<BulletinComponents.BulletinComponentsUnionType>,
     ) => {
-      //check each potential additional component, and see if it has already been loaded
-      additions.forEach((addition) => {
+      // Adds a list of components to an existing list of components, without adding duplicates
+      additions.forEach((addition) => { //check each potential additional component, and see if it has already been loaded
         let isInArray = false;
         components.forEach((component) => {
           if (component.component_id === addition.component_id)
@@ -74,40 +72,44 @@ export default function Bulletin({
           const componentTypes = Array.from(
             new Set(containerData.map((component) => component.child_table)),
           );
-
+          //Pull the users components from supabase
           const byTypeData = await Promise.all(
             componentTypes.map(async (componentType) => {
               const { data: componentTypeData, error: componentTypeError } =
                 await supabase
                   .from("bulletin_components")
                   .select(
-                    `
-            *,
-            ${componentType}!inner(*)
-          `,
+                    `*,
+                    ${componentType}!inner(*)`
                   )
                   .eq("user_id", profileUserId) // only load components for this user
-                  .returns<BulletinComponentsUnionType[]>();
-
+                  .returns<BulletinComponents.BulletinComponentsUnionType[]>();
               if (componentTypeError) {
                 console.error(
                   `error loading ${componentType}`,
                   componentTypeError,
                 );
-                return [] as BulletinComponentsUnionType[];
+                return [] as BulletinComponents.BulletinComponentsUnionType[];
               }
-
-              return componentTypeData ?? [];
+              //console.log(`loaded ${componentType} data:`, componentTypeData);
+              // Flatten the nested data from the join so that child table fields are at the top level
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const flattened = (componentTypeData ?? []).map((item: any) => ({
+                ...item,
+                ...item[componentType],
+              }));
+              return flattened as BulletinComponents.BulletinComponentsUnionType[];
             }),
           );
 
           if (!isActive) return; // check if component is still mounted before setting state
 
-          let merged: BulletinComponentsUnionType[] = [];
+          let merged: BulletinComponents.BulletinComponentsUnionType[] = [];
+          //Sort the components by position
           byTypeData.forEach((components) => {
             merged = cleanAddComponents([...merged], components);
           });
-          setBulletinComponents(merged);
+          setBulletinComponents(merged); // set the Bulletin components to the merged array
         }
       } finally {
         if (isActive) {
@@ -115,7 +117,7 @@ export default function Bulletin({
         }
       }
     },
-    [cleanAddComponents, profileUserId],
+    [setBulletinComponents, cleanAddComponents, profileUserId],
   ); // we include cleanAddComponents in the dependency array since it is defined outside of useEffect, but it is memoized with useCallback so it won't cause unnecessary re-renders
 
   useEffect(() => {
@@ -127,50 +129,68 @@ export default function Bulletin({
     // we use a flag and check it in the async function to prevent setting state on an unmounted component
     let isActive = true;
 
+    setIsOwnProfile(isOwnProfileInput)
+
     void loadBulletin(isActive); // we call the async function but don't await it since useEffect can't be async
 
     return () => {
       isActive = false; // when the component unmounts, set isActive to false to prevent setting state on an unmounted component
     };
-  }, [loadBulletin, profileUserId]); // we include loadBulletin in the dependency array since it is defined outside of useEffect, but it is memoized with useCallback so it won't cause unnecessary re-renders
+  }, [setIsOwnProfile, isOwnProfileInput, setBulletinComponents, loadBulletin, profileUserId]); // we include loadBulletin in the dependency array since it is defined outside of useEffect, but it is memoized with useCallback so it won't cause unnecessary re-renders
 
   return (
     <>
       {show && (
         <div className="bulletin">
           {/* bulletin content */}
-          <button onClick={() => setEditMode(!editMode)}>Edit</button>
           {loadingComponents ? (
             <p>Loading Bulletin...</p>
           ) : bulletinComponents.length === 0 ? (
             <p>No posts yet.</p>
           ) : (
-            <div className="bulletin-content">
-              {bulletinComponents.map((component) => (
-                <div
-                  key={component.component_id}
-                  className="bulletin-components"
-                >
-                  {component.child_table == "text_components" && (
-                    <p key={component.component_id}>
-                      this is component {component.position}, it is of type{" "}
-                      {component.child_table}
-                    </p>
-                  )}
-                  {component.child_table == "title_card_components" && (
-                    <p key={component.component_id}>
-                      this is component {component.position}, it is of type{" "}
-                      {component.child_table}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
+            <></>
           )}
+          {/*
+          Render each component mapped to its respective component type
+          There may be room to make this look a little prettier
+          */}
+          <div className="bulletin-content">
+            {bulletinComponents.map((component) => (
+              <div
+                key={component.component_id}
+                className="bulletin-components"
+              >
+                {component.child_table == "text_components" && (
+                  <BulletinComponents.TextComponent
+                    key={component.component_id}
+                    component={component as BulletinComponents.TextComponentType}
+                  />
+                )}
+                {component.child_table == "title_card_components" && (
+                  <BulletinComponents.TitleComponent
+                    key={component.component_id}
+                    component={component as BulletinComponents.TitleComponentType}
+                  />
+                )}
+                {component.child_table == "about_me_components" && (
+                  <BulletinComponents.AboutMeComponent
+                    key={component.component_id}
+                    component={component as BulletinComponents.AboutMeComponentType}
+                  />
+                )}
+                {component.child_table == "interests_components" && (
+                  <BulletinComponents.InterestsComponent
+                    key={component.component_id}
+                    component={component as BulletinComponents.InterestsComponentType}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
           {/* Edit Menu */}
+          <button onClick={() => setEditMode(!editMode)}>Edit Bulletin</button>
           {isOwnProfile && (
             <EditBulletin
-              show={editMode}
               components={bulletinComponents}
               profileUserId={profileUserId}
               loadBulletin={loadBulletin}

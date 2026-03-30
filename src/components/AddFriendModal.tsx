@@ -150,10 +150,6 @@ export default function AddFriendModal({
     <div className="afm-overlay" onClick={handleClose}>
       <div className="afm-modal" onClick={(e) => e.stopPropagation()}>
         <div className="afm-header">
-          <span className="afm-title">Add Friend</span>
-          <button className="afm-close" onClick={handleClose}>
-            &times;
-          </button>
         </div>
 
         <div className="afm-body">

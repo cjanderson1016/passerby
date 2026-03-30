@@ -627,7 +627,7 @@
 }
 
 .profile-modal {
-  width: min(560px, calc(100vw - 32px)) !important;
+  width: min(620px, calc(100vw - 32px)) !important;
   max-height: 90vh !important;
   overflow: auto !important;
   background: #ffffff !important;
@@ -639,10 +639,16 @@
 
 .profile-modal-header {
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
+  border-bottom: grey solid 1px;
+      font-size: large;
+    font-weight: bold;
+
+
 }
 
 .profile-modal-header h3 {
@@ -664,7 +670,7 @@
 }
 
 .profile-modal-textarea {
-  width: 100%;
+  width: 95%;
   min-height: 120px;
   border: 1px solid #d6d6d6;
   border-radius: 10px;

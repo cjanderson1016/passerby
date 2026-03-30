@@ -11,11 +11,13 @@ import { Link } from "react-router-dom";
 import "./dashboard.css";
 import type { Friend, Post, AcceptedFriendRequest, FriendUser } from "../types";
 import ProfileMenu from "../components/ProfileMenu";
+import Button from "../components/Button";
 import FriendTable from "../components/FriendTable";
 import FriendRequestList from "../components/FriendRequestList";
 import AddFriendModal from "../components/AddFriendModal";
 import { useUser } from "../hooks/useUser"; // hook wraps UserContext and provides user/profile/loading
 import { supabase } from "../lib/supabase"; // still used for fetching friends/posts
+import Modal from "../components/Modal"
 
 type FilterOption =
   | "Most Recently Updated"
@@ -237,9 +239,9 @@ export default function Dashboard() {
           >
             ✉
           </Link>
-          <button className="dash-add-btn" onClick={() => setModalOpen(true)}>
+          <Button size="sm" onClick={() => setModalOpen(true)}>
             Add Friend
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -264,11 +266,11 @@ export default function Dashboard() {
 
       {/* Add Friend modal */}
       {currentUserId && (
-        <AddFriendModal
+         <Modal is_open={modalOpen} current_state={setModalOpen} component={        <AddFriendModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           currentUserId={currentUserId}
-        />
+        />   } title = {"Add Friend"}/>
       )}
     </div>
   );

@@ -7,12 +7,16 @@
 */
 import { type TextComponentType } from "./TextComponent";
 import { type TitleComponentType } from "./TitleComponent";
+import { type AboutMeComponentType } from "./AboutMeComponent";
+import { type InterestsComponentType } from "./InterestsComponent";
 
-export type BulletinComponentsUnionType = TextComponentType | TitleComponentType
+export type BulletinComponentsUnionType = TextComponentType | TitleComponentType | AboutMeComponentType | InterestsComponentType;
 
 export type BulletinComponent = {
-  component_id: string;
-  position: number;
+  user_id: string;
   created_at: string;
+  position: number;
+  component_id: string;
   child_table: string;
+  name: string
 }

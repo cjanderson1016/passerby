@@ -1,0 +1,38 @@
+.edit-bulletin{
+    width: 500px;
+    height: 100%;
+    border-left: #cdcdcd solid 2px;
+    padding-left: 20px;
+}
+
+.specific-component-editor{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border-top: #cdcdcd solid 1px;
+    border-bottom: #cdcdcd solid 1px;
+    justify-content: space-between;
+}
+
+.component{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.edit-box{
+    display: flex;
+    align-items: flex-start;
+    text-align: left;
+    width: 100%;
+    padding: 20px;
+    border: 1px solid #cdcdcd;
+    border-radius: 4px;
+}
+
+.component-text{
+    padding-bottom: 10px
+}

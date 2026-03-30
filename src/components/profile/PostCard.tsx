@@ -27,6 +27,35 @@ type CommentRow = {
   users?: { username?: string | null } | { username?: string | null }[] | null;
 };
 
+// We define the Attachment and AttachmentRow types to represent media attachments for posts. Attachment is the type we use in our component state, while AttachmentRow represents the raw data we get from the database when we load attachments for a post. Each attachment includes its position so we can render them in the correct order.
+type Attachment = {
+  id: string;
+  key: string;
+  content_type?: string | null;
+  file_name?: string | null;
+  position?: number | null;
+};
+
+type AttachmentRow = {
+  position: number | null;
+  // Supabase can return the joined row as either a single object or an array containing one object,
+  // so accept both shapes here (mirrors how `CommentRow.users` is typed above).
+  user_media:
+    | {
+        id: string;
+        key: string;
+        content_type?: string | null;
+        file_name?: string | null;
+      }
+    | {
+        id: string;
+        key: string;
+        content_type?: string | null;
+        file_name?: string | null;
+      }[]
+    | null;
+};
+
 type PostCardProps = {
   post: ProfilePost;
   displayName: string;
@@ -113,13 +142,75 @@ export default function PostCard({
 
   const formattedDate = post.created_at
     ? new Date(post.created_at).toLocaleDateString()
-    : "";
-  const trimmedContent = post.content.trim();
-  const mediaUrl = post.media_key ? getPublicUrl(post.media_key) : "";
-  const mediaContentType = post.media_content_type?.toLowerCase() ?? "";
+    : ""; // format the date as a local date string
+  const trimmedContent = post.content.trim(); // trim the content to check if it's empty or just whitespace, so we can conditionally render it (if it's empty/whitespace, we won't render the <p> element at all)
+  const mediaUrl = post.media_key ? getPublicUrl(post.media_key) : ""; // get the public URL for the media if there is a media key. This will be used to display the media in the post if it exists.
+
+  /* ---------------- ATTACHMENTS (media files attached to the post) ---------------- */
+  const mediaContentType = post.media_content_type?.toLowerCase() ?? ""; // normalize the content type to lowercase for easier checking. This will help us determine if the media is a video or an image, so we know whether to render a <video> or an <img> element in the post.
   const isVideoMedia =
     mediaContentType.startsWith("video/") ||
-    /\.(mp4|mov|webm)$/i.test(post.media_key ?? "");
+    /\.(mp4|mov|webm)$/i.test(post.media_key ?? ""); // we determine if the media is a video by checking if the content type starts with "video/" or if the media key ends with a common video file extension. This is important because we need to render videos with a <video> element and images with an <img> element for proper display and controls.
+  const [attachments, setAttachments] = useState<
+    {
+      id: string;
+      key: string;
+      content_type?: string | null;
+      file_name?: string | null;
+      position?: number | null;
+    }[]
+  >([]); // this state will hold the media attachments for the post. We will load these from the database when the component mounts. Each attachment includes its position so we can render them in the correct order.
+  // NOTE: We also declare the `Attachment` and `AttachmentRow` types above to avoid using `any` when processing DB rows.
+
+  // When the component mounts, we load the attachments for the post from the database. We query the `post_media` table for rows matching our post ID, and we also join the `user_media` table to get the details of each media attachment (like its key and content type). We then transform the raw data from the database into our `Attachment` type and store it in state. This allows us to render all media attachments for the post in the UI.
+  useEffect(() => {
+    let active = true; // we use this flag to prevent state updates if the component unmounts before the async operation completes, which can cause memory leaks or errors.
+
+    const loadAttachments = async () => {
+      // this function loads the media attachments for the post from the database.
+      try {
+        const { data, error } = await supabase
+          .from("post_media") // query the post_media table to get attachments for this post
+          .select(
+            "position, user_media:user_media_id (id, key, content_type, file_name)",
+          ) // we select the position from post_media and join the user_media table to get the details of each media attachment.
+          .eq("post_id", post.id) // filter for attachments that belong to our post
+          .order("position", { ascending: true }); // order by position so attachments are in the correct order for rendering
+        if (error) {
+          console.error("Error loading post attachments:", error);
+          return;
+        }
+        if (!active) return; // if the component has unmounted, we don't want to update state, so we check the active flag before proceeding.
+        const rows = (data as AttachmentRow[] | null) ?? []; // we cast the data to our AttachmentRow type, and default to an empty array if it's null.
+        // we then map the raw database rows to our Attachment type, extracting the media details from the joined user_media data. We also filter out any rows where the media details are missing (i.e., if the join failed for some reason), and we end up with an array of attachments that we can render in our post.
+        const mapped = rows
+          .map((r) => {
+            const raw = r.user_media;
+            const um = Array.isArray(raw) ? raw[0] : raw;
+            return um
+              ? {
+                  id: um.id,
+                  key: um.key,
+                  content_type: um.content_type,
+                  file_name: um.file_name,
+                  position: r.position,
+                }
+              : null;
+          })
+          .filter(Boolean) as Attachment[]; // filter out any nulls that may have resulted from failed joins, ensuring we only have valid attachments in our state.
+        setAttachments(mapped); // we update our attachments state with the loaded attachments, which will trigger a re-render and display the media in the post.
+      } catch (e) {
+        console.error("Failed to load attachments", e);
+      }
+    };
+
+    void loadAttachments(); // we call the function to load attachments when the component mounts.
+
+    return () => {
+      // this runs when the component unmounts, which can happen if the user navigates away from the page before the attachments finish loading. By setting active to false, we can avoid trying to update state on an unmounted component, which would cause a memory leak or error.
+      active = false;
+    };
+  }, [post.id]);
 
   /* ---------------- LIKE HANDLING ---------------- */
 
@@ -224,9 +315,32 @@ export default function PostCard({
 
       {trimmedContent && <p className="profile-post-content">{post.content}</p>}
 
-      {mediaUrl && (
+      {(attachments.length > 0 || mediaUrl) && (
         <div className="profile-post-media-wrap">
-          {isVideoMedia ? (
+          {attachments.length > 0 ? (
+            attachments.map((a) => {
+              const url = getPublicUrl(a.key);
+              const isVideo =
+                !!a.content_type && a.content_type.startsWith("video/");
+              return isVideo ? (
+                <video
+                  key={a.id}
+                  className="profile-post-media"
+                  src={url}
+                  controls
+                  preload="metadata"
+                />
+              ) : (
+                <img
+                  key={a.id}
+                  className="profile-post-media"
+                  src={url}
+                  alt={a.file_name ?? `${displayName}'s post media`}
+                  loading="lazy"
+                />
+              );
+            })
+          ) : isVideoMedia ? (
             <video
               className="profile-post-media"
               src={mediaUrl}

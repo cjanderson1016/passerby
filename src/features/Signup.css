@@ -1,0 +1,157 @@
+@import url("https://fonts.googleapis.com/css2?family=Handjet:wght@400;500;600;700&family=Major+Mono+Display&display=swap");
+
+.signup-shell {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px;
+  box-sizing: border-box;
+  font-family: "Handjet", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.signup-container {
+  width: min(1000px, 100%);
+  background: #f1f1f1;
+  border: 1px solid #cdcdcd;
+  padding: 64px 72px;
+  box-sizing: border-box;
+}
+
+.signup-logo {
+  margin: 0 0 56px;
+  text-align: center;
+  font-size: clamp(2.1rem, 4vw, 3rem);
+  font-weight: 800;
+  font-family: "Major Mono Display", monospace;
+  letter-spacing: 0.08em;
+  color: #111111;
+}
+
+.signup-form {
+  display: grid;
+  row-gap: 24px;
+}
+
+.signup-row {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 460px) 170px;
+  align-items: center;
+  column-gap: 10px;
+  justify-content: center;
+}
+
+.signup-label {
+  grid-column: 1;
+  text-align: left;
+  font-size: 0.95rem;
+  color: #666666;
+  letter-spacing: 0.01em;
+}
+
+.signup-input-wrap {
+  grid-column: 2;
+  width: 100%;
+}
+
+.signup-input {
+  width: 100%;
+  background: #e4e4e4;
+  border: none;
+  color: #222222;
+  padding: 12px 14px;
+  font-size: 1rem;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.signup-input:focus {
+  outline: 1px solid #b8b8b8;
+}
+
+.signup-hint {
+  margin: 6px 0 0;
+  color: #6a6a6a;
+  font-size: 0.9rem;
+}
+
+.signup-hint-valid {
+  color: #4f4f4f;
+}
+
+.signup-hint-invalid {
+  color: #767676;
+}
+
+.signup-error {
+  margin: 4px 0 0;
+  text-align: center;
+  color: #555555;
+  font-size: 0.9rem;
+}
+
+.signup-actions {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.signup-btn {
+  min-width: 110px;
+  border: 1px solid #bcbcbc;
+  background: #d7d7d7;
+  color: #262626;
+  font-family: "Handjet", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.signup-btn:hover {
+  background: #c6c6c6;
+}
+
+.signup-btn:disabled {
+  cursor: not-allowed;
+  background: #dcdcdc;
+  color: #6c6c6c;
+}
+
+.signup-btn-secondary {
+  min-width: 140px;
+  padding: 7px 14px;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 760px) {
+  .signup-shell {
+    padding: 18px;
+  }
+
+  .signup-container {
+    padding: 36px 20px;
+  }
+
+  .signup-logo {
+    margin-bottom: 36px;
+  }
+
+  .signup-row {
+    grid-template-columns: 1fr;
+    row-gap: 8px;
+  }
+
+  .signup-label {
+    grid-column: 1;
+    text-align: left;
+  }
+
+  .signup-input-wrap,
+  .signup-input {
+    grid-column: 1;
+    width: 100%;
+  }
+}

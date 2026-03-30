@@ -11,22 +11,20 @@ import { useEffect, useMemo, useState } from "react";
 import { useUser } from "../hooks/useUser";
 import ProfileMenu from "../components/ProfileMenu";
 import "./Profile.css";
+//import Modal from "../components/Modal";
 import { supabase } from "../lib/supabase";
-import {
-  deleteFileFromR2,
-  getPublicUrl,
-  uploadFileToR2,
-} from "../services/dataService";
+import { deleteFileFromR2, getPublicUrl } from "../services/dataService";
 import ProfileHeader from "../components/profile/ProfileHeader";
-import AboutMeCard from "../components/profile/AboutMeCard";
-import InterestsCard from "../components/profile/InterestsCard";
+//import AboutMeCard from "../components/profile/AboutMeCard";
+//import InterestsCard from "../components/profile/InterestsCard";
 //import PostCountCard from "../components/profile/PostCountCard";
 import CreatePostBox from "../components/profile/CreatePostBox";
 import PinnedPostsSection from "../components/profile/PinnedPostsSection";
 import PostFeed from "../components/profile/PostFeed";
-import RecentPostsPanel from "../components/profile/RecentPostsPanel";
+//import RecentPostsPanel from "../components/profile/RecentPostsPanel";
 import type { ProfilePost as Post } from "../components/profile/types"; // we define a more specific Post type for the profile page that includes the is_pinned field, since we need that for the pinned posts feature. This way we don't have to use the more general Post type from our global types which doesn't include is_pinned.
-//import Bulletin from "../components/Bulletin/Bulletin";
+import Bulletin from "../components/Bulletin/Bulletin";
+import { BulletinProvider } from "../contexts/BulletinContext";
 
 type ViewedProfile = {
   id: string;
@@ -37,6 +35,7 @@ type ViewedProfile = {
   bio?: string | null;
   about_me?: string | null;
   interests?: string[] | null;
+  profile_privacy: string;
 };
 
 type PostRow = {
@@ -54,40 +53,40 @@ type PostRow = {
 type EditField = "bio" | "about_me" | "interests" | null;
 
 // We define a set of allowed media types and extensions for post uploads. This is used both for the file input accept attribute and for validating files before upload to ensure users can only upload supported media types for their posts.
-const ALLOWED_POST_MEDIA_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/heic",
-  "image/heif",
-  "video/mp4",
-  "video/quicktime",
-  "video/webm",
-]);
+// const ALLOWED_POST_MEDIA_TYPES = new Set([
+//   "image/jpeg",
+//   "image/png",
+//   "image/webp",
+//   "image/heic",
+//   "image/heif",
+//   "video/mp4",
+//   "video/quicktime",
+//   "video/webm",
+// ]);
 
 // We also define a set of allowed file extensions as a fallback in case the file type is not provided or is unreliable. This allows us to still validate files based on their extension if needed, while primarily relying on the MIME type for validation.
-const ALLOWED_POST_MEDIA_EXTENSIONS = new Set([
-  "jpg",
-  "jpeg",
-  "png",
-  "webp",
-  "heic",
-  "heif",
-  "mp4",
-  "mov",
-  "webm",
-]);
+// const ALLOWED_POST_MEDIA_EXTENSIONS = new Set([
+//   "jpg",
+//   "jpeg",
+//   "png",
+//   "webp",
+//   "heic",
+//   "heif",
+//   "mp4",
+//   "mov",
+//   "webm",
+// ]);
 
 // This helper function checks if a given file is an allowed media type for posts by checking both its MIME type and its file extension against our defined sets of allowed types and extensions
-function isAllowedPostMedia(file: File) {
-  // first we check the MIME type of the file against our allowed types. If it matches, we consider it valid and return true.
-  if (ALLOWED_POST_MEDIA_TYPES.has(file.type)) {
-    return true;
-  }
-  // if the MIME type is not in our allowed list, we then check the file extension as a fallback. We extract the extension from the file name, convert it to lowercase, and check if it's in our allowed extensions set. If it matches, we consider it valid and return true. If neither the MIME type nor the extension is allowed, we return false.
-  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-  return ALLOWED_POST_MEDIA_EXTENSIONS.has(extension);
-}
+// function isAllowedPostMedia(file: File) {
+//   // first we check the MIME type of the file against our allowed types. If it matches, we consider it valid and return true.
+//   if (ALLOWED_POST_MEDIA_TYPES.has(file.type)) {
+//     return true;
+//   }
+//   // if the MIME type is not in our allowed list, we then check the file extension as a fallback. We extract the extension from the file name, convert it to lowercase, and check if it's in our allowed extensions set. If it matches, we consider it valid and return true. If neither the MIME type nor the extension is allowed, we return false.
+//   const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+//   return ALLOWED_POST_MEDIA_EXTENSIONS.has(extension);
+// }
 
 function normalizePost(row: PostRow): Post {
   // this function takes a raw PostRow from the database and converts it into our Post type that has a guaranteed boolean for is_pinned. If is_pinned is null or undefined, we treat it as false.
@@ -114,7 +113,6 @@ export default function Profile() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [newPostContent, setNewPostContent] = useState("");
-  const [newPostMediaFile, setNewPostMediaFile] = useState<File | null>(null); // state to hold the currently selected media file for a new post, which can be an image or video that the user wants to attach to their post. This is used in the CreatePostBox component and is validated before upload.
   const [posting, setPosting] = useState(false);
 
   const [editField, setEditField] = useState<EditField>(null);
@@ -182,7 +180,7 @@ export default function Profile() {
           const { data, error } = await supabase
             .from("users")
             .select(
-              "id, username, first_name, last_name, profile_pic_key, bio, about_me, interests",
+              "id, username, first_name, last_name, profile_pic_key, bio, about_me, interests, profile_privacy",
             )
             .eq("id", user.id)
             .maybeSingle();
@@ -271,11 +269,19 @@ export default function Profile() {
     : "";
 
   // this function is called when the user submits the form to create a new post. It validates the input, creates the post in the database, uploads any attached media to R2, updates the post with the media information, and then updates the local state to show the new post in the feed.
-  const handleCreatePost = async (e: React.FormEvent) => {
+  const handleCreatePost = async (
+    e: React.FormEvent,
+    attachments: {
+      id: string;
+      key: string;
+      content_type?: string | null;
+    }[] = [],
+  ) => {
     e.preventDefault();
 
     const content = newPostContent.trim();
-    if ((!content && !newPostMediaFile) || !user?.id || !isOwnProfile) return;
+    if ((!content && attachments.length === 0) || !user?.id || !isOwnProfile)
+      return;
 
     setPosting(true);
 
@@ -308,18 +314,32 @@ export default function Profile() {
       let postToAdd = data as PostRow; // we use the PostRow type here because this is the raw data from the database, which may have is_pinned as null. We will normalize it to our Post type later when we add it to state.
 
       // if there is a media file attached, we upload it to R2 and then update the post with the media key and content type so we can display it later. We do this after creating the post so that we have a post ID to associate the media with in storage.
-      if (newPostMediaFile) {
+      // If attachments were provided from the media library, persist them to `post_media`.
+      // Also update the posts row with the first attachment's key for backward-compatible display.
+      if (attachments.length > 0) {
         try {
-          const { key } = await uploadFileToR2(newPostMediaFile, {
-            target: "post_media",
-            postId: postToAdd.id,
-          });
+          // Insert post_media rows linking to user_media.id with an explicit position to preserve order
+          const rows = attachments.map((a, idx) => ({
+            post_id: postToAdd.id,
+            user_media_id: a.id,
+            position: idx,
+          }));
 
+          const { error: insertPmError } = await supabase
+            .from("post_media")
+            .insert(rows);
+          if (insertPmError) {
+            console.error("Error inserting post_media rows:", insertPmError);
+            alert("Post created, but could not attach all media.");
+          }
+
+          // Update posts.media_key with the first attachment for backwards compatibility
+          const first = attachments[0];
           const { data: updatedPost, error: updateError } = await supabase
             .from("posts")
             .update({
-              media_key: key,
-              media_content_type: newPostMediaFile.type,
+              media_key: first.key,
+              media_content_type: first.content_type ?? null,
             })
             .eq("id", postToAdd.id)
             .eq("user_id", user.id)
@@ -329,14 +349,13 @@ export default function Profile() {
             .single();
 
           if (updateError) {
-            console.error("Error attaching media to post:", updateError);
-            alert("Post created, but media could not be attached.");
+            console.error("Error updating post with first media:", updateError);
           } else if (updatedPost) {
             postToAdd = updatedPost as PostRow;
           }
         } catch (uploadError) {
-          console.error("Error uploading post media:", uploadError);
-          alert("Post created, but media upload failed.");
+          console.error("Error persisting post media:", uploadError);
+          alert("Post created, but attaching media failed.");
         }
       }
 
@@ -345,28 +364,13 @@ export default function Profile() {
       }
 
       setNewPostContent(""); // we clear the new post content state after successfully creating the post
-      setNewPostMediaFile(null); // we also clear the selected media file state after creating the post, so that the CreatePostBox component will reset and be ready for a new post
     } finally {
       setPosting(false);
     }
   };
 
   // this function is called when the user selects a file using the file input in the CreatePostBox component. It updates the selected media file in the parent component using the onMediaChange callback and resets the file input value to allow selecting the same file again if needed. We also validate the selected file's type and size before allowing it to be set as the mediaFile, showing an alert if it's invalid.
-  const handlePostMediaChange = (file: File | null) => {
-    if (!file) {
-      // if the file is null, it means the user has cleared the selected file, so we update the state to reflect that and return early.
-      setNewPostMediaFile(null);
-      return;
-    }
-
-    if (!isAllowedPostMedia(file)) {
-      // we validate the selected file's type and extension using our isAllowedPostMedia helper function. If the file is not an allowed media type, we show an alert to the user and do not update the state with the invalid file.
-      alert("Invalid media type. Please select a supported image or video.");
-      return;
-    }
-
-    setNewPostMediaFile(file); // if the file is valid, we update the state with the selected file so that it can be uploaded when the post is created. The CreatePostBox component will also show a preview of the selected media based on this state.
-  };
+  // Note: media selection is now handled by the MediaLibraryModal in CreatePostBox and provided to handleCreatePost as the second argument.
 
   const openEditModal = (field: EditField) => {
     if (!viewedProfile || !field || !isOwnProfile) return;
@@ -567,7 +571,7 @@ export default function Profile() {
 
   const pinnedPost = posts.find((post) => post.is_pinned) ?? null;
   const feedPosts = posts.filter((post) => !post.is_pinned);
-  const newestPost =
+  /*const newestPost =
     [...posts].sort(
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
@@ -575,7 +579,7 @@ export default function Profile() {
   const interests = useMemo(
     () => viewedProfile?.interests ?? [],
     [viewedProfile?.interests],
-  );
+  );*/
 
   const modalTitle =
     editField === "bio"
@@ -591,6 +595,58 @@ export default function Profile() {
       ? "Enter interests separated by commas. Example: UI Design, Coding, Gaming"
       : "";
 
+  function EditModal() {
+    return (
+      <div className="profile-modal-overlay" onClick={closeEditModal}>
+        <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="profile-modal-header">
+            <h3>{modalTitle}</h3>
+            <button
+              type="button"
+              className="exit_btn"
+              onClick={closeEditModal}
+              aria-label="Close modal"
+            >
+              &times;
+            </button>
+          </div>
+
+          <form onSubmit={handleSaveEdit} className="profile-modal-form">
+            <textarea
+              className="profile-modal-textarea"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              rows={editField === "interests" ? 4 : 5}
+              placeholder={
+                editField === "interests" ? "UI Design, Coding, Gaming" : ""
+              }
+            />
+
+            {modalHelpText && (
+              <p className="profile-modal-help">{modalHelpText}</p>
+            )}
+
+            <div className="profile-modal-actions">
+              <button
+                type="button"
+                className="profile-modal-secondary-btn"
+                onClick={closeEditModal}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="profile-modal-primary-btn"
+                disabled={savingEdit}
+              >
+                {savingEdit ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
   const handleUnfriend = async () => {
     if (!viewedProfile?.id || !user?.id || unfriending) return;
 
@@ -684,9 +740,7 @@ export default function Profile() {
                     <CreatePostBox
                       value={newPostContent}
                       posting={posting}
-                      mediaFile={newPostMediaFile}
                       onChange={setNewPostContent}
-                      onMediaChange={handlePostMediaChange}
                       onSubmit={handleCreatePost}
                     />
                   )}
@@ -713,11 +767,12 @@ export default function Profile() {
 
               {activeTab === "bulletin" && (
                 <div className="profile-center-card">
-                  <AboutMeCard
-                    aboutMe={viewedProfile.about_me}
-                    isOwnProfile={isOwnProfile}
-                    onEdit={() => openEditModal("about_me")}
-                  />
+                  {/*
+                      <AboutMeCard
+                        aboutMe={viewedProfile.about_me}
+                        isOwnProfile={isOwnProfile}
+                        onEdit={() => openEditModal("about_me")}
+                        />
 
                   <InterestsCard
                     interests={interests}
@@ -725,14 +780,20 @@ export default function Profile() {
                     onEdit={() => openEditModal("interests")}
                   />
 
-                  <RecentPostsPanel
-                    newestPost={newestPost}
-                    displayName={displayName}
-                    username={viewedProfile.username}
-                  />
-                  {/*<PostCountCard postCount={posts.length} />*/}
-
-                  {/*<Bulletin show={true} isOwnProfile={isOwnProfile} profileUserId={viewedProfile?.id} />*/}
+                      <RecentPostsPanel
+                        newestPost={newestPost}
+                        displayName={displayName}
+                        username={viewedProfile.username}
+                      />
+                      <PostCountCard postCount={posts.length} />*/}
+                  {/**/}
+                  <BulletinProvider>
+                    <Bulletin
+                      show={true}
+                      isOwnProfileInput={isOwnProfile}
+                      profileUserId={viewedProfile?.id}
+                    />
+                  </BulletinProvider>
                 </div>
               )}
             </main>
@@ -747,56 +808,7 @@ export default function Profile() {
         </div>
       ) : null}
 
-      {isOwnProfile && editField && (
-        <div className="profile-modal-overlay" onClick={closeEditModal}>
-          <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="profile-modal-header">
-              <h3>{modalTitle}</h3>
-              <button
-                type="button"
-                className="profile-modal-close"
-                onClick={closeEditModal}
-                aria-label="Close modal"
-              >
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEdit} className="profile-modal-form">
-              <textarea
-                className="profile-modal-textarea"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                rows={editField === "interests" ? 4 : 5}
-                placeholder={
-                  editField === "interests" ? "UI Design, Coding, Gaming" : ""
-                }
-              />
-
-              {modalHelpText && (
-                <p className="profile-modal-help">{modalHelpText}</p>
-              )}
-
-              <div className="profile-modal-actions">
-                <button
-                  type="button"
-                  className="profile-modal-secondary-btn"
-                  onClick={closeEditModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="profile-modal-primary-btn"
-                  disabled={savingEdit}
-                >
-                  {savingEdit ? "Saving..." : "Save"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {isOwnProfile && editField && <EditModal></EditModal>}
 
       {isOwnProfile && selectedPost && (
         <div className="profile-modal-overlay" onClick={closePostMenu}>

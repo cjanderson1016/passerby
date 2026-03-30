@@ -76,12 +76,10 @@ export default function ResetPass() {
     <div
       style={{
         maxWidth: "400px",
-        padding: "2rem",
-        border: "1px solid #ccc",
         borderRadius: "8px",
+        marginTop: "10px"
       }}
     >
-      <h2>Reset Password</h2>
 
       <form onSubmit={handlePasswordReset}>
         <div style={{ marginBottom: "1rem" }}>
@@ -92,7 +90,7 @@ export default function ResetPass() {
             onChange={(e) => setCurrentPassword(e.target.value)}
             required
             style={{
-              width: "100%",
+              width: "95%",
               padding: "0.5rem",
               border: "1px solid #ccc",
               borderRadius: "4px",
@@ -109,7 +107,7 @@ export default function ResetPass() {
             required
             minLength={6}
             style={{
-              width: "100%",
+              width: "95%",
               padding: "0.5rem",
               border: "1px solid #ccc",
               borderRadius: "4px",
@@ -125,7 +123,7 @@ export default function ResetPass() {
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             style={{
-              width: "100%",
+              width: "95%",
               padding: "0.5rem",
               border: "1px solid #ccc",
               borderRadius: "4px",
