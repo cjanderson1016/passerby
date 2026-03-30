@@ -314,12 +314,28 @@ export default function Profile() {
       let postToAdd = data as PostRow; // we use the PostRow type here because this is the raw data from the database, which may have is_pinned as null. We will normalize it to our Post type later when we add it to state.
 
       // if there is a media file attached, we upload it to R2 and then update the post with the media key and content type so we can display it later. We do this after creating the post so that we have a post ID to associate the media with in storage.
-      // If attachments were provided from the media library, attach the first one to the post for now.
-      // (Database changes required for multi-attachment posts will be implemented separately.)
+      // If attachments were provided from the media library, persist them to `post_media`.
+      // Also update the posts row with the first attachment's key for backward-compatible display.
       if (attachments.length > 0) {
-        const first = attachments[0];
         try {
-          const { error: updateError, data: updatedPost } = await supabase
+          // Insert post_media rows linking to user_media.id with an explicit position to preserve order
+          const rows = attachments.map((a, idx) => ({
+            post_id: postToAdd.id,
+            user_media_id: a.id,
+            position: idx,
+          }));
+
+          const { error: insertPmError } = await supabase
+            .from("post_media")
+            .insert(rows);
+          if (insertPmError) {
+            console.error("Error inserting post_media rows:", insertPmError);
+            alert("Post created, but could not attach all media.");
+          }
+
+          // Update posts.media_key with the first attachment for backwards compatibility
+          const first = attachments[0];
+          const { data: updatedPost, error: updateError } = await supabase
             .from("posts")
             .update({
               media_key: first.key,
@@ -333,14 +349,13 @@ export default function Profile() {
             .single();
 
           if (updateError) {
-            console.error("Error attaching media to post:", updateError);
-            alert("Post created, but media could not be attached.");
+            console.error("Error updating post with first media:", updateError);
           } else if (updatedPost) {
             postToAdd = updatedPost as PostRow;
           }
         } catch (uploadError) {
-          console.error("Error attaching post media:", uploadError);
-          alert("Post created, but media attach failed.");
+          console.error("Error persisting post media:", uploadError);
+          alert("Post created, but attaching media failed.");
         }
       }
 
