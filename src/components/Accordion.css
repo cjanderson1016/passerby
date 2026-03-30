@@ -1,115 +1,98 @@
 /*
   File Name: Accordion.css
 
-  Description: Style component for Accordion.tsx
-
-  Author(s): Owen Berkholtz
-*/
-.accordion-container{
-  background: #ffffff;
-  border: 1px solid #dddddd;
-  border-radius: 12px;
-  overflow: hidden;
-  width: 35%;
-
-}
-
-
-
-.accordion-trigger{
-    width: 100%;
-    border: none;
-    background-color: whitesmoke;
-    font-size: large;
-    display: flex;
-    border-bottom: 1px solid lightgray;
-    padding-bottom: 10px;
-    padding-top: 10px;
+  .accordion-container{
+    background: var(--bg-800);
+    border: 1px solid var(--glass-border);
     border-radius: 12px;
-}
+    overflow: hidden;
+    width: 35%;
+  }
 
+  .accordion-trigger{
+      width: 100%;
+      border: none;
+      background-color: var(--panel);
+      font-size: large;
+      display: flex;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 10px;
+      padding-top: 10px;
+      border-radius: 12px;
+  }
 
+  .accordion-trigger:hover{
+      cursor: pointer;
+      border: 1px solid var(--glass-border);
+  }
 
-.accordion-trigger:hover{
+  .accordion-content{
+      display: grid;
+      padding: 15px;
+      gap: 15px;
+  }
+
+  .accordion-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .accordion-arrow{
+      margin-left: auto;
+      transition: transform 0.3s ease;
+      width: 20px;
+      height: 20px;
+  }
+
+  .accordion-arrow.rotated {
+    display: inline-block;
+    transform: rotate(90deg);
+  }
+
+  .accordion-arrow:hover {
+      cursor: pointer;
+      background-color: var(--bg-900);
+      border-radius: 50%;
+  }
+
+  .dropdown-container {
+    width: 30%;
+    display: flex;
+  }
+
+  .dropdown-button {
+    display: block;
+    width: 70%;
+    padding: 0.25rem 0;
+    overflow: hidden;
+    max-height: 18rem;
     cursor: pointer;
-    border: black solid 1px;
-}
+    background: var(--panel);
+    border: 1px solid var(--glass-border);
+    font-size: medium;
+  }
 
+  .dropdown-content {
+    min-width: 100%;
+    width: 100%;
+    background: var(--bg-800);
+    border-top: none;
+    border-radius: 0 0 0.75rem 0.75rem;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+    padding: 0.75rem 0;
+  }
 
-.accordion-content{
-    display: grid;
-    padding: 15px;
-    gap: 15px;
-    
-    }
-
-.accordion-row{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-
-.accordion-arrow{
-    margin-left: auto;
-    transition: transform 0.3s ease;
-    width: 20px;
-    height: 20px;
-}
-
-.accordion-arrow.rotated {
-  display: inline-block;
-  transform: rotate(90deg);
-}
-
-.accordion-arrow:hover {
+  .dropdown-item {
+    width: 100%;
+    padding: 0.75rem 0;
+    background: var(--bg-800);
     cursor: pointer;
-    background-color: lightgrey;
-    border-radius: 50%;
-}
+    border: 1px solid var(--glass-border);
+    border-top: none;
+    margin-left: 0px;
+  }
 
-
-.dropdown-container {
-  width: 30%;
-  display: flex;
-}
-
-.dropdown-button {
-  display: block;
-  width: 70%;
-  background-color: grey;
-  padding: 0.25rem 0;
-  overflow: hidden;
-  max-height: 18rem;
-  cursor: pointer;
-  background: #f5f5f5;
-  border: grey solid 1px;
-  font-size: medium;
-}
-
-
-
-.dropdown-content {
-  min-width: 100%;
-  width: 100%;
-  background: white;
-
-  border-top: none;
-  border-radius: 0 0 0.75rem 0.75rem;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-  padding: 0.75rem 0;
-}
-
-.dropdown-item {
-  width: 100%;
-  padding: 0.75rem 0;
-  background: white;
-  cursor: pointer;
-  border: grey solid 1px;
-  border-top: none;
-  margin-left: 0px;
-}
-
-.dropdown-item:hover {
-  background: #f5f5f5;
-}
+  .dropdown-item:hover {
+    background: var(--panel);
+  }

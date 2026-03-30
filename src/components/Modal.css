@@ -17,7 +17,7 @@
     justify-content: center;
     align-items: center;
 
-    background-color: rgba(0, 0, 0, 0.5); 
+    background-color: rgba(2,6,23,0.65);
 
     z-index: 9999;
 }
@@ -26,13 +26,14 @@
 /* Actual modal box */
 .modal_container {
     position: relative;
-    background: white;
-    padding: 32px;
-    border-radius: 15px;
-    min-width: 400px;
+    background: var(--panel);
+    color: var(--text);
+    padding: 24px;
+    border-radius: 12px;
+    min-width: 320px;
     max-width: 90vw;
-
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-strong);
 }
 
 
@@ -45,12 +46,12 @@
     border: none;
     background: none;
     font-size: 20px;
-    font-weight: bold;
-    color: red;
+    font-weight: 700;
+    color: var(--accent-pink);
 
     cursor: pointer;
 }
 
 .exit_btn:hover {
-    color: pink;
+    color: var(--accent-cyan);
 }

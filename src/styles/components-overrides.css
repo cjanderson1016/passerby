@@ -1,0 +1,149 @@
+/* Component overrides to harmonize legacy component CSS with the theme tokens.
+   These rules are intentionally broad but conservative — they prefer theme variables
+   and neutralize hard-coded whites/blacks while preserving layout. */
+
+/* Generic resets for common component wrappers */
+.profile-page, .dash-page, .msg-page, .auth-layout, .auth-layout--login {
+  background: transparent !important;
+  color: var(--text) !important;
+  font-family: var(--font-sans) !important;
+}
+
+/* Cards and panels (dashboard and misc) */
+.dash-card, .profile-post-card, .fr-card, .msg-picker, .afm-modal {
+  background: var(--panel) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.profile-side-card, .profile-feed-empty, .profile-post-menu-preview, .profile-post-menu-btn {
+  background: var(--bg-800) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text) !important;
+  box-shadow: var(--card-shadow) !important;
+}
+
+/* Friend/profile cards on dashboard should appear on white with black text */
+.dash-card {
+  background: var(--bg-800) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--glass-border) !important;
+}
+
+/* Text colors */
+.profile-title, .dash-title, .msg-inbox-title, .msg-thread-name, .profile-display-name, .dash-name {
+  color: var(--accent-1) !important;
+}
+
+.profile-back-link, .profile-post-content, .profile-post-time, .dash-time, .msg-conv-preview {
+  color: var(--muted) !important;
+}
+
+/* Buttons */
+.profile-primary-btn, .msg-new-btn, .msg-send-btn, .afm-search-btn, .afm-send-btn, .fr-accept-btn {
+  background: var(--accent-1) !important;
+  color: var(--bg-800) !important;
+  border: none !important;
+}
+
+.profile-outline-btn, .fr-decline-btn, .profile-modal-secondary-btn {
+  background: transparent !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text) !important;
+}
+
+/* Inputs */
+input, textarea, select, .profile-create-post-textarea, .login-input, .msg-input {
+  background: rgba(255,255,255,0.92) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text) !important;
+}
+
+/* Avatars */
+.dash-avatar, .msg-conv-avatar, .profile-avatar, .msg-friend-avatar, .fr-card .avatar {
+  background: rgba(255,255,255,0.03) !important;
+  border: 1px solid var(--avatar-outline) !important;
+  box-shadow: var(--avatar-shadow) !important;
+  border-radius: var(--avatar-radius) !important;
+  overflow: hidden !important;
+}
+
+/* Center material icon placeholders inside avatars */
+.dash-avatar .material-icons,
+.msg-conv-avatar .material-icons,
+.msg-friend-avatar .material-icons,
+.profile-avatar .material-icons,
+.fr-card .avatar .material-icons,
+.dash-profile-circle .material-icons {
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:100% !important;
+  height:100% !important;
+  color: var(--muted) !important;
+}
+
+/* Size icons appropriately for different avatar sizes */
+.dash-avatar .material-icons { font-size: calc(var(--avatar-size-dash) * 0.45) !important; }
+.profile-avatar .material-icons { font-size: calc(var(--avatar-size-lg) * 0.5) !important; }
+.avatar .material-icons { font-size: calc(var(--avatar-size) * 0.45) !important; }
+.avatar.small .material-icons, .dash-profile-circle .material-icons { font-size: calc(var(--avatar-size-sm) * 0.55) !important; }
+.msg-conv-avatar .material-icons, .msg-friend-avatar .material-icons { font-size: calc(var(--avatar-size-sm) * 0.55) !important; }
+
+/* Modals/backdrops */
+.profile-modal-overlay, .popup_window, .afm-overlay, .msg-picker-overlay {
+  background: rgba(4,86,91,0.55) !important;
+}
+
+/* Small utility tweaks */
+.dash-card:hover, .profile-recent-post-button:hover, .msg-conv-item:hover {
+  background: rgba(4,86,91,0.04) !important;
+}
+
+/* Keep layout untouched but neutralize harsh borders/colors for most areas.
+   NOTE: dashboard topbar and filter row intentionally use theme white, so
+   they are excluded from the transparent fallback below. */
+.msg-thread-header {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Topbars: make primary header areas use primary teal with white text/icons */
+.profile-topbar, .dash-topbar, .dash-filter-row {
+  background: var(--accent-1) !important;
+  color: var(--bg-800) !important;
+  border: none !important;
+}
+
+/* Ensure links and icons inside topbars are white for contrast */
+.profile-topbar a, .dash-topbar a, .dash-filter-row a,
+.profile-topbar .material-icons, .dash-topbar .material-icons, .dash-filter-row .material-icons {
+  color: var(--bg-800) !important;
+}
+
+/* Ensure title and heading text inside topbars is white for contrast */
+.profile-topbar .profile-title, .profile-topbar .profile-display-name,
+.dash-topbar .dash-title, .dash-topbar .dash-name,
+.profile-topbar h1, .profile-topbar h2, .dash-topbar h1, .dash-topbar h2 {
+  color: var(--bg-800) !important;
+}
+
+/* Fallback: ensure headings use retro font where intended */
+
+h1, h2, h3 { font-family: var(--font-retro); }
+
+/* Force square corners for common card-like elements to restore pointed box look */
+.dash-card, .profile-post-card, .fr-card, .msg-picker, .afm-modal, .profile-side-card, .profile-card, .card, .card.neon, .dash-filter-row, .dash-profile-menu, .profile-topbar, .dash-topbar {
+  border-radius: 0 !important;
+}
+
+/* Ensure profile post cards are white and have subtle shadow (override legacy panel) */
+.profile-post-card {
+  background: var(--bg-800) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--card-shadow) !important;
+  border-radius: 8px !important;
+}

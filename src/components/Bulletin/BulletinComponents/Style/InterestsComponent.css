@@ -1,39 +1,5 @@
-.profile-side-card {
-  background: #fafafa;
-  border: 1px solid #e3e3e3;
-  border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 16px;
-}
-
-.profile-side-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.profile-side-card-text {
-  margin: 0;
-  color: #555555;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-/* Interests */
-.profile-interests-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.profile-interest-tag {
-  background: #ececec;
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 13px;
-  color: #555555;
-  max-width: 100%;
-}
+.profile-side-card { background: var(--panel); border: 1px solid var(--glass-border); border-radius: 10px; padding: 14px; margin-bottom: 12px; color:var(--text); }
+.profile-side-card-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+.profile-side-card-text { margin:0; color:var(--muted); line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+.profile-interests-list { display:flex; flex-wrap:wrap; gap:8px; }
+.profile-interest-tag { background: rgba(255,255,255,0.03); border-radius:999px; padding:6px 10px; font-size:13px; color:var(--muted); }

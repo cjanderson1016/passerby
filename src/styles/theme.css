@@ -1,0 +1,135 @@
+/*
+  Theme: Retro Social (Myspace / AOL Messenger inspired)
+  Modern twist: clean tokens, accessible contrast, subtle glows.
+*/
+:root {
+  /* Palette (user provided) */
+  --bg-900: #e6e6e6; /* more washed-out, grey-leaning background */
+  --bg-800: #ffffff; /* white */
+  --panel: #f3e8dd; /* slightly warmer panel to separate from page background */
+  --glass: rgba(4,86,91,0.06);
+  --text: #0b0b0b; /* primary black text for readability */
+  --muted: #6b6b6b; /* neutral muted gray for secondary text */
+  --accent-1: #04565b; /* primary accent (teal) */
+  --accent-2: #ecba67; /* secondary accent (gold) */
+  --accent-3: #6e5a7a; /* muted purple, toned for contrast */
+  --accent-2-gradient: linear-gradient(135deg,var(--accent-1) 0%,var(--accent-2) 100%);
+  --glow: 0 8px 28px rgba(4,86,91,0.08), 0 3px 8px rgba(110,90,122,0.04);
+  --danger: #b42318;
+  --danger-bg: #fdeeee;
+  --card-shadow: 0 8px 20px rgba(4,86,91,0.06);
+  --radius: 0px;
+  --avatar-radius: 12px;
+  --avatar-radius-sm: 8px;
+  --avatar-size: 64px;
+  --avatar-size-sm: 40px;
+  --avatar-size-lg: 132px;
+  --avatar-size-dash: 68px;
+  --avatar-outline: rgba(11,11,11,0.06);
+  --avatar-shadow: 0 6px 16px rgba(11,11,11,0.06);
+  --glass-border: rgba(4,86,91,0.12);
+  --max-width: 1100px;
+  --shadow-strong: 0 20px 40px rgba(4,86,91,0.12);
+  --focus: 0 0 0 4px rgba(4,86,91,0.12);
+  --font-sans: 'Quantico', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  --font-retro: 'Press Start 2P', monospace;
+}
+
+/* Reset + sensible defaults */
+* { box-sizing: border-box; }
+html,body,#root { height:100%; }
+html,body { margin:0; padding:0; }
+img,svg { display:block; max-width:100%; }
+button,input,select,textarea { font-family: var(--font-sans); }
+
+/* Body + app container */
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-900);
+  color: var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  min-height:100vh;
+  line-height:1.45;
+}
+
+.app-root, .app-container { max-width:var(--max-width); margin:32px auto; padding:20px; }
+
+/* Cards / panels */
+.card {
+  background: var(--panel);
+  border-radius: var(--radius);
+  border: 1px solid var(--glass-border);
+  padding:16px;
+  box-shadow: var(--shadow-strong);
+}
+
+.glass {
+  backdrop-filter: blur(4px) saturate(1.02);
+  background: rgba(255,255,255,0.6);
+  border: 1px solid var(--glass-border);
+}
+
+/* Headings use retro font for nostalgia; size modest for readability */
+h1,h2,h3,h4 { margin:0 0 12px 0; font-family: var(--font-retro); letter-spacing: 0.02em; color:var(--accent-1); }
+h1 { font-size:20px; }
+h2 { font-size:16px; }
+
+p { margin:0 0 12px 0; color:var(--muted); }
+
+/* Buttons */
+.btn {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:10px 14px; border-radius:10px; border:1px solid transparent;
+  background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  color:var(--text); cursor:pointer; transition:transform .12s ease, box-shadow .12s ease;
+}
+.btn:hover { transform:translateY(-2px); }
+.btn:focus { box-shadow: var(--focus); outline:none; }
+.btn-primary {
+  background: var(--accent-2-gradient);
+  color: var(--text); font-weight:700; border-radius:10px;
+  box-shadow: 0 8px 30px rgba(4,86,91,0.06);
+}
+
+/* Inputs */
+input[type="text"], input[type="email"], input[type="password"], textarea, select {
+  width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--glass-border);
+  background: rgba(255,255,255,0.92); color:var(--text);
+}
+input::placeholder, textarea::placeholder { color: rgba(4,86,91,0.25); }
+
+/* Links */
+a { color: var(--accent-1); text-decoration: none; }
+a:hover { color: var(--accent-2); text-decoration: underline; }
+
+/* Utility: avatar */
+.avatar { width: var(--avatar-size); height: var(--avatar-size); border-radius: var(--avatar-radius); overflow:hidden; border:1px solid rgba(255,255,255,0.06); }
+.avatar.small { width: var(--avatar-size-sm); height: var(--avatar-size-sm); border-radius: var(--avatar-radius-sm); }
+
+/* Floating chat / messenger badge */
+.chat-badge {
+  position:fixed; right:24px; bottom:24px; z-index:60;
+  width:64px; height:64px; border-radius:18px; display:flex; align-items:center; justify-content:center;
+  background: var(--accent-2); box-shadow: 0 10px 30px rgba(4,86,91,0.12), 0 6px 18px rgba(110,90,122,0.04);
+}
+
+/* Cards with neon accent */
+.card.neon {
+  border: 1px solid rgba(0,230,255,0.18);
+  box-shadow: 0 6px 30px rgba(0,230,255,0.06), 0 2px 8px rgba(255,77,210,0.04);
+}
+
+/* Forms layout */
+.form-row { display:flex; gap:12px; align-items:center; }
+.muted { color:var(--muted); }
+
+/* Small responsive helpers */
+@media (max-width:700px) {
+  .app-container { margin:16px; padding:12px; }
+  h1 { font-size:16px; }
+}
+
+/* Accessibility: focus-visible outline */
+:focus { outline: none; }
+:focus-visible { box-shadow: var(--focus); }

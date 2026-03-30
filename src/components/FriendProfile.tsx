@@ -50,7 +50,11 @@ export default function FriendProfile({ friend }: FriendProfileProps) {
           className="dash-avatar"
         />
       ) : (
-        <div className="dash-avatar" />
+        <div className="dash-avatar dash-avatar--placeholder">
+          <span className="material-icons" aria-hidden>
+            person
+          </span>
+        </div>
       )}
 
       <div className="dash-card-main">

@@ -238,13 +238,15 @@ export default function Messages() {
           </div>
         ) : (
           <div className="msg-conv-list">
-            {conversations.map((conv) => (
+              {conversations.map((conv) => (
               <div
                 key={conv.conversation_id}
                 className="msg-conv-item"
                 onClick={() => navigate(`/messages/${conv.conversation_id}`)}
               >
-                <div className="msg-conv-avatar" />
+                <div className="msg-conv-avatar msg-avatar--placeholder">
+                  <span className="material-icons" aria-hidden>person</span>
+                </div>
                 <div className="msg-conv-info">
                   <div className="msg-conv-name">
                     {getDisplayName(conv.other_user)}
@@ -288,7 +290,9 @@ export default function Messages() {
                     onClick={() => handlePickFriend(f.id)}
                     disabled={creatingConv === f.id}
                   >
-                    <div className="msg-friend-avatar" />
+                    <div className="msg-friend-avatar msg-avatar--placeholder">
+                      <span className="material-icons" aria-hidden>person</span>
+                    </div>
                     <div>
                       <div className="msg-friend-name">
                         {getDisplayName(f)}

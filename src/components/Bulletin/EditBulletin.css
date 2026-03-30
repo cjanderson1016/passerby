@@ -1,38 +1,9 @@
-.edit-bulletin{
-    width: 500px;
-    height: 100%;
-    border-left: #cdcdcd solid 2px;
-    padding-left: 20px;
-}
+.edit-bulletin{ width: 100%; padding-left: 14px; border-left: 1px solid rgba(255,255,255,0.03); }
 
-.specific-component-editor{
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    border-top: #cdcdcd solid 1px;
-    border-bottom: #cdcdcd solid 1px;
-    justify-content: space-between;
-}
+.specific-component-editor{ display:flex; flex-direction:row; align-items:center; border-top:1px solid rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.03); justify-content:space-between; padding:8px 0; }
 
-.component{
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding-left: 20px;
-    padding-right: 20px;
-}
+.component{ display:flex; flex-direction:row; align-items:center; justify-content:space-between; padding:8px 12px; }
 
-.edit-box{
-    display: flex;
-    align-items: flex-start;
-    text-align: left;
-    width: 100%;
-    padding: 20px;
-    border: 1px solid #cdcdcd;
-    border-radius: 4px;
-}
+.edit-box{ display:flex; align-items:flex-start; text-align:left; width:100%; padding:12px; border:1px solid rgba(255,255,255,0.03); border-radius:8px; background: rgba(255,255,255,0.01); }
 
-.component-text{
-    padding-bottom: 10px
-}
+.component-text{ padding-bottom:10px; color: var(--text); }

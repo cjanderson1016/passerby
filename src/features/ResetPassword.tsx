@@ -77,7 +77,7 @@ export default function ResetPass() {
       style={{
         maxWidth: "400px",
         padding: "2rem",
-        border: "1px solid #ccc",
+        border: "1px solid var(--glass-border)",
         borderRadius: "8px",
       }}
     >
@@ -86,7 +86,7 @@ export default function ResetPass() {
       <form onSubmit={handlePasswordReset}>
         <div style={{ marginBottom: "1rem" }}>
           <label>Current Password:</label>
-          <input
+            <input
             type="password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
@@ -94,7 +94,7 @@ export default function ResetPass() {
             style={{
               width: "100%",
               padding: "0.5rem",
-              border: "1px solid #ccc",
+                border: "1px solid var(--glass-border)",
               borderRadius: "4px",
             }}
           />
@@ -102,7 +102,7 @@ export default function ResetPass() {
 
         <div style={{ marginBottom: "1rem" }}>
           <label>New Password:</label>
-          <input
+            <input
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
@@ -111,7 +111,7 @@ export default function ResetPass() {
             style={{
               width: "100%",
               padding: "0.5rem",
-              border: "1px solid #ccc",
+                border: "1px solid var(--glass-border)",
               borderRadius: "4px",
             }}
           />
@@ -119,7 +119,7 @@ export default function ResetPass() {
 
         <div style={{ marginBottom: "1rem" }}>
           <label>Confirm Password:</label>
-          <input
+            <input
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -127,18 +127,18 @@ export default function ResetPass() {
             style={{
               width: "100%",
               padding: "0.5rem",
-              border: "1px solid #ccc",
+                border: "1px solid var(--glass-border)",
               borderRadius: "4px",
             }}
           />
         </div>
 
         {error && (
-          <div style={{ color: "red", marginBottom: "1rem" }}>{error}</div>
+          <div style={{ color: "var(--danger)", marginBottom: "1rem" }}>{error}</div>
         )}
 
         {success && (
-          <div style={{ color: "green", marginBottom: "1rem" }}>{success}</div>
+          <div style={{ color: "var(--accent-2)", marginBottom: "1rem" }}>{success}</div>
         )}
 
         <button
@@ -147,8 +147,8 @@ export default function ResetPass() {
           style={{
             width: "100%",
             padding: "0.75rem",
-            backgroundColor: loading ? "#ccc" : "#28a745",
-            color: "white",
+            backgroundColor: loading ? "var(--muted)" : "var(--accent-1)",
+            color: "var(--bg-800)",
             border: "none",
             borderRadius: "4px",
             cursor: loading ? "not-allowed" : "pointer",

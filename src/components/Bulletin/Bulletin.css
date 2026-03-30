@@ -1,19 +1,2 @@
-.bulletin {
-    display: flex;
-    align-items: start;
-    justify-content: space-between;
-    size: 100vw;
-    /*border-top: #cdcdcd solid 2px;*/
-    /*height: 100vh;*/
-    margin-left: 20px;
-    margin-right: 20px;
-}
-.bulletin-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    text-align: left;
-    gap: 12px;
-    width: 100%;
-    padding: 20px;
-}
+.bulletin { display: flex; align-items: flex-start; justify-content: space-between; width:100%; margin: 8px 12px; gap:14px; }
+.bulletin-content { display:flex; flex-direction:column; justify-content:center; text-align:left; gap:12px; width:100%; padding:12px; background: rgba(255,255,255,0.02); border-radius:10px; border:1px solid rgba(255,255,255,0.03); }

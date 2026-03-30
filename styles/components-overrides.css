@@ -1,0 +1,3 @@
+/* Shim so PostCSS/Vite can resolve the components-overrides import if it
+   incorrectly looks in the project root. This forwards to the src copy. */
+@import "./src/styles/components-overrides.css";

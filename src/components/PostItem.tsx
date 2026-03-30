@@ -18,9 +18,21 @@ export default function PostItem({ post }: PostItemProps) {
     : "Unknown date";
 
   return (
-    <li style={{ marginBottom: "1rem" }}>
-      <div>{post.content}</div>
-      <div style={{ fontSize: "0.8rem", color: "#666" }}>{createdAtLabel}</div>
+    <li style={{ marginBottom: "1rem", listStyle: "none" }}>
+      <div
+        className="profile-post-card"
+        style={{
+          background: "var(--bg-800)",
+          color: "var(--text)",
+          border: "1px solid var(--glass-border)",
+          boxShadow: "var(--card-shadow)",
+          borderRadius: "8px",
+          padding: "12px",
+        }}
+      >
+        <div style={{ whiteSpace: "pre-wrap" }}>{post.content}</div>
+        <div style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.5rem" }}>{createdAtLabel}</div>
+      </div>
     </li>
   );
 }
