@@ -12,6 +12,7 @@ import "./dashboard.css";
 import type { Friend, Post, AcceptedFriendRequest, FriendUser } from "../types";
 import ProfileMenu from "../components/ProfileMenu";
 import Button from "../components/Button";
+import { FiMessageCircle } from "react-icons/fi";
 import FriendTable from "../components/FriendTable";
 import FriendRequestList from "../components/FriendRequestList";
 import AddFriendModal from "../components/AddFriendModal";
@@ -226,7 +227,6 @@ export default function Dashboard() {
         <div style={{ display: "flex", gap: "8px" }}>
           <Link
             to="/messages"
-            className="dash-add-btn"
             style={{
               textDecoration: "none",
               display: "flex",
@@ -236,9 +236,9 @@ export default function Dashboard() {
             }}
             title="Messages"
           >
-            ✉
+            <FiMessageCircle />
           </Link>
-          <Button size="sm" onClick={() => setModalOpen(true)}>
+          <Button size="sm" className="dash-add-btn" onClick={() => setModalOpen(true)}>
             Add Friend
           </Button>
         </div>

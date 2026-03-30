@@ -1,19 +1,21 @@
-@import url("https://fonts.googleapis.com/css2?family=Handjet:wght@400;500;600;700&family=Major+Mono+Display&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Handjet:wght@400;500;600;700&family=Josefin+Sans:wght@400;500;600;700&family=Major+Mono+Display&display=swap");
 
 .login-shell {
   width: 100%;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 32px;
   box-sizing: border-box;
-  font-family: "Handjet", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-family: "Josefin Sans", sans-serif;
+  background: #d4c4aa;
 }
 
 .login-container {
   width: min(1000px, 100%);
-  background: #f1f1f1;
-  border: 1px solid #cdcdcd;
+  background: #e8d9c4;
+  border: 1px solid #c4a882;
   padding: 64px 72px;
   box-sizing: border-box;
 }
@@ -82,10 +84,10 @@
 
 .login-btn {
   min-width: 110px;
-  border: 1px solid #bcbcbc;
-  background: #d7d7d7;
-  color: #262626;
-  font-family: "Handjet", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  border: 1px solid #1f5f68;
+  background: #2a7280;
+  color: #ffffff;
+  font-family: "Josefin Sans", sans-serif;
   padding: 8px 16px;
   font-size: 0.9rem;
   cursor: pointer;
@@ -93,13 +95,13 @@
 }
 
 .login-btn:hover {
-  background: #c6c6c6;
+  background: #236470;
 }
 
 .login-btn:disabled {
   cursor: not-allowed;
-  background: #dcdcdc;
-  color: #6c6c6c;
+  background: #4a8e99;
+  color: #d0e8eb;
 }
 
 .login-btn-secondary {
