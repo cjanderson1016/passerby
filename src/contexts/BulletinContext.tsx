@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { type BulletinComponentsUnionType } from "../components/Bulletin/BulletinComponents";
+import { type BulletinComponentsUnionType, type ComponentSpecificInfo } from "../components/Bulletin/BulletinComponents";
 import { bulletinContext } from "./BulletinContextData";
 
 const updatedComponents: Record<string, Array<BulletinComponentsUnionType>> = {}; //Keeps track of the components that need to be updated when save is pressed
@@ -25,6 +25,12 @@ export function BulletinProvider({children}: {children: ReactNode}) {
         updatedComponents[component.child_table].push(component)
       };
 
+    const getTypeInfo = (component: BulletinComponentsUnionType) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { user_id, created_at, position, component_id, child_table, name, ...rest } = component;
+      return {created_at, component_id, ...rest} as ComponentSpecificInfo
+    }
+
     return(
         <bulletinContext.Provider value = {{
             editMode,
@@ -34,7 +40,8 @@ export function BulletinProvider({children}: {children: ReactNode}) {
             bulletinComponents,
             setBulletinComponents,
             isOwnProfile,
-            setIsOwnProfile
+            setIsOwnProfile,
+            getTypeInfo
         }}>{children}</bulletinContext.Provider>
     )
 }

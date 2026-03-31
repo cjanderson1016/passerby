@@ -12,12 +12,15 @@ import "./Style/InterestsComponent.css";
 import { type BulletinComponent } from "./BulletinComponent";
 import "../Style/EditBulletin.css"
 import { useBulletin } from "../../../hooks/useBulletin";
+import { useState } from "react";
 
-export type InterestsComponentType = BulletinComponent & {
+export type InterestsComponentSpecificInfo = {
   component_id: string;
-  position: number;
+  created_at: string;
   interests: string; // array of interest strings
-};
+}
+
+export type InterestsComponentType = BulletinComponent & InterestsComponentSpecificInfo
 
 interface InterestsComponentProps {
   component: InterestsComponentType
@@ -27,10 +30,12 @@ export function InterestsComponent({
   component
 }: InterestsComponentProps) {
 
-  const {editMode, isOwnProfile} = useBulletin()
+  const [editComponent, setEditComponent] = useState(false)
+
+  const {editMode, isOwnProfile, bulletinComponents, cleanAdd, setBulletinComponents} = useBulletin()
 
   const onEdit = () => {
-    console.log("Edit Interests clicked");
+    setEditComponent(true)
   }
 
   return (
@@ -51,19 +56,48 @@ export function InterestsComponent({
         )}
       </div>
 
-      {component.interests.length > 0 ? (
-        <div className="profile-interests-list">
-          {component.interests.split(",").map((interest: string, index: number) => (
-            <span key={index} className="profile-interest-tag">
-              {interest}
-            </span>
-          ))}
-        </div>
+      {!editComponent? (
+        <>
+          {component.interests.length > 0 ? (
+            <div className="profile-interests-list">
+              {component.interests.split(",").map((interest: string, index: number) => (
+                <span key={index} className="profile-interest-tag">
+                  {interest}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="profile-side-card-text">
+              No interests added yet.
+            </p>
+          )}
+        </>
       ) : (
-        <p className="profile-side-card-text">
-          No interests added yet.
-        </p>
+        <input
+          type="text"
+          className="edit-box"
+          defaultValue={component.interests}
+          
+          onKeyDown={async (e: React.KeyboardEvent<HTMLInputElement>)=>{
+            if (e.key === "Enter") {
+              console.log("Save About Me Component with text: " + e.currentTarget.value);
+              const updatedComponent = { ...component }
+              updatedComponent.interests =  e.currentTarget.value
+              cleanAdd(updatedComponent)
+              setBulletinComponents(bulletinComponents.map(item => {
+                if (item.component_id === component.component_id){
+                  return updatedComponent
+                }  
+                else return item
+              }))
+              setEditComponent(false)
+            }
+          }}
+          
+        />
       )}
+
+
     </section>
   );
 }

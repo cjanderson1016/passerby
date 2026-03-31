@@ -11,9 +11,14 @@ import "../Style/EditBulletin.css"
 import { useState } from "react";
 import { useBulletin } from "../../../hooks/useBulletin";
 
-export type TextComponentType = BulletinComponent & {
-  text: string;
+
+export type TextComponentSpecificInfo = {
+  component_id: string;
+  created_at: string;
+  text: string; 
 }
+
+export type TextComponentType = BulletinComponent & TextComponentSpecificInfo
 
 interface textProps {
   component: TextComponentType;

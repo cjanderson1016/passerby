@@ -94,10 +94,13 @@ export default function Bulletin({
               //console.log(`loaded ${componentType} data:`, componentTypeData);
               // Flatten the nested data from the join so that child table fields are at the top level
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const flattened = (componentTypeData ?? []).map((item: any) => ({
-                ...item,
-                ...item[componentType],
-              }));
+              const flattened = (componentTypeData ?? []).map((item: any) => {
+                const { [componentType]: child, ...parent } = item;
+                return {
+                  ...parent,
+                  ...child,
+                };
+              });
               return flattened as BulletinComponents.BulletinComponentsUnionType[];
             }),
           );
@@ -157,30 +160,30 @@ export default function Bulletin({
           <div className="bulletin-content">
             {bulletinComponents.map((component) => (
               <div
-                key={component.component_id}
+                key={component.position}
                 className="bulletin-components"
               >
                 {component.child_table == "text_components" && (
                   <BulletinComponents.TextComponent
-                    key={component.component_id}
+                    key={component.position}
                     component={component as BulletinComponents.TextComponentType}
                   />
                 )}
                 {component.child_table == "title_card_components" && (
                   <BulletinComponents.TitleComponent
-                    key={component.component_id}
+                    key={component.position}
                     component={component as BulletinComponents.TitleComponentType}
                   />
                 )}
                 {component.child_table == "about_me_components" && (
                   <BulletinComponents.AboutMeComponent
-                    key={component.component_id}
+                    key={component.position}
                     component={component as BulletinComponents.AboutMeComponentType}
                   />
                 )}
                 {component.child_table == "interests_components" && (
                   <BulletinComponents.InterestsComponent
-                    key={component.component_id}
+                    key={component.position}
                     component={component as BulletinComponents.InterestsComponentType}
                   />
                 )}
@@ -188,13 +191,15 @@ export default function Bulletin({
             ))}
           </div>
           {/* Edit Menu */}
-          <button onClick={() => setEditMode(!editMode)}>Edit Bulletin</button>
           {isOwnProfile && (
-            <EditBulletin
-              components={bulletinComponents}
-              profileUserId={profileUserId}
-              loadBulletin={loadBulletin}
-            />
+            <>  
+              <button onClick={() => setEditMode(!editMode)}>Edit Bulletin</button>
+                <EditBulletin
+                  components={bulletinComponents}
+                  profileUserId={profileUserId}
+                  loadBulletin={loadBulletin}
+                />
+            </>
           )}
         </div>
       )}

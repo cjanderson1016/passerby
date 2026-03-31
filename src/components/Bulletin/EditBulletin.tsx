@@ -7,9 +7,11 @@
 */
 
 import "./Style/EditBulletin.css"
-import { type BulletinComponentsUnionType } from "./BulletinComponents";
+import { newTitleComponent, type BulletinComponentsUnionType } from "./BulletinComponents";
 import { supabase } from "../../lib/supabase";
 import { useBulletin } from "../../hooks/useBulletin";
+import { useState } from "react";
+import { useUser } from "../../hooks/useUser";
 
 interface EditBulletinProps {
   //Things to pass in to the bulletin editor
@@ -18,12 +20,21 @@ interface EditBulletinProps {
   loadBulletin: (isActive: boolean) => Promise<void>
 }
 
+type FilterOption = 
+  | "Title"
+  | "Text"
+  | "About Me"
+  | "Interests";
+
 export default function EditBulletin({components: components}: EditBulletinProps) {
   //Render the edit bulletin menu
 
   const componentsCopy = [...components] //Creates a copy so vscode doesn't yell at me
+  const [filterOption, setFilterOption] = useState<FilterOption>("Text") //default option for the create new component dropdown menu
 
-  const {cleanAdd, updatedComponents, editMode, setBulletinComponents} = useBulletin()
+  const {cleanAdd, updatedComponents, editMode, setBulletinComponents, getTypeInfo} = useBulletin()
+  const {user} = useUser()
+  const user_id = user?.id
 
   interface SpecificComponentEditorProps {
     component: BulletinComponentsUnionType
@@ -90,7 +101,7 @@ export default function EditBulletin({components: components}: EditBulletinProps
     //Upload all the changed elements to the database
     console.log("Saving bulletin with the following component changes: ", updatedComponents)
     const flatUpdate = Object.values(updatedComponents).flat() //Get just the lists of each component type, and flatten it into a single list of values
-    const { error: moveComponentParentError } = await supabase
+      const { error: moveComponentParentError } = await supabase
       .from("bulletin_components")
       .upsert(flatUpdate.map(component => ({
         user_id: component.user_id,
@@ -106,13 +117,26 @@ export default function EditBulletin({components: components}: EditBulletinProps
     Object.entries(updatedComponents).map(async ([table, typedComponents]) => {
       const { error: moveComponentChildError } = await supabase
         .from(table)
-        .upsert((typedComponents).map(component => ({
-          component
+        .upsert(typedComponents.map(component => ({
+          ...(getTypeInfo(component))
         })), { onConflict: "component_id" })
       if (moveComponentChildError){
         console.error("Failed saving component changes for table " + table)
       }
     })
+  }
+
+  const addComponent = () => {
+    //Add a new component to the bottom of the bulletin.
+    console.log("Adding new component of type " + filterOption)
+    if (!user_id) {
+      console.error("No user id found, cannot add component")
+      return
+    }
+    const newComponent = newTitleComponent(user_id, componentsCopy.length)
+    cleanAdd(newComponent)
+    setBulletinComponents([...componentsCopy, newComponent])
+    //console.log("New component created:", newComponent)
   }
 
   return (
@@ -121,10 +145,23 @@ export default function EditBulletin({components: components}: EditBulletinProps
         //Render the editor full of tools and such for changing your bulletin
         <div className = "edit-bulletin">
           {componentsCopy.map((component) => (
-            <div key = {component.component_id}>
+            <div key = {component.position}>
               <SpecificComponentEditor component = {component}/>
             </div>
           ))}
+          <div className="new-component-menu">
+            <button onClick={addComponent}>Create New Component</button>
+            <select
+              className="edit-select"
+              onChange={(e) => {setFilterOption(e.target.value as FilterOption)}}
+              value={filterOption}
+            >
+              <option value="Text">Text</option>
+              <option value="Title">Title</option>
+              <option value="About Me">About Me</option>
+              <option value="Interests">Interests</option>
+            </select>
+          </div>
           <button onClick={saveBulletin}>save</button>
         </div>
       )}

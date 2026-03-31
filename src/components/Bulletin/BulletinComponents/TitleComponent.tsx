@@ -5,13 +5,10 @@
 
   Author(s): Matthew Eagleman
 */
-import type { BulletinComponent } from "./BulletinComponent";
 import "../Style/EditBulletin.css"
 import { useBulletin } from "../../../hooks/useBulletin";
-
-export type TitleComponentType = BulletinComponent & {
-  title: string;
-}
+import { useState } from "react";
+import { type TitleComponentType } from "./TitleComponentData";
 
 interface titleProps {
   component: TitleComponentType;
@@ -21,15 +18,42 @@ export function TitleComponent({
   component
 }: titleProps) {
 
-  const { editMode, isOwnProfile } = useBulletin()
+  const [editComponent, setEditComponent] = useState(false)
+
+  const { editMode, isOwnProfile, cleanAdd, setBulletinComponents, bulletinComponents } = useBulletin()
   
   const onEdit = () => { 
-    console.log("Edit Title clicked");
+    setEditComponent(true)
   }
   return (
-      <div className="component">
-          <h1>{component.title}</h1>
-          {isOwnProfile && editMode && (
+    <div className="component">
+      {!editComponent? (
+        <h1>{component.title}</h1>
+      ) : (
+        <input
+          type="text"
+          className="edit-box"
+          defaultValue={component.title}
+          
+          onKeyDown={async (e: React.KeyboardEvent<HTMLInputElement>)=>{
+            if (e.key === "Enter") {
+              console.log("Save Title Component with title: " + e.currentTarget.value);
+              const updatedComponent = { ...component }
+              updatedComponent.title =  e.currentTarget.value
+              cleanAdd(updatedComponent)
+              setBulletinComponents(bulletinComponents.map(item => {
+                if (item.component_id === component.component_id){
+                  return updatedComponent
+                }  
+                else return item
+              }))
+              setEditComponent(false)
+            }
+          }}
+          
+        />
+      )}
+      {isOwnProfile && editMode && (
         <button
           type="button"
           className="profile-inline-edit-btn"
@@ -40,6 +64,6 @@ export function TitleComponent({
           ✏️
         </button>
       )}
-      </div>
+    </div>
   );
 }

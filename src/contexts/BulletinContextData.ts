@@ -1,5 +1,5 @@
 import { createContext } from "react"
-import { type BulletinComponentsUnionType } from "../components/Bulletin/BulletinComponents/BulletinComponent"
+import { type BulletinComponentsUnionType, type ComponentSpecificInfo } from "../components/Bulletin/BulletinComponents/BulletinComponent"
 
 export interface BulletinContextType {
     editMode: boolean,
@@ -10,6 +10,7 @@ export interface BulletinContextType {
     setBulletinComponents: React.Dispatch<React.SetStateAction<BulletinComponentsUnionType[]>>
     isOwnProfile: boolean
     setIsOwnProfile: React.Dispatch<React.SetStateAction<boolean>>
+    getTypeInfo: (component: BulletinComponentsUnionType) => ComponentSpecificInfo
 }
 
 export const bulletinContext = createContext<BulletinContextType | undefined>(undefined)
