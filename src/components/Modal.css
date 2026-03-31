@@ -8,60 +8,58 @@
 
 /* Fullscreen backdrop */
 .popup_window {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-
-    background-color: rgba(0, 0, 0, 0.5); 
-
-    z-index: 9999;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.45);
+  z-index: 9999;
 }
 
-.modal-header{
-    z-index: 10000;
-    display: flex;
-    justify-content: space-between;
-    border-bottom: grey solid 1px;
-    padding-bottom: 0.5rem;
+.modal-header {
+  z-index: 10000;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #cdcdcd;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
-.Title{
-    font-size: x-large;
-    font-weight: bold;
+.Title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
+  color: #111111;
 }
+
 /* Actual modal box */
 .modal_container {
-    position: relative;
-    background: white;
-    border-top: grey, solid, 1px;
-    padding: 32px;
-    border-radius: 12px;
-    min-width: 400px;
-    max-width: 90vw;
-
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  position: relative;
+  background: #f1f1f1;
+  border: 1px solid #cdcdcd;
+  padding: 28px 32px;
+  min-width: 400px;
+  max-width: 90vw;
 }
-
 
 /* Exit button */
 .exit_btn {
-    font-size: xx-large;
-    display: flex;
-    justify-content: center;
-    border: none;
-    background: none;
-    font-weight: bold;
-    color: red;
-
-    cursor: pointer;
+  font-size: 1.4rem;
+  display: flex;
+  justify-content: center;
+  border: none;
+  background: none;
+  font-weight: bold;
+  color: #555555;
+  cursor: pointer;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
 }
 
 .exit_btn:hover {
-    color: pink;
+  color: #111111;
 }

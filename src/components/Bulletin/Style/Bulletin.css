@@ -1,19 +1,18 @@
 .bulletin {
-    display: flex;
-    align-items: start;
-    justify-content: space-between;
-    size: 100vw;
-    /*border-top: #cdcdcd solid 2px;*/
-    /*height: 100vh;*/
-    margin-left: 20px;
-    margin-right: 20px;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  margin-left: 20px;
+  margin-right: 20px;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
 }
+
 .bulletin-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    text-align: left;
-    gap: 12px;
-    width: 100%;
-    padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+  gap: 12px;
+  width: 100%;
+  padding: 20px;
 }

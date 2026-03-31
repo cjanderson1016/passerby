@@ -1,38 +1,39 @@
-.edit-bulletin{
-    width: 500px;
-    height: 100%;
-    border-left: #cdcdcd solid 2px;
-    padding-left: 20px;
+.edit-bulletin {
+  width: 500px;
+  height: 100%;
+  border-left: 1px solid #cdcdcd;
+  padding-left: 20px;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
 }
 
-.specific-component-editor{
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    border-top: #cdcdcd solid 1px;
-    border-bottom: #cdcdcd solid 1px;
-    justify-content: space-between;
+.specific-component-editor {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border-top: 1px solid #cdcdcd;
+  border-bottom: 1px solid #cdcdcd;
+  justify-content: space-between;
 }
 
-.component{
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding-left: 20px;
-    padding-right: 20px;
+.component {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
-.edit-box{
-    display: flex;
-    align-items: flex-start;
-    text-align: left;
-    width: 100%;
-    padding: 20px;
-    border: 1px solid #cdcdcd;
-    border-radius: 4px;
+.edit-box {
+  display: flex;
+  align-items: flex-start;
+  text-align: left;
+  width: 100%;
+  padding: 20px;
+  border: 1px solid #cdcdcd;
+  background: #e4e4e4;
 }
 
-.component-text{
-    padding-bottom: 10px
+.component-text {
+  padding-bottom: 10px;
 }

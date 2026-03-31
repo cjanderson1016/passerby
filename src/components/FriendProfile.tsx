@@ -21,26 +21,40 @@ function formatMinutes(m: number) {
 
 interface FriendProfileProps {
   friend: Friend;
+  isActive?: boolean;
+  onSelect?: (friend: Friend | null) => void;
 }
 
-export default function FriendProfile({ friend }: FriendProfileProps) {
+export default function FriendProfile({
+  friend,
+  isActive = false,
+  onSelect,
+}: FriendProfileProps) {
   const navigate = useNavigate();
   const friendAvatarUrl = friend.profile_pic_key
     ? getPublicUrl(friend.profile_pic_key)
     : null;
 
-  const goToFriendProfile = () => {
-    navigate(`/profile/${friend.username}`); // navigate to the friend's profile page when the card is clicked
+  const handleClick = () => {
+    if (onSelect) {
+      onSelect(isActive ? null : friend);
+      return;
+    }
+
+    navigate(`/profile/${friend.username}`); // fallback for standalone use
   };
 
   return (
     <div
-      className="dash-card"
+      className={`dash-card ${isActive ? "dash-card-active" : ""}`}
       role="button"
       tabIndex={0}
-      onClick={goToFriendProfile}
+      onClick={handleClick}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") goToFriendProfile(); // navigate to the friend's profile page when Enter or Space is pressed
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick();
+        }
       }}
     >
       {friendAvatarUrl ? (
@@ -63,12 +77,6 @@ export default function FriendProfile({ friend }: FriendProfileProps) {
 
         <div className="dash-message-box">
           <div className="dash-message">{friend.text}</div>
-        </div>
-      </div>
-
-      <div className="dash-checkwrap">
-        <div className="dash-checkbox">
-          {friend.unreadMessages && <span className="dash-unread-dot" />}
         </div>
       </div>
     </div>

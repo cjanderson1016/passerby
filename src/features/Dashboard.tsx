@@ -7,7 +7,7 @@
   */
 
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import "./dashboard.css";
 import type { Friend, Post, AcceptedFriendRequest, FriendUser } from "../types";
 import ProfileMenu from "../components/ProfileMenu";
@@ -17,7 +17,8 @@ import FriendRequestList from "../components/FriendRequestList";
 import AddFriendModal from "../components/AddFriendModal";
 import { useUser } from "../hooks/useUser"; // hook wraps UserContext and provides user/profile/loading
 import { supabase } from "../lib/supabase"; // still used for fetching friends/posts
-import Modal from "../components/Modal"
+import Modal from "../components/Modal";
+import Profile from "./Profile";
 
 type FilterOption =
   | "Most Recently Updated"
@@ -72,7 +73,9 @@ export default function Dashboard() {
 
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
+  const [hasLoadedFriends, setHasLoadedFriends] = useState(false);
   const [friendsRefreshTick, setFriendsRefreshTick] = useState(0); // this is a simple way to trigger a refresh of the friends feed when something changes, like accepting a friend request. We increment this tick to cause the useEffect that loads the friends feed to re-run.
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -87,10 +90,15 @@ export default function Dashboard() {
 
   // Pull friends + latest posts from Supabase
   useEffect(() => {
-    if (!currentUserId) return;
+    if (!currentUserId) {
+      setFriends([]);
+      setHasLoadedFriends(false);
+      return;
+    }
 
     // This function fetches the list of friends for the current user, along with their latest post and how long ago it was updated, then sets that in state for the feed.  We do this in multiple steps:
     const fetchFriendsFeed = async () => {
+      setHasLoadedFriends(false);
       setLoadingFriends(true);
 
       // 1) Get accepted relationships involving this user
@@ -109,6 +117,7 @@ export default function Dashboard() {
         );
         setFriends([]);
         setLoadingFriends(false);
+        setHasLoadedFriends(true);
         return;
       }
 
@@ -122,6 +131,7 @@ export default function Dashboard() {
       if (friendIds.length === 0) {
         setFriends([]);
         setLoadingFriends(false);
+        setHasLoadedFriends(true);
         return;
       }
 
@@ -135,6 +145,7 @@ export default function Dashboard() {
         console.error("Error fetching friend users:", usersError.message);
         setFriends([]);
         setLoadingFriends(false);
+        setHasLoadedFriends(true);
         return;
       }
 
@@ -186,6 +197,7 @@ export default function Dashboard() {
 
       setFriends(feed);
       setLoadingFriends(false);
+      setHasLoadedFriends(true);
     };
 
     void fetchFriendsFeed();
@@ -194,6 +206,55 @@ export default function Dashboard() {
   const filteredFriends = useMemo(() => {
     return applyFilter(friends, filterOption);
   }, [friends, filterOption]);
+
+  const selectedUsername = searchParams.get("friend");
+
+  const selectedFriend = useMemo(() => {
+    if (!selectedUsername) return null;
+    return (
+      filteredFriends.find((friend) => friend.username === selectedUsername) ??
+      null
+    );
+  }, [filteredFriends, selectedUsername]);
+
+  useEffect(() => {
+    if (!selectedUsername || !hasLoadedFriends) {
+      return;
+    }
+
+    const selectedFriendStillExists = friends.some(
+      (friend) => friend.username === selectedUsername,
+    );
+
+    if (!selectedFriendStillExists) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("friend");
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [
+    friends,
+    hasLoadedFriends,
+    searchParams,
+    selectedUsername,
+    setSearchParams,
+  ]);
+
+  const handleSelectFriend = (friend: Friend | null) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (friend) {
+      nextParams.set("friend", friend.username);
+    } else {
+      nextParams.delete("friend");
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const handleUnfriendFromProfile = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("friend");
+    setSearchParams(nextParams, { replace: true });
+    setFriendsRefreshTick((prev) => prev + 1);
+  };
 
   return (
     <div className="dash-page">
@@ -253,24 +314,55 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Feed */}
-      {loadingFriends ? (
-        <div style={{ padding: "16px" }}>Loading friends…</div>
-      ) : friends.length === 0 ? (
-        <div style={{ padding: "16px" }}>
-          No friends yet. Click <b>Add Friend</b> to send a request.
-        </div>
-      ) : (
-        <FriendTable friends={filteredFriends} />
-      )}
+      <div className="dash-shell">
+        <section className="dash-left-pane" aria-label="Friends list">
+          {loadingFriends ? (
+            <div style={{ padding: "16px" }}>Loading friends...</div>
+          ) : friends.length === 0 ? (
+            <div style={{ padding: "16px" }}>
+              No friends yet. Click <b>Add Friend</b> to send a request.
+            </div>
+          ) : (
+            <FriendTable
+              friends={filteredFriends}
+              selectedFriendId={selectedFriend?.id ?? null}
+              onSelectFriend={handleSelectFriend}
+            />
+          )}
+        </section>
+
+        <section
+          className="dash-right-pane"
+          aria-label="Selected friend profile"
+        >
+          {selectedFriend ? (
+            <Profile
+              embedded
+              embeddedUsername={selectedFriend.username}
+              onUnfriendSuccess={handleUnfriendFromProfile}
+            />
+          ) : (
+            <div className="dash-empty-selection">
+              Select a friend from the left to view their profile.
+            </div>
+          )}
+        </section>
+      </div>
 
       {/* Add Friend modal */}
       {currentUserId && (
-         <Modal is_open={modalOpen} current_state={setModalOpen} component={        <AddFriendModal
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-          currentUserId={currentUserId}
-        />   } title = {"Add Friend"}/>
+        <Modal
+          is_open={modalOpen}
+          current_state={setModalOpen}
+          component={
+            <AddFriendModal
+              isOpen={modalOpen}
+              onClose={() => setModalOpen(false)}
+              currentUserId={currentUserId}
+            />
+          }
+          title={"Add Friend"}
+        />
       )}
     </div>
   );
