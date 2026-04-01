@@ -8,7 +8,7 @@
 import "../Style/EditBulletin.css"
 import { useBulletin } from "../../../hooks/useBulletin";
 import { useState } from "react";
-import { type TitleComponentType } from "./TitleComponentData";
+import { type TitleComponentType } from "./Data/TitleComponentData";
 
 interface titleProps {
   component: TitleComponentType;

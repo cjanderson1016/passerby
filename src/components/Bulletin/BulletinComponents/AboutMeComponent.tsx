@@ -9,18 +9,10 @@
 */
 
 import "./Style/AboutMeComponent.css";
-import { type BulletinComponent } from "./BulletinComponent";
 import "../Style/EditBulletin.css"
 import { useBulletin } from "../../../hooks/useBulletin";
 import { useState } from "react";
-
-export type AboutMeComponentSpecificInfo = {
-  component_id: string;
-  created_at: string;
-  text: string;
-}
-
-export type AboutMeComponentType = BulletinComponent & AboutMeComponentSpecificInfo
+import { type AboutMeComponentType } from "./Data/AboutMeComponentData";
 
 interface AboutMeCardProps {
   component: AboutMeComponentType

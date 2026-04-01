@@ -7,7 +7,13 @@
 */
 
 import "./Style/EditBulletin.css"
-import { newTitleComponent, type BulletinComponentsUnionType } from "./BulletinComponents";
+import { 
+  newTextComponent, 
+  newTitleComponent, 
+  newAboutMeComponent,
+  newInterestsComponent,
+  type BulletinComponentsUnionType 
+} from "./BulletinComponents";
 import { supabase } from "../../lib/supabase";
 import { useBulletin } from "../../hooks/useBulletin";
 import { useState } from "react";
@@ -31,8 +37,19 @@ export default function EditBulletin({components: components}: EditBulletinProps
 
   const componentsCopy = [...components] //Creates a copy so vscode doesn't yell at me
   const [filterOption, setFilterOption] = useState<FilterOption>("Text") //default option for the create new component dropdown menu
-
-  const {cleanAdd, updatedComponents, editMode, setBulletinComponents, getTypeInfo} = useBulletin()
+  const {
+    cleanAdd, 
+    updatedComponents, 
+    bulletinComponents,
+    editMode, 
+    setBulletinComponents, 
+    getTypeInfo, 
+    addToDeletedComponents, 
+    removeFromUpdatedComponents,
+    deletedComponents,
+    unsavedChanges,
+    setUnsavedChanges
+  } = useBulletin()
   const {user} = useUser()
   const user_id = user?.id
 
@@ -42,15 +59,40 @@ export default function EditBulletin({components: components}: EditBulletinProps
 
   function SpecificComponentEditor({component}: SpecificComponentEditorProps){
     // This component renders each component with some basic information, and the ability to move it up or down
+    const [renaming, setRenaming] = useState(false)
     return(
       <div className="specific-component-editor">
+        {renaming? (<input type="text" defaultValue={component.name} onKeyDown={async (e) => {
+          if (e.key === "Enter") {
+            cleanAdd({...component, name: e.currentTarget.value})
+            setBulletinComponents(bulletinComponents.map(c => {
+              if (c.component_id === component.component_id){
+                return {...c, name: e.currentTarget.value}
+              }
+              else return c
+            }))
+            setRenaming(false)
+          }
+        }}/>) : (
         <p>{component.name}</p>
+        )}
         <div>
+          <button onClick={() => { setRenaming(true) }}>rename</button>
+          <button onClick={() => deleteComponent(component)}>delete</button>
           <button onClick={() => moveComponentUp(component)}>↑</button>
           <button onClick={() => moveComponentDown(component)}>↓</button>
         </div>
       </div>
     )
+  }
+
+  const deleteComponent = async (component: BulletinComponentsUnionType) => {
+    //Delete the given component from the bulletin, and update the position values of the remaining components to reflect the change
+    console.log("Deleting component with id " + component.component_id)
+    const newComponents = componentsCopy.filter(c => c.component_id !== component.component_id) //Create a new array without the deleted component
+    setBulletinComponents(newComponents) //Render the new array
+    addToDeletedComponents(component) //Add the deleted component to deletedComponents to be deleted from the database when the user clicks save
+    removeFromUpdatedComponents(component) //Remove the deleted component from updatedComponents so it doesn't get accidentally re-added to the database when the user clicks save
   }
 
   const moveComponentUp = async (component: BulletinComponentsUnionType) => {
@@ -97,9 +139,7 @@ export default function EditBulletin({components: components}: EditBulletinProps
     setBulletinComponents([...componentsCopy])
   }
   
-  const saveBulletin = async () => {
-    //Upload all the changed elements to the database
-    console.log("Saving bulletin with the following component changes: ", updatedComponents)
+  const pushNewStuffToDatabase = async () => {
     const flatUpdate = Object.values(updatedComponents).flat() //Get just the lists of each component type, and flatten it into a single list of values
       const { error: moveComponentParentError } = await supabase
       .from("bulletin_components")
@@ -126,6 +166,24 @@ export default function EditBulletin({components: components}: EditBulletinProps
     })
   }
 
+  const deleteFromDatabase = async () => {
+    const { error } = await supabase
+      .from("bulletin_components")
+      .delete()
+      .in("component_id", deletedComponents.map(c => c.component_id))
+    if (error){
+      console.error("Failed to delete components from database")
+    }
+  }
+
+  const saveBulletin = async () => {
+    //Upload all the changed elements to the database
+    console.log("Saving bulletin with the following component changes: ", updatedComponents)
+    pushNewStuffToDatabase()
+    deleteFromDatabase()
+    setUnsavedChanges(false)
+  }
+
   const addComponent = () => {
     //Add a new component to the bottom of the bulletin.
     console.log("Adding new component of type " + filterOption)
@@ -133,7 +191,21 @@ export default function EditBulletin({components: components}: EditBulletinProps
       console.error("No user id found, cannot add component")
       return
     }
-    const newComponent = newTitleComponent(user_id, componentsCopy.length)
+    let newComponent: BulletinComponentsUnionType
+    switch(filterOption){
+      case "Title":
+        newComponent = newTitleComponent(user_id, componentsCopy.length)
+        break
+      case "Text":
+        newComponent = newTextComponent(user_id, componentsCopy.length)
+        break
+      case "About Me":
+        newComponent = newAboutMeComponent(user_id, componentsCopy.length)
+        break
+      case "Interests":
+        newComponent = newInterestsComponent(user_id, componentsCopy.length)
+        break
+    }
     cleanAdd(newComponent)
     setBulletinComponents([...componentsCopy, newComponent])
     //console.log("New component created:", newComponent)
@@ -163,6 +235,7 @@ export default function EditBulletin({components: components}: EditBulletinProps
             </select>
           </div>
           <button onClick={saveBulletin}>save</button>
+          {unsavedChanges && <p>You have unsaved changes!</p>}
         </div>
       )}
     </>

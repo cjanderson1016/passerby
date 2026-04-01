@@ -149,7 +149,7 @@ export default function Bulletin({
           {loadingComponents ? (
             <p>Loading Bulletin...</p>
           ) : bulletinComponents.length === 0 ? (
-            <p>No posts yet.</p>
+            <p>This user has not yet customized their bulletin.</p>
           ) : (
             <></>
           )}

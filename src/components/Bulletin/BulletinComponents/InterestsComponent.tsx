@@ -5,22 +5,14 @@
   Displays the user's interests on the profile page.
   Interests are shown as small tag-like elements.
 
-  
+  Author(s): Matthew Eagleman
 */
 
 import "./Style/InterestsComponent.css";
-import { type BulletinComponent } from "./BulletinComponent";
 import "../Style/EditBulletin.css"
 import { useBulletin } from "../../../hooks/useBulletin";
 import { useState } from "react";
-
-export type InterestsComponentSpecificInfo = {
-  component_id: string;
-  created_at: string;
-  interests: string; // array of interest strings
-}
-
-export type InterestsComponentType = BulletinComponent & InterestsComponentSpecificInfo
+import { type InterestsComponentType } from "./Data/InterestsComponentData";
 
 interface InterestsComponentProps {
   component: InterestsComponentType

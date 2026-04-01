@@ -11,6 +11,11 @@ export interface BulletinContextType {
     isOwnProfile: boolean
     setIsOwnProfile: React.Dispatch<React.SetStateAction<boolean>>
     getTypeInfo: (component: BulletinComponentsUnionType) => ComponentSpecificInfo
+    addToDeletedComponents: (component: BulletinComponentsUnionType) => void
+    deletedComponents: Array<BulletinComponentsUnionType>
+    removeFromUpdatedComponents: (component: BulletinComponentsUnionType) => void
+    unsavedChanges: boolean
+    setUnsavedChanges: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export const bulletinContext = createContext<BulletinContextType | undefined>(undefined)

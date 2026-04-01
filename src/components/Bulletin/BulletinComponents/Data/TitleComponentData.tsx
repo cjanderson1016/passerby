@@ -6,7 +6,7 @@
   Author(s): Matthew Eagleman
 */
 
-import { newBulletinComponent, type BulletinComponent } from "./BulletinComponent";
+import { newBulletinComponent, type BulletinComponent } from "../BulletinComponent";
 
 export type TitleComponentSpecificInfo = {
   component_id: string;

@@ -3,27 +3,46 @@ import { type BulletinComponentsUnionType, type ComponentSpecificInfo } from "..
 import { bulletinContext } from "./BulletinContextData";
 
 const updatedComponents: Record<string, Array<BulletinComponentsUnionType>> = {}; //Keeps track of the components that need to be updated when save is pressed
+let deletedComponents: Array<BulletinComponentsUnionType> = []; //Keeps track of the components that need to be deleted when save is pressed
 
 export function BulletinProvider({children}: {children: ReactNode}) {
     //React Hooks
     const [editMode,setEditMode] = useState<boolean>(false)
     const [bulletinComponents, setBulletinComponents] = useState<BulletinComponentsUnionType[]>([]);
-    
+    const [unsavedChanges, setUnsavedChanges] = useState(false) //Whether or not there are unsaved changes
     const [isOwnProfile, setIsOwnProfile] = useState<boolean>(false)
 
-    const cleanAdd = (component: BulletinComponentsUnionType) => {
-        //Adds the given component to updatedComponents, without adding dupicates
-        if (!updatedComponents[component.child_table]) {
-          updatedComponents[component.child_table] = [];
-        }
-        updatedComponents[component.child_table].forEach(item => {
+    const addToDeletedComponents = (component: BulletinComponentsUnionType) => {
+      deletedComponents.forEach(item => {
           if (item.component_id === component.component_id) {
             //remove the old version of the component from updatedComponents
-            updatedComponents[component.child_table] = updatedComponents[component.child_table].filter(c => c.component_id !== component.component_id) 
+            deletedComponents = deletedComponents.filter(c => c.component_id !== component.component_id) 
           }
         });
-        updatedComponents[component.child_table].push(component)
-      };
+        deletedComponents.push(component)
+        setUnsavedChanges(true)
+    }
+
+    const removeFromUpdatedComponents = (component: BulletinComponentsUnionType) => { 
+      if (updatedComponents[component.child_table]) {
+        updatedComponents[component.child_table] = updatedComponents[component.child_table].filter(c => c.component_id !== component.component_id) 
+      }
+    }
+
+    const cleanAdd = (component: BulletinComponentsUnionType) => {
+      //Adds the given component to updatedComponents, without adding dupicates
+      if (!updatedComponents[component.child_table]) {
+        updatedComponents[component.child_table] = [];
+      }
+      updatedComponents[component.child_table].forEach(item => {
+        if (item.component_id === component.component_id) {
+          //remove the old version of the component from updatedComponents
+          updatedComponents[component.child_table] = updatedComponents[component.child_table].filter(c => c.component_id !== component.component_id) 
+        }
+      });
+      updatedComponents[component.child_table].push(component)
+      setUnsavedChanges(true)
+    };
 
     const getTypeInfo = (component: BulletinComponentsUnionType) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -41,7 +60,12 @@ export function BulletinProvider({children}: {children: ReactNode}) {
             setBulletinComponents,
             isOwnProfile,
             setIsOwnProfile,
-            getTypeInfo
+            getTypeInfo,
+            addToDeletedComponents,
+            deletedComponents,
+            removeFromUpdatedComponents,
+            unsavedChanges,
+            setUnsavedChanges
         }}>{children}</bulletinContext.Provider>
     )
 }

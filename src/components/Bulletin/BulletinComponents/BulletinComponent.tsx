@@ -5,10 +5,10 @@
 
   Author(s): Matthew Eagleman
 */
-import type { TextComponentType, TextComponentSpecificInfo } from "./TextComponent";
-import type { TitleComponentType, TitleComponentSpecificInfo } from "./TitleComponentData";
-import type { AboutMeComponentType, AboutMeComponentSpecificInfo } from "./AboutMeComponent";
-import type { InterestsComponentType, InterestsComponentSpecificInfo } from "./InterestsComponent";
+import type { TextComponentType, TextComponentSpecificInfo } from "./Data/TextComponentData";
+import type { TitleComponentType, TitleComponentSpecificInfo } from "./Data/TitleComponentData";
+import type { AboutMeComponentType, AboutMeComponentSpecificInfo } from "./Data/AboutMeComponentData";
+import type { InterestsComponentType, InterestsComponentSpecificInfo } from "./Data/InterestsComponentData";
 
 export type BulletinComponentsUnionType = TextComponentType | TitleComponentType | AboutMeComponentType | InterestsComponentType;
 
