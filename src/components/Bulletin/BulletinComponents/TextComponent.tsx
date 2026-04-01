@@ -6,14 +6,10 @@
   Author(s): Matthew Eagleman
 */
 
-import type { BulletinComponent} from "./BulletinComponent";
 import "../Style/EditBulletin.css"
 import { useState } from "react";
-import { useBulletin } from "../../../hooks/useBulletin";
-
-export type TextComponentType = BulletinComponent & {
-  text: string;
-}
+import { useBulletin } from "../../../hooks/useBulletin"
+import { type TextComponentType } from "./Data/TextComponentData";
 
 interface textProps {
   component: TextComponentType;

@@ -10,3 +10,7 @@ export * from "./TextComponent.tsx";
 export * from "./TitleComponent.tsx";
 export * from "./AboutMeComponent.tsx";
 export * from "./InterestsComponent.tsx";
+export * from "./Data/TitleComponentData.tsx";
+export * from "./Data/TextComponentData.tsx";
+export * from "./Data/AboutMeComponentData.tsx";
+export * from "./Data/InterestsComponentData.tsx";

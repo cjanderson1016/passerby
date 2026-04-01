@@ -34,6 +34,24 @@
   background: #e4e4e4;
 }
 
-.component-text {
-  padding-bottom: 10px;
+.component-text{
+    padding-bottom: 10px
+}
+
+.edit-select {
+  height: 28px;
+  padding: 2px 10px;
+  border: 1px solid #bdbdbd;
+  background: #ffffff;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.new-component-menu {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
