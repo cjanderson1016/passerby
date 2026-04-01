@@ -16,13 +16,24 @@ import FriendProfile from "./FriendProfile";
 
 interface FriendTableProps {
   friends: Friend[];
+  selectedFriendId?: string | null;
+  onSelectFriend?: (friend: Friend | null) => void;
 }
 
-export default function FriendTable({ friends }: FriendTableProps) {
+export default function FriendTable({
+  friends,
+  selectedFriendId = null,
+  onSelectFriend,
+}: FriendTableProps) {
   return (
     <div className="dash-feed">
       {friends.map((f) => (
-        <FriendProfile key={f.id} friend={f} />
+        <FriendProfile
+          key={f.id}
+          friend={f}
+          isActive={selectedFriendId === f.id}
+          onSelect={onSelectFriend}
+        />
       ))}
     </div>
   );

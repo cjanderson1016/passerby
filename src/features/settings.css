@@ -7,83 +7,123 @@
 */
 
 .settings-title {
-    margin-left: 100px;
+  padding: 24px 32px 0;
+  font-family: "Major Mono Display", monospace;
+}
+
+.settings-title h1 {
+  margin: 0;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #111111;
 }
 
 .settings-body {
-    margin-left: 120px;
-
+  padding: 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .toggle-button {
-    background-color: lightgray;
-    border: 1px solid black;
-    border-radius: 99px;
-    width: 50px;
-    height: 25px;
-    transition: background-color 0.2s ease;
-    cursor: pointer;
-    position: relative;
-    vertical-align: middle;
+  background-color: #d7d7d7;
+  border: 1px solid #bcbcbc;
+  border-radius: 0;
+  width: 50px;
+  height: 24px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
 }
 
 .toggle-button.isToggled {
-    background-color: #00FF7F;
+  background-color: #888888;
 }
 
 .circle {
-    height: 18px;
-    width: 18px;
-    position: absolute;
-    transition: left 0.15s ease;
-    border-radius: 50%;
-    background-color: whitesmoke;
-    left: 3px;
-    top: 50%;
-    transform: translateY(-50%);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  height: 16px;
+  width: 16px;
+  position: absolute;
+  transition: left 0.15s ease;
+  background-color: #f1f1f1;
+  border: 1px solid #aaaaaa;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
 }
+
 .toggle-button.isToggled .circle {
-    left: 27px;
+  left: 29px;
 }
 
-.settings-btn{
-    padding: 10px;
-    cursor: pointer;
+.settings-btn {
+  padding: 8px 16px;
+  cursor: pointer;
+  border: 1px solid #bcbcbc;
+  background: #d7d7d7;
+  color: #262626;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
+  font-size: 0.95rem;
+  border-radius: 0;
+  transition: background-color 0.15s ease;
 }
 
-.settings-btn-important{
-    padding: 10px;
-    cursor: pointer;
-    border-color: red;
-    color: red;
+.settings-btn:hover {
+  background: #c6c6c6;
 }
 
-.confirm_box{
-    display: inline;
-    align-items: center;
+.settings-btn-important {
+  padding: 8px 16px;
+  cursor: pointer;
+  border: 1px solid #d0a0a0;
+  background: #f5eded;
+  color: #b42318;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
+  font-size: 0.95rem;
+  border-radius: 0;
+  transition: background-color 0.15s ease;
 }
 
-.confirm_accept{
-            padding: 0.75rem;
-            background-color: #46d668;
-            color: white;
-            border: none;
-            margin-top: 30px;
-            font-weight: bold;
-            width: 50%;
-            margin-left: 25%;
-
-        
+.settings-btn-important:hover {
+  background: #edd8d8;
 }
 
-.confirm_accept:hover{
-    cursor: pointer;
+.confirm_box {
+  display: inline;
+  align-items: center;
 }
 
-.change_user{
-    padding: 10px;
-    width: 51%;
-    font-weight: bold;
+.confirm_accept {
+  padding: 0.75rem;
+  background-color: #d7d7d7;
+  color: #262626;
+  border: 1px solid #bcbcbc;
+  margin-top: 30px;
+  font-weight: bold;
+  width: 50%;
+  margin-left: 25%;
+  cursor: pointer;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
+}
 
+.confirm_accept:hover {
+  background: #c6c6c6;
+}
+
+.change_user {
+  padding: 10px;
+  width: 51%;
+  font-weight: bold;
+  background: #e4e4e4;
+  border: none;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
+  font-size: 1rem;
+  color: #222222;
+  box-sizing: border-box;
+}
+
+.change_user:focus {
+  outline: 1px solid #b8b8b8;
 }

@@ -26,6 +26,12 @@ import type { ProfilePost as Post } from "../components/profile/types"; // we de
 import Bulletin from "../components/Bulletin/Bulletin";
 import { BulletinProvider } from "../contexts/BulletinContext";
 
+interface ProfileProps {
+  embeddedUsername?: string;
+  embedded?: boolean;
+  onUnfriendSuccess?: () => void;
+}
+
 type ViewedProfile = {
   id: string;
   username: string;
@@ -96,8 +102,13 @@ function normalizePost(row: PostRow): Post {
   };
 }
 
-export default function Profile() {
-  const { username } = useParams();
+export default function Profile({
+  embeddedUsername,
+  embedded = false,
+  onUnfriendSuccess,
+}: ProfileProps = {}) {
+  const { username: routeUsername } = useParams();
+  const username = embeddedUsername ?? routeUsername;
   const navigate = useNavigate();
   const { user } = useUser();
 
@@ -662,7 +673,11 @@ export default function Profile() {
         return;
       }
 
-      navigate("/");
+      if (embedded) {
+        onUnfriendSuccess?.();
+      } else {
+        navigate("/");
+      }
     } finally {
       setUnfriending(false);
     }
@@ -676,23 +691,27 @@ export default function Profile() {
   };
 
   return (
-    <div className="profile-page">
-      <div className="profile-topbar">
-        <div className="profile-title">PASSERBY</div>
-        <ProfileMenu />
-      </div>
+    <div className={`profile-page ${embedded ? "profile-page-embedded" : ""}`}>
+      {!embedded && (
+        <div className="profile-topbar">
+          <div className="profile-title">PASSERBY</div>
+          <ProfileMenu />
+        </div>
+      )}
 
       {loadingProfile ? (
         <p style={{ padding: "16px" }}>Loading profile...</p>
       ) : profileError ? (
         <p style={{ padding: "16px" }}>{profileError}</p>
       ) : viewedProfile ? (
-        <div className="profile-shell">
-          <div className="profile-back-row">
-            <Link to="/" className="profile-back-link">
-              ← Back to Dashboard
-            </Link>
-          </div>
+        <div className={`profile-shell ${embedded ? "profile-shell-embedded" : ""}`}>
+          {!embedded && (
+            <div className="profile-back-row">
+              <Link to="/" className="profile-back-link">
+                ← Back to Dashboard
+              </Link>
+            </div>
+          )}
 
           <div className="profile-card">
             <ProfileHeader
