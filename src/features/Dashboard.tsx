@@ -11,7 +11,6 @@ import { Link, useSearchParams } from "react-router-dom";
 import "./dashboard.css";
 import type { Friend, Post, AcceptedFriendRequest, FriendUser } from "../types";
 import ProfileMenu from "../components/ProfileMenu";
-import Button from "../components/Button";
 import FriendTable from "../components/FriendTable";
 import FriendRequestList from "../components/FriendRequestList";
 import AddFriendModal from "../components/AddFriendModal";
@@ -19,6 +18,7 @@ import { useUser } from "../hooks/useUser"; // hook wraps UserContext and provid
 import { supabase } from "../lib/supabase"; // still used for fetching friends/posts
 import Modal from "../components/Modal";
 import Profile from "./Profile";
+import personAddIcon from "../assets/person_add.svg";
 
 type FilterOption =
   | "Most Recently Updated"
@@ -285,24 +285,23 @@ export default function Dashboard() {
           </select>
         </div>
 
-        <div style={{ display: "flex", gap: "8px" }}>
-          <Link
-            to="/messages"
-            className="dash-add-btn"
-            style={{
-              textDecoration: "none",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "28px",
-            }}
-            title="Messages"
-          >
-            ✉
+        <div className="dash-action-group">
+          <Link to="/messages" className="dash-icon-btn" title="Messages">
+            <span className="dash-message-icon">✉</span>
           </Link>
-          <Button size="sm" onClick={() => setModalOpen(true)}>
-            Add Friend
-          </Button>
+
+          <button
+            type="button"
+            className="dash-icon-btn"
+            title="Add Friend"
+            onClick={() => setModalOpen(true)}
+          >
+            <img
+              src={personAddIcon}
+              alt="Add Friend"
+              className="dash-icon-img"
+            />
+          </button>
         </div>
       </div>
 
@@ -343,7 +342,10 @@ export default function Dashboard() {
             />
           ) : (
             <div className="dash-empty-selection">
-              Select a friend from the left to view their profile.
+              <h2 className="dash-empty-title">👋 Welcome back</h2>
+              <p className="dash-empty-text">
+                Select a friend to see what they&apos;ve been up to.
+              </p>
             </div>
           )}
         </section>

@@ -1,5 +1,6 @@
 /* IMPORTANT: remove browser default margins so it matches screenshot */
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
 }
@@ -99,24 +100,53 @@ html, body {
   color: #222222;
 }
 
-.dash-add-btn {
-  height: 30px;
-  padding: 0 14px;
+/* top-right action buttons */
+.dash-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-icon-btn {
+  width: 34px;
+  height: 34px;
   border: 1px solid #bcbcbc;
   background: #d7d7d7;
   cursor: pointer;
-  font-weight: 700;
-  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  color: #262626;
+  flex-shrink: 0;
+}
+
+.dash-icon-btn:hover {
+  background: #c6c6c6;
+  text-decoration: none;
+}
+
+.dash-icon-btn:link,
+.dash-icon-btn:visited {
   color: #262626;
   text-decoration: none;
-  display: inline-flex;
+}
+
+.dash-message-icon {
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.dash-add-btn:hover {
-  background: #c6c6c6;
-  text-decoration: none;
+.dash-icon-img {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 /* Feed */
@@ -153,9 +183,29 @@ html, body {
 }
 
 .dash-empty-selection {
+  min-height: 620px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 24px;
+  text-align: center;
   color: #444444;
   font-weight: 600;
+}
+
+.dash-empty-title {
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #222222;
+}
+
+.dash-empty-text {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #555555;
 }
 
 /* Card */
@@ -194,11 +244,13 @@ html, body {
   object-fit: cover;
   display: block;
   margin-left: 10px;
+  flex-shrink: 0;
 }
 
 /* Middle content */
 .dash-card-main {
   padding: 0 10px;
+  min-width: 0;
 }
 
 .dash-card-header {
@@ -339,6 +391,10 @@ html, body {
   .dash-right-pane {
     min-height: 0;
   }
+
+  .dash-empty-selection {
+    min-height: 320px;
+  }
 }
 
 /* Friend Request Card */
@@ -416,3 +472,25 @@ html, body {
   flex-shrink: 0;
 }
 
+.dash-empty-selection {
+  min-height: 620px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #444444;
+}
+
+.dash-empty-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #222222;
+}
+
+.dash-empty-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #555555;
+}
