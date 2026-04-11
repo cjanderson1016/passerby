@@ -11,6 +11,4 @@ CREATE TABLE IF NOT EXISTS public.post_media (
 -- Optional index for ordering
 CREATE INDEX IF NOT EXISTS post_media_post_id_position_idx ON public.post_media (post_id, position);
 
--- RLS: allow owners (post owners) to insert rows via session user check is enforced by server-side post creation flow; keep default open for now
-
--- Note: Apply this migration in your database (psql or Supabase migration tooling) before deploying the code that inserts into post_media.
+-- RLS: allow owners (post owners) to insert rows via session user check is enforced by server-side post creation flow; keep default open for now (add policies in a later migration)

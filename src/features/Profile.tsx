@@ -52,8 +52,7 @@ type PostRow = {
   updated_at?: string | null;
   user_id: string;
   is_pinned?: boolean | null; // we make this optional here because when we fetch posts from the database, the is_pinned field might come back as null if it's not set, but we want to treat that as false. In our normalizePost function below, we will convert any null or undefined is_pinned values to false to ensure our Post type always has a boolean for is_pinned.
-  media_key?: string | null; // optional storage key for any media attached to the post, which we can use to generate a URL when displaying the post
-  media_content_type?: string | null; // the content type of the attached media, which we can use to determine how to display it (e.g. image vs video)
+  // media moved to post_media table; legacy fields removed
 };
 
 type EditField = "bio" | "about_me" | "interests" | null;
@@ -237,9 +236,7 @@ export default function Profile({
       try {
         const { data, error } = await supabase
           .from("posts")
-          .select(
-            "id, content, created_at, updated_at, user_id, is_pinned, media_key, media_content_type",
-          )
+          .select("id, content, created_at, updated_at, user_id, is_pinned")
           .eq("user_id", viewedProfile.id)
           .order("is_pinned", { ascending: false })
           .order("created_at", { ascending: false });
@@ -307,9 +304,7 @@ export default function Profile({
           content,
           is_pinned: false,
         })
-        .select(
-          "id, content, created_at, updated_at, user_id, is_pinned, media_key, media_content_type",
-        )
+        .select("id, content, created_at, updated_at, user_id, is_pinned")
         .single();
 
       if (error) {
@@ -322,7 +317,7 @@ export default function Profile({
         return;
       }
 
-      let postToAdd = data as PostRow; // we use the PostRow type here because this is the raw data from the database, which may have is_pinned as null. We will normalize it to our Post type later when we add it to state.
+      const postToAdd = data as PostRow; // we use the PostRow type here because this is the raw data from the database, which may have is_pinned as null. We will normalize it to our Post type later when we add it to state.
 
       // if there is a media file attached, we upload it to R2 and then update the post with the media key and content type so we can display it later. We do this after creating the post so that we have a post ID to associate the media with in storage.
       // If attachments were provided from the media library, persist them to `post_media`.
@@ -344,26 +339,7 @@ export default function Profile({
             alert("Post created, but could not attach all media.");
           }
 
-          // Update posts.media_key with the first attachment for backwards compatibility
-          const first = attachments[0];
-          const { data: updatedPost, error: updateError } = await supabase
-            .from("posts")
-            .update({
-              media_key: first.key,
-              media_content_type: first.content_type ?? null,
-            })
-            .eq("id", postToAdd.id)
-            .eq("user_id", user.id)
-            .select(
-              "id, content, created_at, updated_at, user_id, is_pinned, media_key, media_content_type",
-            )
-            .single();
-
-          if (updateError) {
-            console.error("Error updating post with first media:", updateError);
-          } else if (updatedPost) {
-            postToAdd = updatedPost as PostRow;
-          }
+          // no longer update posts table with media_key; UI reads attachments from post_media
         } catch (uploadError) {
           console.error("Error persisting post media:", uploadError);
           alert("Post created, but attaching media failed.");
@@ -551,15 +527,43 @@ export default function Profile({
     setSavingPostAction(true);
 
     try {
-      // if the post has attached media, we attempt to delete the media from R2 first before deleting the post from the database. This ensures that we don't leave orphaned media files in storage if a post is deleted. If the media deletion fails, we alert the user and do not proceed with deleting the post, since we want to avoid a situation where the post is deleted but the media remains in storage.
-      if (selectedPost.media_key) {
-        try {
-          await deleteFileFromR2(selectedPost.media_key);
-        } catch (deleteMediaError) {
-          console.error("Error deleting post media:", deleteMediaError);
-          alert("Could not delete post media. Please try again.");
-          return;
+      // delete all attachments associated with this post from R2 before deleting the post
+      // REVISIT THIS (media should only be deleted through the media library, not by deleting a post, since media can be reused across multiple posts and we don't want to accidentally delete media that's still in use by another post when deleting a post. Instead of deleting media when a post is deleted, we should just disassociate the media from the post in the database, and then provide a way for users to manage their uploaded media separately in the media library where they can see which posts are using each media item and choose to delete media from there if they want to remove it from all posts.)
+      try {
+        const { data: pmRows, error: pmErr } = await supabase
+          .from("post_media")
+          .select("user_media (key)")
+          .eq("post_id", selectedPost.id);
+
+        if (pmErr) throw pmErr;
+
+        type PostMediaSelectRow = {
+          user_media?:
+            | { key?: string | null }
+            | { key?: string | null }[]
+            | null;
+        };
+
+        const rows = ((pmRows as PostMediaSelectRow[]) ??
+          []) as PostMediaSelectRow[];
+        for (const r of rows) {
+          const raw = r.user_media;
+          const um = Array.isArray(raw) ? raw[0] : raw;
+          const key = um?.key;
+          if (key) {
+            try {
+              await deleteFileFromR2(key);
+            } catch (deleteMediaError) {
+              console.error("Error deleting post media:", deleteMediaError);
+              alert("Could not delete post media. Please try again.");
+              return;
+            }
+          }
         }
+      } catch (e) {
+        console.error("Failed to delete post attachments:", e);
+        alert("Could not delete post media. Please try again.");
+        return;
       }
 
       const { error } = await supabase
@@ -704,7 +708,9 @@ export default function Profile({
       ) : profileError ? (
         <p style={{ padding: "16px" }}>{profileError}</p>
       ) : viewedProfile ? (
-        <div className={`profile-shell ${embedded ? "profile-shell-embedded" : ""}`}>
+        <div
+          className={`profile-shell ${embedded ? "profile-shell-embedded" : ""}`}
+        >
           {!embedded && (
             <div className="profile-back-row">
               <Link to="/" className="profile-back-link">

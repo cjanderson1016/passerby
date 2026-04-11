@@ -22,17 +22,11 @@ type Attachment = {
 
 type Props = {
   attachments: Attachment[]; // the list of media attachments to display in the carousel
-  mediaUrl?: string; // a fallback media URL to use if there are no attachments (e.g. for legacy posts that didn't have attachments but had a single media URL field)
-  isVideoMedia: boolean; // a flag indicating if the mediaUrl (if provided) is a video, so we know whether to render it as an <img> or a <video>
+  // legacy fallback removed — attachments must be provided via `post_media`
   displayName: string; // the display name of the user who made the post, used for alt text on images for accessibility
 };
 
-export default function MediaCarousel({
-  attachments,
-  mediaUrl,
-  isVideoMedia,
-  displayName,
-}: Props) {
+export default function MediaCarousel({ attachments, displayName }: Props) {
   // Create an array of items to display in the carousel. Each item has an id, a URL, a flag indicating if it's a video, and an optional file name.
   // If there are attachments, we use those to create the items array. If there are no attachments but there is a mediaUrl, we create a single item using that mediaUrl. If there are no attachments and no mediaUrl, the items array will be empty.
   const items = attachments.length
@@ -42,16 +36,7 @@ export default function MediaCarousel({
         isVideo: !!a.content_type && a.content_type.startsWith("video/"),
         fileName: a.file_name,
       }))
-    : mediaUrl
-      ? [
-          {
-            id: "fallback",
-            url: mediaUrl,
-            isVideo: isVideoMedia, // we rely on the isVideoMedia prop to tell us if this mediaUrl is a video or an image, since we don't have content type information for it
-            fileName: undefined,
-          },
-        ]
-      : [];
+    : [];
 
   const [index, setIndex] = useState(0); // the index of the currently displayed item in the carousel
 

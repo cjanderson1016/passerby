@@ -4,7 +4,7 @@ import { FaHeart, FaRegHeart } from "react-icons/fa"; // icons for liked/unliked
 import { FaRegCommentDots } from "react-icons/fa6"; // icon for comments
 
 import { supabase } from "../../lib/supabase";
-import { getPublicUrl } from "../../services/dataService";
+// import { getPublicUrl } from "../../services/dataService";
 import { getItem, setItem } from "../LocalStorage";
 import { Replies } from "../replies"; // component for handling replies.
 import MediaCarousel from "../MediaCarousel";
@@ -145,13 +145,7 @@ export default function PostCard({
     ? new Date(post.created_at).toLocaleDateString()
     : ""; // format the date as a local date string
   const trimmedContent = post.content.trim(); // trim the content to check if it's empty or just whitespace, so we can conditionally render it (if it's empty/whitespace, we won't render the <p> element at all)
-  const mediaUrl = post.media_key ? getPublicUrl(post.media_key) : ""; // get the public URL for the media if there is a media key. This will be used to display the media in the post if it exists.
-
   /* ---------------- ATTACHMENTS (media files attached to the post) ---------------- */
-  const mediaContentType = post.media_content_type?.toLowerCase() ?? ""; // normalize the content type to lowercase for easier checking. This will help us determine if the media is a video or an image, so we know whether to render a <video> or an <img> element in the post.
-  const isVideoMedia =
-    mediaContentType.startsWith("video/") ||
-    /\.(mp4|mov|webm)$/i.test(post.media_key ?? ""); // we determine if the media is a video by checking if the content type starts with "video/" or if the media key ends with a common video file extension. This is important because we need to render videos with a <video> element and images with an <img> element for proper display and controls.
   const [attachments, setAttachments] = useState<
     {
       id: string;
@@ -316,14 +310,9 @@ export default function PostCard({
 
       {trimmedContent && <p className="profile-post-content">{post.content}</p>}
 
-      {(attachments.length > 0 || mediaUrl) && (
+      {attachments.length > 0 && (
         <div className="profile-post-media-wrap">
-          <MediaCarousel
-            attachments={attachments}
-            mediaUrl={mediaUrl}
-            isVideoMedia={isVideoMedia}
-            displayName={displayName}
-          />
+          <MediaCarousel attachments={attachments} displayName={displayName} />
         </div>
       )}
 
