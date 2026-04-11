@@ -13,7 +13,7 @@ import ProfileMenu from "../components/ProfileMenu";
 import "./Profile.css";
 //import Modal from "../components/Modal";
 import { supabase } from "../lib/supabase";
-import { deleteFileFromR2, getPublicUrl } from "../services/dataService";
+import { getPublicUrl } from "../services/dataService";
 import ProfileHeader from "../components/profile/ProfileHeader";
 //import AboutMeCard from "../components/profile/AboutMeCard";
 //import InterestsCard from "../components/profile/InterestsCard";
@@ -527,44 +527,11 @@ export default function Profile({
     setSavingPostAction(true);
 
     try {
-      // delete all attachments associated with this post from R2 before deleting the post
-      // REVISIT THIS (media should only be deleted through the media library, not by deleting a post, since media can be reused across multiple posts and we don't want to accidentally delete media that's still in use by another post when deleting a post. Instead of deleting media when a post is deleted, we should just disassociate the media from the post in the database, and then provide a way for users to manage their uploaded media separately in the media library where they can see which posts are using each media item and choose to delete media from there if they want to remove it from all posts.)
-      try {
-        const { data: pmRows, error: pmErr } = await supabase
-          .from("post_media")
-          .select("user_media (key)")
-          .eq("post_id", selectedPost.id);
-
-        if (pmErr) throw pmErr;
-
-        type PostMediaSelectRow = {
-          user_media?:
-            | { key?: string | null }
-            | { key?: string | null }[]
-            | null;
-        };
-
-        const rows = ((pmRows as PostMediaSelectRow[]) ??
-          []) as PostMediaSelectRow[];
-        for (const r of rows) {
-          const raw = r.user_media;
-          const um = Array.isArray(raw) ? raw[0] : raw;
-          const key = um?.key;
-          if (key) {
-            try {
-              await deleteFileFromR2(key);
-            } catch (deleteMediaError) {
-              console.error("Error deleting post media:", deleteMediaError);
-              alert("Could not delete post media. Please try again.");
-              return;
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Failed to delete post attachments:", e);
-        alert("Could not delete post media. Please try again.");
-        return;
-      }
+      // Do not delete media objects from R2 when deleting a post. Media is
+      // account-scoped and may be reused by other posts; deleting objects
+      // should be an explicit action performed from the media library by the
+      // media owner. `post_media` rows referencing this post will be removed
+      // automatically by the FK `ON DELETE CASCADE` on `post_media.post_id`.
 
       const { error } = await supabase
         .from("posts")
