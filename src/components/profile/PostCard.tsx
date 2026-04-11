@@ -7,6 +7,7 @@ import { supabase } from "../../lib/supabase";
 import { getPublicUrl } from "../../services/dataService";
 import { getItem, setItem } from "../LocalStorage";
 import { Replies } from "../replies"; // component for handling replies.
+import MediaCarousel from "../MediaCarousel";
 import type { ProfilePost } from "./types";
 
 // Type definition for a comment.
@@ -317,44 +318,12 @@ export default function PostCard({
 
       {(attachments.length > 0 || mediaUrl) && (
         <div className="profile-post-media-wrap">
-          {attachments.length > 0 ? (
-            attachments.map((a) => {
-              const url = getPublicUrl(a.key);
-              const isVideo =
-                !!a.content_type && a.content_type.startsWith("video/");
-              return isVideo ? (
-                <video
-                  key={a.id}
-                  className="profile-post-media"
-                  src={url}
-                  controls
-                  preload="metadata"
-                />
-              ) : (
-                <img
-                  key={a.id}
-                  className="profile-post-media"
-                  src={url}
-                  alt={a.file_name ?? `${displayName}'s post media`}
-                  loading="lazy"
-                />
-              );
-            })
-          ) : isVideoMedia ? (
-            <video
-              className="profile-post-media"
-              src={mediaUrl}
-              controls
-              preload="metadata"
-            />
-          ) : (
-            <img
-              className="profile-post-media"
-              src={mediaUrl}
-              alt={`${displayName}'s post media`}
-              loading="lazy"
-            />
-          )}
+          <MediaCarousel
+            attachments={attachments}
+            mediaUrl={mediaUrl}
+            isVideoMedia={isVideoMedia}
+            displayName={displayName}
+          />
         </div>
       )}
 
