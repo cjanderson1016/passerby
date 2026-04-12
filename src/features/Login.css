@@ -61,6 +61,19 @@
   box-sizing: border-box;
 }
 
+.forgot-password{
+   grid-column: 1;
+  text-align: right;
+  font-size: 0.95rem;
+  color: #666666;
+  letter-spacing: 0.01em;
+  width: 77%;
+}
+
+.forgot-password:hover{
+  cursor: pointer;
+  text-decoration: underline;
+}
 .login-input:focus {
   outline: 1px solid #b8b8b8;
 }
@@ -73,7 +86,6 @@
 }
 
 .login-actions {
-  margin-top: 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
