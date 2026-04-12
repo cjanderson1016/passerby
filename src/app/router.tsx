@@ -13,6 +13,7 @@ import Settings from "../features/UserSettings"
 import Reset from "../features/ResetPassword";
 import Messages from "../features/Messages";
 import Conversation from "../features/Conversation";
+import ForgottenPass from "../features/ForgotPasswordUpdate";
 
 export const router = createBrowserRouter([
   {
@@ -51,5 +52,9 @@ export const router = createBrowserRouter([
   {
     path: "/messages/:conversationId",
     element: <Conversation />,
+  },
+  {
+    path: "/recovery",
+    element: <ForgottenPass/>,
   },
 ]);
