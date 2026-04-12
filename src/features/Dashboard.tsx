@@ -6,7 +6,7 @@
   Author(s): Connor Anderson, Jacob Richards
   */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, startTransition } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import "./dashboard.css";
 import type { Friend, Post, AcceptedFriendRequest, FriendUser } from "../types";
@@ -90,9 +90,12 @@ export default function Dashboard() {
 
   // Pull friends + latest posts from Supabase
   useEffect(() => {
+    // If there is no authenticated user, we clear the friends feed and return early. This handles the case where the user logs out (the user object becomes null, so currentUserId becomes null), and we want to make sure we don't show any stale friend data from the previous user.
     if (!currentUserId) {
-      setFriends([]);
-      setHasLoadedFriends(false);
+      startTransition(() => {
+        setFriends([]);
+        setHasLoadedFriends(false);
+      });
       return;
     }
 
