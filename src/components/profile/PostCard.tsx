@@ -5,7 +5,7 @@ import { FaHeart, FaRegHeart } from "react-icons/fa"; // icons for liked/unliked
 import { FaRegCommentDots } from "react-icons/fa6"; // icon for comments
 
 import { supabase } from "../../lib/supabase";
-// import { getPublicUrl } from "../../services/dataService";
+ import { getPublicUrl } from "../../services/dataService";
 import { getItem, setItem } from "../LocalStorage";
 import { Replies } from "../replies"; // component for handling replies.
 import MediaCarousel from "../MediaCarousel";
@@ -19,7 +19,8 @@ type Comment = {
   username?: string;
   first_name?: string;
   last_name?: string;
-  profile_pic_key?: string
+  profile_pic_key?: string;
+  created_at?: string;
   replies?: Comment[]; // replies are also comments, but nested under a parent comment.
 };
 
@@ -116,6 +117,7 @@ const fetchComments = async (
        profile_pic_key: joinedUser?.profile_pic_key || "",
       first_name: joinedUser?.first_name || "",
       last_name: joinedUser?.last_name || "",
+      created_at: row.created_at,
       replies: [],
     };
     map[c.id] = c; // add comment to map.
@@ -155,8 +157,8 @@ export default function PostCard({
   // states for comments
   const [comments, setComments] = useState<Comment[]>([]); // stores all of the comments for the post.
   const [showComments, setShowComments] = useState(false); // hides and unhides comments
-  const [showReplies, setShowReplies] = useState(false); // hides and unhides replies
-  const [showRepliesInput, SetShowRepliesInput]= useState(false) // shows/hides the prompt to reply to a comment
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set()); // tracks which comments have replies expanded
+  const [replyingTo, setReplyingTo] = useState<string | null>(null); // tracks which comment is being replied to
   const [newComment, setNewComment] = useState(""); // Stores new comment text before it's submitted.
 
   const formattedDate = post.created_at
@@ -247,12 +249,20 @@ export default function PostCard({
     });
   };
 
-    const handleShowReplies = () => {
-      setShowReplies((prev) => !prev);
-  };
-      const handleReplyBox = () => {
-      SetShowRepliesInput((prev) => !prev);
-  };
+    const handleShowReplies = (commentId: string) => {
+      setExpandedComments(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(commentId)) {
+          newSet.delete(commentId);
+        } else {
+          newSet.add(commentId);
+        }
+        return newSet;
+      });
+    };
+      const handleReplyBox = (commentId: string) => {
+        setReplyingTo(replyingTo === commentId ? null : commentId);
+      };
     
 
   useEffect(() => {
@@ -288,7 +298,7 @@ export default function PostCard({
       })
       // use a join fuckhead!!!
       .select(
-        "id, content, user_id, users(username, profile_pic_key, first_name, last_name)",
+        "id, content, created_at, user_id, users(username, profile_pic_key, first_name, last_name)",
       ) // also get the username of the commenter
       .single();
       console.log("here is the data:")
@@ -308,6 +318,7 @@ export default function PostCard({
       profile_pic_key: data.users?.[0]?.profile_pic_key ,
       first_name: data.users?.[0]?.first_name ,
       last_name : data.users?.[0]?.last_name , 
+      created_at: data.created_at,
       replies: [],
     };
 
@@ -351,6 +362,7 @@ export default function PostCard({
       <div className="profile-post-actions">
         {/* LIKE BUTTON */}
         <div
+
           onMouseEnter={() => setHeartHover(true)}
           onMouseLeave={() => setHeartHover(false)}
           style={{ cursor: "pointer" }}
@@ -455,11 +467,11 @@ export default function PostCard({
                 </div>
                 </div>
                 <div style={{display: "flex", width: "30%", justifyContent: "space-between"}}>
-                  <Button variant="secondary" size="sm" onClick={handleShowReplies} type="submit" children="Show Replies" className="submit-comment-btn"/>
-                  <Button variant="secondary" size="sm" onClick={handleReplyBox} type="submit" children="Reply" className="submit-comment-btn"/>
+                  <Button variant="secondary" size="sm" onClick={() => handleShowReplies(comment.id)} type="submit" children="Show Replies" className="submit-comment-btn"/>
+                  <Button variant="secondary" size="sm" onClick={() => handleReplyBox(comment.id)} type="submit" children="Reply" className="submit-comment-btn"/>
                   </div>
                 {/* Replies */}
-                {showRepliesInput && (             
+                {replyingTo === comment.id && (             
                   // Replies Input
                   <Replies
                           parentId={comment.id}
@@ -478,11 +490,13 @@ export default function PostCard({
                           fetchComments={() => fetchComments(id, setComments)}
                         />)}
 
-                    {showReplies && (
+                    {expandedComments.has(comment.id) && (
                       <>
                       
-                        {comment.replies?.map((reply) => (
-                          <div style={{display: "flex", marginLeft: "3rem", marginTop: "1rem"}}>
+                        {comment.replies?.map((reply) => {
+                          const replyFormattedDate = reply.created_at ? new Date(reply.created_at).toLocaleDateString() : "";
+                          return (
+                          <div key={reply.id} style={{display: "flex", marginLeft: "3rem", marginTop: "1rem"}}>
                              {reply.profile_pic_key ?(
                 <div style={{ fontWeight: "bold" }}> <img src={getPublicUrl(reply.profile_pic_key ?? "")} alt="Profile" className="profile-avatar-comment" />  </div>) :
                 <div className="profile-avater-placeholder-comment">No Photo </div>
@@ -493,13 +507,13 @@ export default function PostCard({
                              <div  className="display-user">
                       
                               
-                                <strong className="display-first-last">{reply.first_name} {reply.last_name}<div className="profile-post-time">{formattedDate}</div></strong>
+                                <strong className="display-first-last">{reply.first_name} {reply.last_name}<div className="profile-post-time">{replyFormattedDate}</div></strong>
                                 <div className="display-handle">@{reply.username}</div>
                                 <div style={{ marginTop: "1rem", marginBottom: "1rem" }}>{reply.text}</div>
                             </div>
                           </div>
                           </div>
-                        ))}
+                        )})}
                       </>
                     )}
               </div>

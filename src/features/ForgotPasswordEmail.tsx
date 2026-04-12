@@ -1,7 +1,7 @@
 /*
-  File Name: Dashboard.tsx
+  File Name: ForgotPasswordEmail.tsx
 
-  Description: This file defines the main signup component for the application.
+  Description: This is the popup component for the first step of password recovery, where the user inputs their email to receive a reset link.
 
   Author(s): Connor Anderson, Owen Berkholtz
   */
@@ -10,27 +10,27 @@ import { supabase } from "../lib/supabase";
 import "./Signup.css";
 
 
-
+// prop to allow parent component to close the modal once the user submits the form
 interface ForgotPassProps {
   exitModal?: () => void;
 }
 
-type UserUpdate = {
-  username: string;
-  first_name: string;
-  last_name: string;
-};
+
 
 function ForgotPassEmail({ exitModal }: ForgotPassProps) {
-  const [email, setEmail] = useState("");
 
+  const [email, setEmail] = useState(""); // state for the email input
+
+  // function to handle the password reset process
    async function handleForgotPassword(email: string) {
 
+    // basic validation to check if the email includes an "@" symbol
     if (!email.includes("@")) {
       alert("Please include a valid email!");
       return;
     }
 
+    // call supabase function to send the password reset email, with a redirect URL to the password update page
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: "http://localhost:5173/recovery",
     });
