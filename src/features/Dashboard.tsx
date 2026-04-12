@@ -265,48 +265,32 @@ export default function Dashboard() {
       <div className="dash-topbar">
         <div className="dash-title">PASSERBY</div>
 
-        {/* profile button/dropdown moved into its own component */}
-        <ProfileMenu />
-      </div>
+        <div className="dash-top-actions">
+          <div className="dash-action-group">
+            <Link to="/messages" className="dash-icon-btn" title="Messages">
+              <span className="dash-message-icon">✉</span>
+            </Link>
 
-      {/* Filter row */}
-      <div className="dash-filter-row">
-        <div className="dash-filter-left">
-          <div className="dash-filter-label">
-            choose a friend to catch up with
+            <button
+              type="button"
+              className="dash-icon-btn"
+              title="Add Friend"
+              onClick={() => setModalOpen(true)}
+            >
+              <img
+                src={personAddIcon}
+                alt="Add Friend"
+                className="dash-icon-img"
+              />
+            </button>
           </div>
 
-          <select
-            className="dash-select"
-            value={filterOption}
-            onChange={(e) => setFilterOption(e.target.value as FilterOption)}
-          >
-            <option>Most Recently Updated</option>
-            <option>Alphabetical (A–Z)</option>
-            <option>Unread Messages First</option>
-            <option>Closest Friends</option>
-          </select>
-        </div>
-
-        <div className="dash-action-group">
-          <Link to="/messages" className="dash-icon-btn" title="Messages">
-            <span className="dash-message-icon">✉</span>
-          </Link>
-
-          <button
-            type="button"
-            className="dash-icon-btn"
-            title="Add Friend"
-            onClick={() => setModalOpen(true)}
-          >
-            <img
-              src={personAddIcon}
-              alt="Add Friend"
-              className="dash-icon-img"
-            />
-          </button>
+          {/* profile button/dropdown moved into its own component */}
+          <ProfileMenu />
         </div>
       </div>
+
+      {/* Filter row moved into left pane (see below) */}
 
       {/* Incoming friend requests — stacks vertically, pushes feed down */}
       {currentUserId && (
@@ -318,6 +302,25 @@ export default function Dashboard() {
 
       <div className="dash-shell">
         <section className="dash-left-pane" aria-label="Friends list">
+          {/* Filter row placed inside the left pane so it scrolls with the friends list */}
+          <div className="dash-filter-row">
+            <div className="dash-filter-left">
+              <div className="dash-filter-label">
+                choose a friend to catch up with
+              </div>
+
+              <select
+                className="dash-select"
+                value={filterOption}
+                onChange={(e) => setFilterOption(e.target.value as FilterOption)}
+              >
+                <option>Most Recently Updated</option>
+                <option>Alphabetical (A–Z)</option>
+                <option>Unread Messages First</option>
+                <option>Closest Friends</option>
+              </select>
+            </div>
+          </div>
           {loadingFriends ? (
             <div style={{ padding: "16px" }}>Loading friends...</div>
           ) : friends.length === 0 ? (
