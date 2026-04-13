@@ -50,6 +50,6 @@ export const router = createBrowserRouter([
   },
   {
     path: "/messages/:conversationId",
-    element: <Conversation />,
+    element: <Messages />,
   },
 ]);

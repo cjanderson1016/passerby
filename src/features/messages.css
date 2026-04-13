@@ -397,6 +397,103 @@
 }
 
 /* ============================= */
+/* Split-panel layout            */
+/* ============================= */
+
+.msg-shell {
+  max-width: 60%;
+  margin: 10px auto 0;
+  display: grid;
+  grid-template-columns: minmax(320px, 42%) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.msg-left-pane {
+  background: #f1f1f1;
+  border: 1px solid #cdcdcd;
+  min-height: 620px;
+  max-height: calc(100vh - 84px);
+  overflow-y: auto;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.msg-right-pane {
+  background: #d0d0d0;
+  border: 1px solid #cdcdcd;
+  min-height: 620px;
+  max-height: calc(100vh - 84px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Active/selected conversation in the left pane */
+.msg-conv-item-active {
+  border-left: 3px solid #111111;
+  background: #e4e4e4;
+}
+
+/* Embedded thread: override fixed input bar so it sticks to the pane bottom */
+.msg-right-pane .msg-input-bar {
+  position: sticky;
+  bottom: 0;
+  left: unset;
+  right: unset;
+}
+
+/* Embedded thread body fills available pane height */
+.msg-right-pane .msg-thread-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+}
+
+/* Compact header shown inside the right pane when embedded */
+.msg-thread-header-embedded {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  background: #e6e6e6;
+  border-bottom: 1px solid #cdcdcd;
+  font-weight: 700;
+  font-size: 16px;
+  color: #111111;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
+}
+
+/* Empty state when no conversation is selected */
+.msg-empty-thread {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555555;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  padding: 24px;
+}
+
+/* Mobile: stack panels vertically */
+@media (max-width: 768px) {
+  .msg-shell {
+    grid-template-columns: 1fr;
+    max-width: 95%;
+    margin: 10px auto 0;
+  }
+
+  .msg-left-pane,
+  .msg-right-pane {
+    min-height: 0;
+    max-height: none;
+  }
+}
+
+/* ============================= */
 /* Conversation thread page      */
 /* ============================= */
 
