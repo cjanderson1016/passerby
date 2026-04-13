@@ -4,7 +4,7 @@
   Description: This file defines the main dashboard component for the application.
 
   Author(s): Connor Anderson, Jacob Richards
-  */
+*/
 
 import { useEffect, useMemo, useState, startTransition } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -19,6 +19,7 @@ import { supabase } from "../lib/supabase"; // still used for fetching friends/p
 import Modal from "../components/Modal";
 import Profile from "./Profile";
 import personAddIcon from "../assets/person_add.svg";
+import Notifications from "../components/Notifications";
 
 type FilterOption =
   | "Most Recently Updated"
@@ -78,6 +79,7 @@ export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // instead of tracking currentUserId in state and querying supabase again,
   // obtain the authenticated user from our UserContext via the useUser hook.
@@ -274,6 +276,22 @@ export default function Dashboard() {
             <button
               type="button"
               className="dash-icon-btn"
+              title="Notifications"
+              aria-haspopup="dialog"
+              aria-expanded={notificationsOpen}
+              onClick={() => setNotificationsOpen(true)}
+            >
+              <span
+                className="material-symbols-outlined dash-notification-icon"
+                aria-hidden="true"
+              >
+                notifications
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className="dash-icon-btn"
               title="Add Friend"
               onClick={() => setModalOpen(true)}
             >
@@ -312,7 +330,9 @@ export default function Dashboard() {
               <select
                 className="dash-select"
                 value={filterOption}
-                onChange={(e) => setFilterOption(e.target.value as FilterOption)}
+                onChange={(e) =>
+                  setFilterOption(e.target.value as FilterOption)
+                }
               >
                 <option>Most Recently Updated</option>
                 <option>Alphabetical (A–Z)</option>
@@ -370,6 +390,18 @@ export default function Dashboard() {
             />
           }
           title={"Add Friend"}
+        />
+      )}
+
+      {/* Notifications modal */}
+      {currentUserId && (
+        <Modal
+          is_open={notificationsOpen}
+          current_state={setNotificationsOpen}
+          component={
+            <Notifications onClose={() => setNotificationsOpen(false)} />
+          }
+          title={"Notifications"}
         />
       )}
     </div>
