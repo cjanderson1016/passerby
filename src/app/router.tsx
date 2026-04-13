@@ -9,10 +9,10 @@ import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 // import About from "../features/test/About";
 import Profile from "../features/Profile";
-import Settings from "../features/UserSettings"
+import Settings from "../features/UserSettings";
 import Reset from "../features/ResetPassword";
 import Messages from "../features/Messages";
-import Conversation from "../features/Conversation";
+// import Conversation from "../features/Conversation";
 import ForgottenPass from "../features/ForgotPasswordUpdate";
 
 export const router = createBrowserRouter([
@@ -37,11 +37,11 @@ export const router = createBrowserRouter([
     path: "/profile/:username",
     element: <Profile />,
   },
-    {
+  {
     path: "/settings",
     element: <Settings />,
   },
-      {
+  {
     path: "/reset_pass",
     element: <Reset />,
   },
@@ -55,6 +55,6 @@ export const router = createBrowserRouter([
   },
   {
     path: "/recovery",
-    element: <ForgottenPass/>,
+    element: <ForgottenPass />,
   },
 ]);
