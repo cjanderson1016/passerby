@@ -572,10 +572,20 @@
 
 .profile-post-actions {
   display: flex;
+  align-items: center;
   gap: 16px;
   margin-top: 14px;
   color: #777777;
   font-size: 15px;
+}
+
+.profile-post-actions > div,
+.profile-post-actions > button {
+  overflow: visible;
+}
+
+.profile-post-actions svg {
+  overflow: visible;
 }
 
 .profile-post-icon-btn,
@@ -587,13 +597,15 @@
 }
 
 .profile-post-icon-btn {
-  font-size: 15px;
+  font-size: 18px;
   padding: 0;
 }
 
 .profile-post-icon-btn:hover,
 .profile-post-menu-btn:hover {
   color: #333333;
+  font-size: 19px;
+  transition: all 0.1s ease;
 }
 
 .profile-post-menu-btn {

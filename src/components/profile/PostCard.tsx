@@ -1,23 +1,29 @@
 import { useState, useEffect } from "react";
+import "./PostCard.css"
 
 import { FaHeart, FaRegHeart } from "react-icons/fa"; // icons for liked/unliked heart
 import { FaRegCommentDots } from "react-icons/fa6"; // icon for comments
 
 import { supabase } from "../../lib/supabase";
-// import { getPublicUrl } from "../../services/dataService";
+ import { getPublicUrl } from "../../services/dataService";
 import { getItem, setItem } from "../LocalStorage";
 import { Replies } from "../replies"; // component for handling replies.
 import MediaCarousel from "../MediaCarousel";
 import type { ProfilePost } from "./types";
-
+import Button from "../Button";
 // Type definition for a comment.
 type Comment = {
   id: string;
   user_id: string;
   text: string;
   username?: string;
+  first_name?: string;
+  last_name?: string;
+  profile_pic_key?: string;
+  created_at?: string;
   replies?: Comment[]; // replies are also comments, but nested under a parent comment.
 };
+
 
 type CommentRow = {
   // this type represents the raw comment data we get from the database, which includes the joined user data for the comment's author. We will transform this into our Comment type for use in the UI.
@@ -25,7 +31,16 @@ type CommentRow = {
   content: string;
   user_id: string;
   parent_id: string | null;
-  users?: { username?: string | null } | { username?: string | null }[] | null;
+  users?: { username?: string | null , 
+    profile_pic_key?: string | null,
+      first_name?: string | null,
+      last_name?: string | null} | 
+
+    { username?: string | null , 
+      first_name?: string | null,
+      last_name?: string | null,
+      profile_pic_key?: string | null}[] | 
+      null;
 };
 
 // We define the Attachment and AttachmentRow types to represent media attachments for posts. Attachment is the type we use in our component state, while AttachmentRow represents the raw data we get from the database when we load attachments for a post. Each attachment includes its position so we can render them in the correct order.
@@ -75,7 +90,7 @@ const fetchComments = async (
   const { data, error } = await supabase
     .from("comments")
     .select(
-      "id, content, created_at, user_id, parent_id, users:users!comments_user_id_fkey1(username)",
+      "id, content, created_at, user_id, parent_id, users(username, profile_pic_key, first_name, last_name)",
     )
     .eq("post_id", postId)
     .order("created_at", { ascending: true });
@@ -99,9 +114,12 @@ const fetchComments = async (
       text: row.content,
       user_id: row.user_id,
       username: joinedUser?.username || "",
+       profile_pic_key: joinedUser?.profile_pic_key || "",
+      first_name: joinedUser?.first_name || "",
+      last_name: joinedUser?.last_name || "",
+      created_at: row.created_at,
       replies: [],
     };
-
     map[c.id] = c; // add comment to map.
 
     if (!row.parent_id) {
@@ -139,6 +157,8 @@ export default function PostCard({
   // states for comments
   const [comments, setComments] = useState<Comment[]>([]); // stores all of the comments for the post.
   const [showComments, setShowComments] = useState(false); // hides and unhides comments
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set()); // tracks which comments have replies expanded
+  const [replyingTo, setReplyingTo] = useState<string | null>(null); // tracks which comment is being replied to
   const [newComment, setNewComment] = useState(""); // Stores new comment text before it's submitted.
 
   const formattedDate = post.created_at
@@ -229,6 +249,22 @@ export default function PostCard({
     });
   };
 
+    const handleShowReplies = (commentId: string) => {
+      setExpandedComments(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(commentId)) {
+          newSet.delete(commentId);
+        } else {
+          newSet.add(commentId);
+        }
+        return newSet;
+      });
+    };
+      const handleReplyBox = (commentId: string) => {
+        setReplyingTo(replyingTo === commentId ? null : commentId);
+      };
+    
+
   useEffect(() => {
     if (!showComments) return;
 
@@ -260,16 +296,18 @@ export default function PostCard({
         content: newComment,
         user_id: user.id,
       })
+      // use a join fuckhead!!!
       .select(
-        "id, content, user_id, users:users!comments_user_id_fkey1(username)",
+        "id, content, created_at, user_id, users(username, profile_pic_key, first_name, last_name)",
       ) // also get the username of the commenter
       .single();
+      console.log("here is the data:")
+      console.log(data)
 
     if (error) {
       console.error("failed to add comment", error);
       return;
     }
-
     // if the comment was added successfully, create a new Comment object and add it to the comments state to update the UI. We also call fetchComments
     // to refresh the comments from the database, which will include any server-side processing (like counting replies) that we want to reflect in the UI.
     const newC: Comment = {
@@ -277,8 +315,13 @@ export default function PostCard({
       user_id: data.user_id,
       text: data.content,
       username: data.users?.[0]?.username || "",
+      profile_pic_key: data.users?.[0]?.profile_pic_key ,
+      first_name: data.users?.[0]?.first_name ,
+      last_name : data.users?.[0]?.last_name , 
+      created_at: data.created_at,
       replies: [],
     };
+
 
     setComments((prev) => [newC, ...prev]);
     setNewComment("");
@@ -319,6 +362,7 @@ export default function PostCard({
       <div className="profile-post-actions">
         {/* LIKE BUTTON */}
         <div
+
           onMouseEnter={() => setHeartHover(true)}
           onMouseLeave={() => setHeartHover(false)}
           style={{ cursor: "pointer" }}
@@ -397,9 +441,7 @@ export default function PostCard({
               onChange={(e) => setNewComment(e.target.value)}
             />
 
-            <button className="submit-comment-btn" onClick={handleAddComment}>
-              Post
-            </button>
+            <Button variant="secondary" size="sm" onClick={handleAddComment} type="submit" children="Post Comment" className="submit-comment-btn"/>
           </div>
 
           <div className="comment-list">
@@ -413,39 +455,67 @@ export default function PostCard({
                   maxWidth: "600px",
                 }}
               >
-                <div style={{ fontWeight: "bold" }}>@{comment.username}</div>
-                <div style={{ marginTop: "4px" }}>{comment.text}</div>
-
-                {/* Replies */}
-                {comment.replies?.map((reply) => (
-                  <div
-                    key={reply.id}
-                    style={{
-                      padding: "8px 20px",
-                      marginLeft: "20px",
-                      borderLeft: "2px solid #ddd",
-                    }}
-                  >
-                    <div style={{ fontWeight: "bold" }}>@{reply.username}</div>
-                    <div>{reply.text}</div>
+                <div className="display-comment">
+                  {comment.profile_pic_key ?(
+                <div style={{ fontWeight: "bold" }}> <img src={getPublicUrl(comment.profile_pic_key ?? "")} alt="Profile" className="profile-avatar-comment" />  </div>) :
+                <div className="profile-avater-placeholder-comment">No Photo </div>
+                  }
+                <div  className="display-user">
+                  <strong className="display-first-last">{comment.first_name} {comment.last_name} <div className="profile-post-time">{formattedDate}</div></strong>
+                  <div className="display-handle">@{comment.username}</div>
+                  <div style={{ marginTop: "1rem", marginBottom: "1rem" }}>{comment.text}</div>
+                </div>
+                </div>
+                <div style={{display: "flex", width: "30%", justifyContent: "space-between"}}>
+                  <Button variant="secondary" size="sm" onClick={() => handleShowReplies(comment.id)} type="submit" children="Show Replies" className="submit-comment-btn"/>
+                  <Button variant="secondary" size="sm" onClick={() => handleReplyBox(comment.id)} type="submit" children="Reply" className="submit-comment-btn"/>
                   </div>
-                ))}
+                {/* Replies */}
+                {replyingTo === comment.id && (             
+                  // Replies Input
+                  <Replies
+                          parentId={comment.id}
+                          postId={id}
+                        onReplyAdded={(newReply) => {
+                            setComments((prev) =>
+                            prev.map((c) =>
+                                c.id === comment.id
+                              ? { ...c, replies: [...
+                                (c.replies || []),
+                                 newReply] }
+                                  : c
+                              )
+                            );
+                          }}
+                          fetchComments={() => fetchComments(id, setComments)}
+                        />)}
 
-                {/* Reply input */}
-                <Replies
-                  parentId={comment.id}
-                  postId={id}
-                  onReplyAdded={(newReply) => {
-                    setComments((prev) =>
-                      prev.map((c) =>
-                        c.id === comment.id
-                          ? { ...c, replies: [...(c.replies || []), newReply] }
-                          : c,
-                      ),
-                    );
-                  }}
-                  fetchComments={() => fetchComments(id, setComments)}
-                />
+                    {expandedComments.has(comment.id) && (
+                      <>
+                      
+                        {comment.replies?.map((reply) => {
+                          const replyFormattedDate = reply.created_at ? new Date(reply.created_at).toLocaleDateString() : "";
+                          return (
+                          <div key={reply.id} style={{display: "flex", marginLeft: "3rem", marginTop: "1rem"}}>
+                             {reply.profile_pic_key ?(
+                <div style={{ fontWeight: "bold" }}> <img src={getPublicUrl(reply.profile_pic_key ?? "")} alt="Profile" className="profile-avatar-comment" />  </div>) :
+                <div className="profile-avater-placeholder-comment">No Photo </div>
+                  }
+                          <div
+                            key={reply.id}
+                          >
+                             <div  className="display-user">
+                      
+                              
+                                <strong className="display-first-last">{reply.first_name} {reply.last_name}<div className="profile-post-time">{replyFormattedDate}</div></strong>
+                                <div className="display-handle">@{reply.username}</div>
+                                <div style={{ marginTop: "1rem", marginBottom: "1rem" }}>{reply.text}</div>
+                            </div>
+                          </div>
+                          </div>
+                        )})}
+                      </>
+                    )}
               </div>
             ))}
           </div>
