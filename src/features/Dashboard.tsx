@@ -4,20 +4,22 @@
   Description: This file defines the main dashboard component for the application.
 
   Author(s): Connor Anderson, Jacob Richards
-  */
+*/
 
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState, startTransition } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import "./dashboard.css";
 import type { Friend, Post, AcceptedFriendRequest, FriendUser } from "../types";
 import ProfileMenu from "../components/ProfileMenu";
-import Button from "../components/Button";
 import FriendTable from "../components/FriendTable";
 import FriendRequestList from "../components/FriendRequestList";
 import AddFriendModal from "../components/AddFriendModal";
 import { useUser } from "../hooks/useUser"; // hook wraps UserContext and provides user/profile/loading
 import { supabase } from "../lib/supabase"; // still used for fetching friends/posts
-import Modal from "../components/Modal"
+import Modal from "../components/Modal";
+import Profile from "./Profile";
+import personAddIcon from "../assets/person_add.svg";
+import Notifications from "../components/Notifications";
 
 type FilterOption =
   | "Most Recently Updated"
@@ -72,9 +74,12 @@ export default function Dashboard() {
 
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
+  const [hasLoadedFriends, setHasLoadedFriends] = useState(false);
   const [friendsRefreshTick, setFriendsRefreshTick] = useState(0); // this is a simple way to trigger a refresh of the friends feed when something changes, like accepting a friend request. We increment this tick to cause the useEffect that loads the friends feed to re-run.
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // instead of tracking currentUserId in state and querying supabase again,
   // obtain the authenticated user from our UserContext via the useUser hook.
@@ -87,10 +92,18 @@ export default function Dashboard() {
 
   // Pull friends + latest posts from Supabase
   useEffect(() => {
-    if (!currentUserId) return;
+    // If there is no authenticated user, we clear the friends feed and return early. This handles the case where the user logs out (the user object becomes null, so currentUserId becomes null), and we want to make sure we don't show any stale friend data from the previous user.
+    if (!currentUserId) {
+      startTransition(() => {
+        setFriends([]);
+        setHasLoadedFriends(false);
+      });
+      return;
+    }
 
     // This function fetches the list of friends for the current user, along with their latest post and how long ago it was updated, then sets that in state for the feed.  We do this in multiple steps:
     const fetchFriendsFeed = async () => {
+      setHasLoadedFriends(false);
       setLoadingFriends(true);
 
       // 1) Get accepted relationships involving this user
@@ -109,6 +122,7 @@ export default function Dashboard() {
         );
         setFriends([]);
         setLoadingFriends(false);
+        setHasLoadedFriends(true);
         return;
       }
 
@@ -122,6 +136,7 @@ export default function Dashboard() {
       if (friendIds.length === 0) {
         setFriends([]);
         setLoadingFriends(false);
+        setHasLoadedFriends(true);
         return;
       }
 
@@ -135,6 +150,7 @@ export default function Dashboard() {
         console.error("Error fetching friend users:", usersError.message);
         setFriends([]);
         setLoadingFriends(false);
+        setHasLoadedFriends(true);
         return;
       }
 
@@ -186,6 +202,7 @@ export default function Dashboard() {
 
       setFriends(feed);
       setLoadingFriends(false);
+      setHasLoadedFriends(true);
     };
 
     void fetchFriendsFeed();
@@ -195,55 +212,103 @@ export default function Dashboard() {
     return applyFilter(friends, filterOption);
   }, [friends, filterOption]);
 
+  const selectedUsername = searchParams.get("friend");
+
+  const selectedFriend = useMemo(() => {
+    if (!selectedUsername) return null;
+    return (
+      filteredFriends.find((friend) => friend.username === selectedUsername) ??
+      null
+    );
+  }, [filteredFriends, selectedUsername]);
+
+  useEffect(() => {
+    if (!selectedUsername || !hasLoadedFriends) {
+      return;
+    }
+
+    const selectedFriendStillExists = friends.some(
+      (friend) => friend.username === selectedUsername,
+    );
+
+    if (!selectedFriendStillExists) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("friend");
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [
+    friends,
+    hasLoadedFriends,
+    searchParams,
+    selectedUsername,
+    setSearchParams,
+  ]);
+
+  const handleSelectFriend = (friend: Friend | null) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (friend) {
+      nextParams.set("friend", friend.username);
+    } else {
+      nextParams.delete("friend");
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const handleUnfriendFromProfile = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("friend");
+    setSearchParams(nextParams, { replace: true });
+    setFriendsRefreshTick((prev) => prev + 1);
+  };
+
   return (
     <div className="dash-page">
       {/* Top bar */}
       <div className="dash-topbar">
         <div className="dash-title">PASSERBY</div>
 
-        {/* profile button/dropdown moved into its own component */}
-        <ProfileMenu />
-      </div>
+        <div className="dash-top-actions">
+          <div className="dash-action-group">
+            <Link to="/messages" className="dash-icon-btn" title="Messages">
+              <span className="dash-message-icon">✉</span>
+            </Link>
 
-      {/* Filter row */}
-      <div className="dash-filter-row">
-        <div className="dash-filter-left">
-          <div className="dash-filter-label">
-            choose a friend to catch up with
+            <button
+              type="button"
+              className="dash-icon-btn"
+              title="Notifications"
+              aria-haspopup="dialog"
+              aria-expanded={notificationsOpen}
+              onClick={() => setNotificationsOpen(true)}
+            >
+              <span
+                className="material-symbols-outlined dash-notification-icon"
+                aria-hidden="true"
+              >
+                notifications
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className="dash-icon-btn"
+              title="Add Friend"
+              onClick={() => setModalOpen(true)}
+            >
+              <img
+                src={personAddIcon}
+                alt="Add Friend"
+                className="dash-icon-img"
+              />
+            </button>
           </div>
 
-          <select
-            className="dash-select"
-            value={filterOption}
-            onChange={(e) => setFilterOption(e.target.value as FilterOption)}
-          >
-            <option>Most Recently Updated</option>
-            <option>Alphabetical (A–Z)</option>
-            <option>Unread Messages First</option>
-            <option>Closest Friends</option>
-          </select>
-        </div>
-
-        <div style={{ display: "flex", gap: "8px" }}>
-          <Link
-            to="/messages"
-            className="dash-add-btn"
-            style={{
-              textDecoration: "none",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "28px",
-            }}
-            title="Messages"
-          >
-            ✉
-          </Link>
-          <Button size="sm" onClick={() => setModalOpen(true)}>
-            Add Friend
-          </Button>
+          {/* profile button/dropdown moved into its own component */}
+          <ProfileMenu />
         </div>
       </div>
+
+      {/* Filter row moved into left pane (see below) */}
 
       {/* Incoming friend requests — stacks vertically, pushes feed down */}
       {currentUserId && (
@@ -253,24 +318,91 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Feed */}
-      {loadingFriends ? (
-        <div style={{ padding: "16px" }}>Loading friends…</div>
-      ) : friends.length === 0 ? (
-        <div style={{ padding: "16px" }}>
-          No friends yet. Click <b>Add Friend</b> to send a request.
-        </div>
-      ) : (
-        <FriendTable friends={filteredFriends} />
-      )}
+      <div className="dash-shell">
+        <section className="dash-left-pane" aria-label="Friends list">
+          {/* Filter row placed inside the left pane so it scrolls with the friends list */}
+          <div className="dash-filter-row">
+            <div className="dash-filter-left">
+              <div className="dash-filter-label">
+                choose a friend to catch up with
+              </div>
+
+              <select
+                className="dash-select"
+                value={filterOption}
+                onChange={(e) =>
+                  setFilterOption(e.target.value as FilterOption)
+                }
+              >
+                <option>Most Recently Updated</option>
+                <option>Alphabetical (A–Z)</option>
+                <option>Unread Messages First</option>
+                <option>Closest Friends</option>
+              </select>
+            </div>
+          </div>
+          {loadingFriends ? (
+            <div style={{ padding: "16px" }}>Loading friends...</div>
+          ) : friends.length === 0 ? (
+            <div style={{ padding: "16px" }}>
+              No friends yet. Click <b>Add Friend</b> to send a request.
+            </div>
+          ) : (
+            <FriendTable
+              friends={filteredFriends}
+              selectedFriendId={selectedFriend?.id ?? null}
+              onSelectFriend={handleSelectFriend}
+            />
+          )}
+        </section>
+
+        <section
+          className="dash-right-pane"
+          aria-label="Selected friend profile"
+        >
+          {selectedFriend ? (
+            <Profile
+              embedded
+              embeddedUsername={selectedFriend.username}
+              onUnfriendSuccess={handleUnfriendFromProfile}
+            />
+          ) : (
+            <div className="dash-empty-selection">
+              <h2 className="dash-empty-title">👋 Welcome back</h2>
+              <p className="dash-empty-text">
+                Select a friend to see what they&apos;ve been up to.
+              </p>
+            </div>
+          )}
+        </section>
+      </div>
 
       {/* Add Friend modal */}
       {currentUserId && (
-         <Modal is_open={modalOpen} current_state={setModalOpen} component={        <AddFriendModal
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-          currentUserId={currentUserId}
-        />   } title = {"Add Friend"}/>
+        <Modal
+          is_open={modalOpen}
+          current_state={setModalOpen}
+          component={
+            <AddFriendModal
+              isOpen={modalOpen}
+              onClose={() => setModalOpen(false)}
+              currentUserId={currentUserId}
+            />
+          }
+          title={"Add Friend"}
+        />
+      )}
+
+      {/* Notifications modal */}
+      {currentUserId && (
+        <Modal
+          is_open={notificationsOpen}
+          current_state={setNotificationsOpen}
+          component={
+            <Notifications onClose={() => setNotificationsOpen(false)} />
+          }
+          title={"Notifications"}
+        />
       )}
     </div>
   );

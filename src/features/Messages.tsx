@@ -1,18 +1,19 @@
 /*
   File Name: Messages.tsx
 
-  Description: Inbox page that lists all conversations for the current user,
-  sorted by most recent activity. Includes a '+' button to start a new
-  conversation by picking from the user's friends list.
+  Description: Split-panel messages page. Conversation list on the left,
+  selected thread on the right (75%). Mirrors the Dashboard layout pattern.
+  Includes a '+' button to start a new conversation by picking from friends.
 
   Author(s): Bryson Toubassi
 */
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useUser } from "../hooks/useUser";
 import ProfileMenu from "../components/ProfileMenu";
+import ConversationThread from "../components/ConversationThread";
 import type {
   ConversationPreview,
   FriendUser,
@@ -24,6 +25,7 @@ export default function Messages() {
   const { user } = useUser();
   const currentUserId = user?.id ?? null;
   const navigate = useNavigate();
+  const { conversationId } = useParams<{ conversationId?: string }>();
 
   const [conversations, setConversations] = useState<ConversationPreview[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,7 +43,6 @@ export default function Messages() {
     const fetchConversations = async () => {
       setLoading(true);
 
-      // 1) Get conversation IDs the user participates in
       const { data: participantRows, error: partError } = await supabase
         .from("conversation_participants")
         .select("conversation_id")
@@ -60,7 +61,6 @@ export default function Messages() {
         return;
       }
 
-      // 2) Parallel fetch: conversation metadata, other participants, latest messages
       const [convResult, otherResult, msgResult] = await Promise.all([
         supabase
           .from("conversations")
@@ -87,14 +87,12 @@ export default function Messages() {
         return;
       }
 
-      // Build a map of other user per conversation
       const otherUserMap = new Map<string, FriendUser>();
       for (const row of (otherResult.data ?? []) as any[]) {
         const u = Array.isArray(row.user) ? row.user[0] : row.user;
         if (u) otherUserMap.set(row.conversation_id, u);
       }
 
-      // Build a map of latest message per conversation
       const latestMsgMap = new Map<string, string>();
       for (const msg of (msgResult.data ?? []) as any[]) {
         if (!latestMsgMap.has(msg.conversation_id)) {
@@ -102,7 +100,6 @@ export default function Messages() {
         }
       }
 
-      // 3) Assemble ConversationPreview[]
       const previews: ConversationPreview[] = (convResult.data ?? [])
         .map((conv) => {
           const otherUser = otherUserMap.get(conv.id);
@@ -130,7 +127,6 @@ export default function Messages() {
 
     setLoadingFriends(true);
 
-    // Get accepted friend relationships
     const { data: accepted, error: accError } = await supabase
       .from("friend_requests")
       .select("requester_id, recipient_id")
@@ -213,7 +209,7 @@ export default function Messages() {
 
   return (
     <div className="msg-page">
-      {/* Top bar — matches Dashboard, with back button */}
+      {/* Top bar */}
       <div className="dash-topbar">
         <button className="msg-back-btn" onClick={() => navigate("/")} title="Back to Dashboard">
           &#8592;
@@ -222,44 +218,63 @@ export default function Messages() {
         <ProfileMenu />
       </div>
 
-      <div className="msg-content">
-        <div className="msg-inbox-header">
-          <span className="msg-inbox-title">Messages</span>
-          <button className="msg-new-btn" onClick={openPicker} title="New conversation">
-            +
-          </button>
+      {/* Split-panel shell */}
+      <div className="msg-shell">
+        {/* Left pane: conversation list */}
+        <div className="msg-left-pane">
+          <div className="msg-inbox-header">
+            <span className="msg-inbox-title">Messages</span>
+            <button className="msg-new-btn" onClick={openPicker} title="New conversation">
+              +
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="msg-empty">Loading conversations…</div>
+          ) : conversations.length === 0 ? (
+            <div className="msg-empty">
+              No conversations yet. Tap <b>+</b> to message a friend.
+            </div>
+          ) : (
+            <div className="msg-conv-list">
+              {conversations.map((conv) => (
+                <div
+                  key={conv.conversation_id}
+                  className={`msg-conv-item${conv.conversation_id === conversationId ? " msg-conv-item-active" : ""}`}
+                  onClick={() => navigate(`/messages/${conv.conversation_id}`)}
+                >
+                  <div className="msg-conv-avatar" />
+                  <div className="msg-conv-info">
+                    <div className="msg-conv-name">
+                      {getDisplayName(conv.other_user)}
+                    </div>
+                    <div className="msg-conv-preview">
+                      {conv.last_message_content ?? "No messages yet"}
+                    </div>
+                  </div>
+                  <div className="msg-conv-time">
+                    {formatTime(conv.last_message_at)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {loading ? (
-          <div className="msg-empty">Loading conversations…</div>
-        ) : conversations.length === 0 ? (
-          <div className="msg-empty">
-            No conversations yet. Tap <b>+</b> to message a friend.
-          </div>
-        ) : (
-          <div className="msg-conv-list">
-            {conversations.map((conv) => (
-              <div
-                key={conv.conversation_id}
-                className="msg-conv-item"
-                onClick={() => navigate(`/messages/${conv.conversation_id}`)}
-              >
-                <div className="msg-conv-avatar" />
-                <div className="msg-conv-info">
-                  <div className="msg-conv-name">
-                    {getDisplayName(conv.other_user)}
-                  </div>
-                  <div className="msg-conv-preview">
-                    {conv.last_message_content ?? "No messages yet"}
-                  </div>
-                </div>
-                <div className="msg-conv-time">
-                  {formatTime(conv.last_message_at)}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Right pane: selected conversation thread */}
+        <div className="msg-right-pane">
+          {conversationId ? (
+            <ConversationThread
+              key={conversationId}
+              conversationId={conversationId}
+              embedded
+            />
+          ) : (
+            <div className="msg-empty-thread">
+              Select a conversation to start chatting.
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Friend picker overlay */}

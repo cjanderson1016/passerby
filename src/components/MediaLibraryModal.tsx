@@ -48,11 +48,21 @@ export default function MediaLibraryModal({
     setLoading(true);
     setError(null);
     try {
+      // Ensure we only request the current user's media regardless of RLS policies
+      const {
+        data: { user },
+        error: userErr,
+      } = await supabase.auth.getUser();
+      if (userErr || !user) {
+        setItems([]);
+        return;
+      }
       // We select id, key, file_name, content_type and size from user_media where status=ready. RLS should ensure we only get the current user's media.
       const { data, error } = await supabase
         .from("user_media")
         .select("id,key,file_name,content_type,size")
         .eq("status", "ready") // we only want media that is ready to be used, so we filter by status=ready
+        .eq("user_id", user.id) // we explicitly filter by the current user's ID to ensure we only get their media, regardless of RLS policies. This is a safeguard to prevent any misconfiguration of RLS from exposing other users' media.
         .order("created_at", { ascending: false });
       if (error) throw error;
       setItems((data ?? []) as MediaRow[]); // we may get null if there are no items, so we default to an empty array
@@ -129,8 +139,7 @@ export default function MediaLibraryModal({
             justifyContent: "space-between",
             alignItems: "center",
           }}
-        >
-        </div>
+        ></div>
 
         <div style={{ marginTop: 12 }}>
           <input
@@ -208,7 +217,9 @@ export default function MediaLibraryModal({
                             await deleteFileFromR2(m.key);
                             await fetchList();
                             // also clear selection for deleted id
-                            setSelectedOrder((s) => s.filter((id) => id !== m.id));
+                            setSelectedOrder((s) =>
+                              s.filter((id) => id !== m.id),
+                            );
                           } catch (err: unknown) {
                             console.error(err);
                             const msg =

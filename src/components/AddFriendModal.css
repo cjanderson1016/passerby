@@ -1,15 +1,141 @@
 .afm-overlay {
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .afm-modal {
-  background: #ffffff;
+  background: #f1f1f1;
+  border: 1px solid #cdcdcd;
   width: 400px;
   max-width: 90vw;
+}
+
+.afm-title {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #111111;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
+}
+
+.afm-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #555555;
+  line-height: 1;
+}
+
+.afm-close:hover {
+  color: #111111;
+}
+
+.afm-body {
+  padding: 20px;
+}
+
+.afm-search-row {
+  display: flex;
+  gap: 8px;
+}
+
+.afm-input {
+  flex: 1;
+  height: 36px;
+  padding: 0 12px;
+  border: none;
+  background: #e4e4e4;
+  font-size: 0.95rem;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
+  color: #222222;
+}
+
+.afm-input:focus {
+  outline: 1px solid #b8b8b8;
+}
+
+.afm-search-btn {
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid #bcbcbc;
+  background: #d7d7d7;
+  color: #262626;
+  font-weight: 600;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
+  cursor: pointer;
+}
+
+.afm-search-btn:hover {
+  background: #c6c6c6;
+}
+
+.afm-search-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.afm-error {
+  margin-top: 12px;
+  color: #b42318;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.afm-success {
+  margin-top: 12px;
+  color: #2e5c32;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.afm-result {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #e4e4e4;
+  border: 1px solid #cdcdcd;
+}
+
+.afm-result-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.afm-result-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: #111111;
+}
+
+.afm-result-username {
+  font-size: 13px;
+  color: #777777;
+}
+
+.afm-send-btn {
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid #bcbcbc;
+  background: #d7d7d7;
+  color: #262626;
+  font-weight: 600;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
+  cursor: pointer;
+}
+
+.afm-send-btn:hover {
+  background: #c6c6c6;
+}
+
+.afm-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 

@@ -1,7 +1,6 @@
 .profile-side-card {
-  background: #fafafa;
-  border: 1px solid #e3e3e3;
-  border-radius: 10px;
+  background: #f1f1f1;
+  border: 1px solid #cdcdcd;
   padding: 16px;
   margin-bottom: 16px;
 }
@@ -16,7 +15,7 @@
 
 .profile-side-card-text {
   margin: 0;
-  color: #555555;
+  color: #444444;
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
@@ -30,10 +29,10 @@
 }
 
 .profile-interest-tag {
-  background: #ececec;
-  border-radius: 999px;
-  padding: 6px 10px;
+  background: #e4e4e4;
+  border: 1px solid #cdcdcd;
+  padding: 4px 10px;
   font-size: 13px;
-  color: #555555;
+  color: #444444;
   max-width: 100%;
 }

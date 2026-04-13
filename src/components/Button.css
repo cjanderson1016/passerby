@@ -6,15 +6,14 @@
   Author(s): Brandon Toubman
 */
 
-/* Base reset — overrides index.css `button {}` global via class specificity */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  font-family: inherit;
+  border-radius: 0;
+  border: 1px solid #bcbcbc;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
@@ -24,7 +23,7 @@
 }
 
 .btn:focus-visible {
-  outline: 2px solid #0c2b4a;
+  outline: 1px solid #111111;
   outline-offset: 2px;
 }
 
@@ -32,19 +31,19 @@
 .btn--sm {
   height: 28px;
   padding: 0 12px;
-  font-size: 12px;
+  font-size: 0.85rem;
 }
 
 .btn--md {
   height: 36px;
   padding: 0 16px;
-  font-size: 14px;
+  font-size: 0.95rem;
 }
 
 .btn--lg {
   height: 42px;
   padding: 0 18px;
-  font-size: 15px;
+  font-size: 1rem;
 }
 
 /* Full-width modifier */
@@ -52,70 +51,67 @@
   width: 100%;
 }
 
-/* primary — dark blue, white text */
+/* primary */
 .btn--primary {
-  background: #0c2b4a;
-  color: #ffffff;
-  border-color: transparent;
+  background: #d7d7d7;
+  color: #262626;
+  border-color: #bcbcbc;
 }
 .btn--primary:hover:not(:disabled) {
-  background: #0a2240;
+  background: #c6c6c6;
 }
 
-/* secondary — light fill, subtle shadow (default) */
+/* secondary */
 .btn--secondary {
-  background: #f5f5f5;
-  color: #1f1f1f;
-  border-color: transparent;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  background: #e4e4e4;
+  color: #222222;
+  border-color: #cdcdcd;
 }
 .btn--secondary:hover:not(:disabled) {
-  background: #ebebeb;
+  background: #d7d7d7;
 }
 
-/* outline — white bg, visible border */
+/* outline */
 .btn--outline {
-  background: #ffffff;
-  color: #1f1f1f;
-  border-color: #bdbdbd;
+  background: #f1f1f1;
+  color: #222222;
+  border-color: #cdcdcd;
 }
 .btn--outline:hover:not(:disabled) {
-  background: #f6f6f6;
-  border-color: #a0a0a0;
+  background: #e4e4e4;
 }
 
-/* danger — red fill, white text */
+/* danger */
 .btn--danger {
-  background: #b42318;
-  color: #ffffff;
-  border-color: transparent;
+  background: #f5eded;
+  color: #b42318;
+  border-color: #d0a0a0;
 }
 .btn--danger:hover:not(:disabled) {
-  background: #912018;
+  background: #edd8d8;
 }
 
-/* success — green fill, white text */
+/* success */
 .btn--success {
-  background: #2e7d32;
-  color: #ffffff;
-  border-color: transparent;
+  background: #e4ede4;
+  color: #2e5c32;
+  border-color: #a0c0a0;
 }
 .btn--success:hover:not(:disabled) {
-  background: #256128;
+  background: #d0e4d0;
 }
 
-/* ghost — transparent, for icon-only or menu item buttons */
+/* ghost */
 .btn--ghost {
   background: transparent;
   color: inherit;
   border-color: transparent;
-  box-shadow: none;
 }
 .btn--ghost:hover:not(:disabled) {
-  background: #f1f1f1;
+  background: #e4e4e4;
 }
 
-/* Disabled state — applies to all variants */
+/* Disabled state */
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;

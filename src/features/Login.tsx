@@ -9,6 +9,8 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import "./Login.css";
+import Modal from "../components/Modal";
+import ForgotPass from "./ForgotPasswordEmail";
 
 interface LoginProps {
   onSwitchToSignup: () => void;
@@ -19,6 +21,9 @@ function Login({ onSwitchToSignup }: LoginProps) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // These are for the password recovery popup
+  const [recoverOpen, setRecoverOpen] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +82,9 @@ function Login({ onSwitchToSignup }: LoginProps) {
               required
             />
           </div>
+          <div className="forgot-password" onClick={()=> setRecoverOpen(true)}>
+            Forgot Password?
+          </div>
 
           {error && <p className="login-error">{error}</p>}
 
@@ -95,6 +103,7 @@ function Login({ onSwitchToSignup }: LoginProps) {
           </div>
         </form>
       </div>
+      <Modal is_open={recoverOpen} current_state={setRecoverOpen} component={<ForgotPass exitModal={() => setRecoverOpen(false)} />} title = {"Password Recovery"}/>
     </div>
   );
 }

@@ -9,15 +9,10 @@
 */
 
 import "./Style/AboutMeComponent.css";
-import { type BulletinComponent } from "./BulletinComponent";
 import "../Style/EditBulletin.css"
 import { useBulletin } from "../../../hooks/useBulletin";
-
-export type AboutMeComponentType = BulletinComponent & {
-  component_id: string;
-  user_id: string;
-  text: string;
-};
+import { useState } from "react";
+import { type AboutMeComponentType } from "./Data/AboutMeComponentData";
 
 interface AboutMeCardProps {
   component: AboutMeComponentType
@@ -27,10 +22,12 @@ export function AboutMeComponent({
   component
 }: AboutMeCardProps) {
 
-  const {editMode, isOwnProfile} = useBulletin()
+  const [editComponent, setEditComponent] = useState(false)
+
+  const {editMode, isOwnProfile, cleanAdd, setBulletinComponents, bulletinComponents} = useBulletin()
 
   const onEdit = () => {
-    console.log("Edit About Me clicked");
+    setEditComponent(true)
   }
 
   return (
@@ -50,15 +47,42 @@ export function AboutMeComponent({
           </button>
         )}
       </div>
+      
+      {!editComponent? (
+        <p className="profile-side-card-text">
+          {
+            component.text
+          /*aboutMe?.trim()
+            ? aboutMe
+            : "Tell people a little about yourself here."*/
+          }
+        </p>
+      ) : (
+        <input
+          type="text"
+          className="edit-box"
+          defaultValue={component.text}
+          
+          onKeyDown={async (e: React.KeyboardEvent<HTMLInputElement>)=>{
+            if (e.key === "Enter") {
+              console.log("Save About Me Component with text: " + e.currentTarget.value);
+              const updatedComponent = { ...component }
+              updatedComponent.text =  e.currentTarget.value
+              cleanAdd(updatedComponent)
+              setBulletinComponents(bulletinComponents.map(item => {
+                if (item.component_id === component.component_id){
+                  return updatedComponent
+                }  
+                else return item
+              }))
+              setEditComponent(false)
+            }
+          }}
+          
+        />
+      )}
 
-      <p className="profile-side-card-text">
-        {
-          component.text
-        /*aboutMe?.trim()
-          ? aboutMe
-          : "Tell people a little about yourself here."*/
-        }
-      </p>
+
     </section>
   );
 }

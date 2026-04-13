@@ -13,7 +13,7 @@ import ProfileMenu from "../components/ProfileMenu";
 import "./Profile.css";
 //import Modal from "../components/Modal";
 import { supabase } from "../lib/supabase";
-import { deleteFileFromR2, getPublicUrl } from "../services/dataService";
+import { getPublicUrl } from "../services/dataService";
 import ProfileHeader from "../components/profile/ProfileHeader";
 //import AboutMeCard from "../components/profile/AboutMeCard";
 //import InterestsCard from "../components/profile/InterestsCard";
@@ -25,6 +25,12 @@ import PostFeed from "../components/profile/PostFeed";
 import type { ProfilePost as Post } from "../components/profile/types"; // we define a more specific Post type for the profile page that includes the is_pinned field, since we need that for the pinned posts feature. This way we don't have to use the more general Post type from our global types which doesn't include is_pinned.
 import Bulletin from "../components/Bulletin/Bulletin";
 import { BulletinProvider } from "../contexts/BulletinContext";
+
+interface ProfileProps {
+  embeddedUsername?: string;
+  embedded?: boolean;
+  onUnfriendSuccess?: () => void;
+}
 
 type ViewedProfile = {
   id: string;
@@ -46,8 +52,7 @@ type PostRow = {
   updated_at?: string | null;
   user_id: string;
   is_pinned?: boolean | null; // we make this optional here because when we fetch posts from the database, the is_pinned field might come back as null if it's not set, but we want to treat that as false. In our normalizePost function below, we will convert any null or undefined is_pinned values to false to ensure our Post type always has a boolean for is_pinned.
-  media_key?: string | null; // optional storage key for any media attached to the post, which we can use to generate a URL when displaying the post
-  media_content_type?: string | null; // the content type of the attached media, which we can use to determine how to display it (e.g. image vs video)
+  // media moved to post_media table; legacy fields removed
 };
 
 type EditField = "bio" | "about_me" | "interests" | null;
@@ -96,8 +101,13 @@ function normalizePost(row: PostRow): Post {
   };
 }
 
-export default function Profile() {
-  const { username } = useParams();
+export default function Profile({
+  embeddedUsername,
+  embedded = false,
+  onUnfriendSuccess,
+}: ProfileProps = {}) {
+  const { username: routeUsername } = useParams();
+  const username = embeddedUsername ?? routeUsername;
   const navigate = useNavigate();
   const { user } = useUser();
 
@@ -226,9 +236,7 @@ export default function Profile() {
       try {
         const { data, error } = await supabase
           .from("posts")
-          .select(
-            "id, content, created_at, updated_at, user_id, is_pinned, media_key, media_content_type",
-          )
+          .select("id, content, created_at, updated_at, user_id, is_pinned")
           .eq("user_id", viewedProfile.id)
           .order("is_pinned", { ascending: false })
           .order("created_at", { ascending: false });
@@ -296,9 +304,7 @@ export default function Profile() {
           content,
           is_pinned: false,
         })
-        .select(
-          "id, content, created_at, updated_at, user_id, is_pinned, media_key, media_content_type",
-        )
+        .select("id, content, created_at, updated_at, user_id, is_pinned")
         .single();
 
       if (error) {
@@ -311,7 +317,7 @@ export default function Profile() {
         return;
       }
 
-      let postToAdd = data as PostRow; // we use the PostRow type here because this is the raw data from the database, which may have is_pinned as null. We will normalize it to our Post type later when we add it to state.
+      const postToAdd = data as PostRow; // we use the PostRow type here because this is the raw data from the database, which may have is_pinned as null. We will normalize it to our Post type later when we add it to state.
 
       // if there is a media file attached, we upload it to R2 and then update the post with the media key and content type so we can display it later. We do this after creating the post so that we have a post ID to associate the media with in storage.
       // If attachments were provided from the media library, persist them to `post_media`.
@@ -333,26 +339,7 @@ export default function Profile() {
             alert("Post created, but could not attach all media.");
           }
 
-          // Update posts.media_key with the first attachment for backwards compatibility
-          const first = attachments[0];
-          const { data: updatedPost, error: updateError } = await supabase
-            .from("posts")
-            .update({
-              media_key: first.key,
-              media_content_type: first.content_type ?? null,
-            })
-            .eq("id", postToAdd.id)
-            .eq("user_id", user.id)
-            .select(
-              "id, content, created_at, updated_at, user_id, is_pinned, media_key, media_content_type",
-            )
-            .single();
-
-          if (updateError) {
-            console.error("Error updating post with first media:", updateError);
-          } else if (updatedPost) {
-            postToAdd = updatedPost as PostRow;
-          }
+          // no longer update posts table with media_key; UI reads attachments from post_media
         } catch (uploadError) {
           console.error("Error persisting post media:", uploadError);
           alert("Post created, but attaching media failed.");
@@ -540,16 +527,11 @@ export default function Profile() {
     setSavingPostAction(true);
 
     try {
-      // if the post has attached media, we attempt to delete the media from R2 first before deleting the post from the database. This ensures that we don't leave orphaned media files in storage if a post is deleted. If the media deletion fails, we alert the user and do not proceed with deleting the post, since we want to avoid a situation where the post is deleted but the media remains in storage.
-      if (selectedPost.media_key) {
-        try {
-          await deleteFileFromR2(selectedPost.media_key);
-        } catch (deleteMediaError) {
-          console.error("Error deleting post media:", deleteMediaError);
-          alert("Could not delete post media. Please try again.");
-          return;
-        }
-      }
+      // Do not delete media objects from R2 when deleting a post. Media is
+      // account-scoped and may be reused by other posts; deleting objects
+      // should be an explicit action performed from the media library by the
+      // media owner. `post_media` rows referencing this post will be removed
+      // automatically by the FK `ON DELETE CASCADE` on `post_media.post_id`.
 
       const { error } = await supabase
         .from("posts")
@@ -662,7 +644,11 @@ export default function Profile() {
         return;
       }
 
-      navigate("/");
+      if (embedded) {
+        onUnfriendSuccess?.();
+      } else {
+        navigate("/");
+      }
     } finally {
       setUnfriending(false);
     }
@@ -676,23 +662,29 @@ export default function Profile() {
   };
 
   return (
-    <div className="profile-page">
-      <div className="profile-topbar">
-        <div className="profile-title">PASSERBY</div>
-        <ProfileMenu />
-      </div>
+    <div className={`profile-page ${embedded ? "profile-page-embedded" : ""}`}>
+      {!embedded && (
+        <div className="profile-topbar">
+          <div className="profile-title">PASSERBY</div>
+          <ProfileMenu />
+        </div>
+      )}
 
       {loadingProfile ? (
         <p style={{ padding: "16px" }}>Loading profile...</p>
       ) : profileError ? (
         <p style={{ padding: "16px" }}>{profileError}</p>
       ) : viewedProfile ? (
-        <div className="profile-shell">
-          <div className="profile-back-row">
-            <Link to="/" className="profile-back-link">
-              ← Back to Dashboard
-            </Link>
-          </div>
+        <div
+          className={`profile-shell ${embedded ? "profile-shell-embedded" : ""}`}
+        >
+          {!embedded && (
+            <div className="profile-back-row">
+              <Link to="/" className="profile-back-link">
+                ← Back to Dashboard
+              </Link>
+            </div>
+          )}
 
           <div className="profile-card">
             <ProfileHeader
