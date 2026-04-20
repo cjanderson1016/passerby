@@ -13,7 +13,7 @@ import ProfileMenu from "../components/ProfileMenu";
 import "./Profile.css";
 //import Modal from "../components/Modal";
 import { supabase } from "../lib/supabase";
-import { getPublicUrl } from "../services/dataService";
+import { deleteFileFromR2, getPublicUrl } from "../services/dataService";
 import ProfileHeader from "../components/profile/ProfileHeader";
 //import AboutMeCard from "../components/profile/AboutMeCard";
 //import InterestsCard from "../components/profile/InterestsCard";
@@ -56,6 +56,19 @@ type PostRow = {
 };
 
 type EditField = "bio" | "about_me" | "interests" | null;
+
+type UserMediaItem = {
+  id: string;
+  key: string;
+  file_name?: string | null;
+  content_type?: string | null;
+  size?: number | null;
+  created_at?: string | null;
+};
+
+const MEDIA_QUOTA_BYTES = Number(
+  import.meta.env.VITE_MEDIA_QUOTA_BYTES ?? 50 * 1024 * 1024,
+);
 
 // We define a set of allowed media types and extensions for post uploads. This is used both for the file input accept attribute and for validating files before upload to ensure users can only upload supported media types for their posts.
 // const ALLOWED_POST_MEDIA_TYPES = new Set([
@@ -117,7 +130,7 @@ export default function Profile({
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profileError, setProfileError] = useState("");
 
-  const [activeTab, setActiveTab] = useState<"bulletin" | "activity">(
+  const [activeTab, setActiveTab] = useState<"bulletin" | "activity" | "media">(
     "bulletin",
   );
   const [posts, setPosts] = useState<Post[]>([]);
@@ -134,6 +147,14 @@ export default function Profile({
 
   const [postMenuPostId, setPostMenuPostId] = useState<string | null>(null);
   const [savingPostAction, setSavingPostAction] = useState(false);
+
+  const [mediaItems, setMediaItems] = useState<UserMediaItem[]>([]); // State to store the user's media items
+  const [loadingMedia, setLoadingMedia] = useState(false); // State to track if media items are being loaded
+  const [mediaError, setMediaError] = useState(""); // State to store any errors that occur while loading media items
+  const [deletingMediaId, setDeletingMediaId] = useState<string | null>(null); // State to track the ID of the media item being deleted
+
+  const isOwnProfile =
+    !!user?.id && !!viewedProfile?.id && user.id === viewedProfile.id;
 
   useEffect(() => {
     let isActive = true;
@@ -264,8 +285,59 @@ export default function Profile({
     };
   }, [viewedProfile?.id]);
 
-  const isOwnProfile =
-    !!user?.id && !!viewedProfile?.id && user.id === viewedProfile.id;
+  // This effect runs when the media tab is active and loads the user's media items
+  useEffect(() => {
+    // We only load media items if the media tab is active and the viewed profile exists
+    if (activeTab !== "media" || !viewedProfile?.id) {
+      return;
+    }
+
+    let isActive = true; // Flag to track if the component is still mounted
+
+    // Load the media items for the viewed profile
+    const loadMedia = async () => {
+      setLoadingMedia(true);
+      setMediaError("");
+
+      try {
+        // Fetch the media items from the database
+        const { data, error } = await supabase
+          .from("user_media")
+          .select("id, key, file_name, content_type, size, created_at")
+          .eq("status", "ready")
+          .eq("user_id", viewedProfile.id)
+          .order("created_at", { ascending: false });
+
+        // Handle any errors that occurred while fetching the media items
+        if (error) {
+          console.error("Error loading profile media:", error);
+          if (isActive) {
+            setMediaItems([]);
+            setMediaError(
+              isOwnProfile
+                ? "Could not load your media library."
+                : "This media library is private or unavailable.",
+            );
+          }
+          return;
+        }
+        // Update the state with the fetched media items
+        if (isActive) {
+          setMediaItems((data as UserMediaItem[] | null) ?? []);
+        }
+      } finally {
+        // Finally, set the loading state to false
+        if (isActive) setLoadingMedia(false);
+      }
+    };
+
+    void loadMedia(); // Load the media items
+
+    // Cleanup function to set isActive to false when the component unmounts
+    return () => {
+      isActive = false;
+    };
+  }, [activeTab, viewedProfile?.id, isOwnProfile]);
 
   const displayName =
     viewedProfile?.first_name || viewedProfile?.last_name
@@ -553,6 +625,16 @@ export default function Profile({
 
   const pinnedPost = posts.find((post) => post.is_pinned) ?? null;
   const feedPosts = posts.filter((post) => !post.is_pinned);
+  // Calculate the total size of all media items
+  const totalMediaBytes = useMemo(
+    () => mediaItems.reduce((sum, item) => sum + (item.size ?? 0), 0),
+    [mediaItems],
+  );
+  // Calculate the percentage of media quota used
+  const mediaUsagePercent =
+    MEDIA_QUOTA_BYTES > 0
+      ? Math.min((totalMediaBytes / MEDIA_QUOTA_BYTES) * 100, 100)
+      : 0;
   /*const newestPost =
     [...posts].sort(
       (a, b) =>
@@ -576,6 +658,44 @@ export default function Profile({
     editField === "interests"
       ? "Enter interests separated by commas. Example: UI Design, Coding, Gaming"
       : "";
+
+  // Format bytes into a human-readable string
+  const formatBytes = (bytes: number) => {
+    if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    const unitIndex = Math.min(
+      Math.floor(Math.log(bytes) / Math.log(1024)),
+      units.length - 1,
+    );
+    const value = bytes / 1024 ** unitIndex;
+    return `${value >= 10 || unitIndex === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`;
+  };
+
+  // Handle deleting a media item
+  const handleDeleteMedia = async (item: UserMediaItem) => {
+    if (!isOwnProfile || deletingMediaId) return;
+
+    // Confirm deletion with the user
+    const confirmed = window.confirm(
+      `Delete ${item.file_name ?? "this media item"}? This will remove the uploaded file from your media library.`,
+    );
+    if (!confirmed) return; // If the user cancels, do nothing
+
+    setDeletingMediaId(item.id); // Set the ID of the media item being deleted
+
+    // Attempt to delete the media item from R2
+    try {
+        await deleteFileFromR2(item.key, item.id); // Delete the file from R2 with media ID
+      setMediaItems((prev) => prev.filter((media) => media.id !== item.id)); // Remove the media item from the state
+    } catch (error) {
+      // Handle any errors that occur during deletion
+      console.error("Error deleting media:", error);
+      alert("Could not delete this media item.");
+    } finally {
+      // Reset the deleting media state
+      setDeletingMediaId(null);
+    }
+  };
 
   function EditModal() {
     return (
@@ -720,6 +840,12 @@ export default function Profile({
               >
                 Activity
               </button>
+              <button
+                className={`profile-tab ${activeTab === "media" ? "active" : ""}`}
+                onClick={() => setActiveTab("media")}
+              >
+                Media
+              </button>
             </div>
             {/*<div className="profile-content-grid">*/}
             {/*<aside className="profile-left-panel">
@@ -787,6 +913,90 @@ export default function Profile({
                     />
                   </BulletinProvider>
                 </div>
+              )}
+
+              {activeTab === "media" && (
+                <section className="profile-media-section">
+                  {isOwnProfile && (
+                    <div className="profile-media-usage-card">
+                      <div className="profile-media-usage-row">
+                        <h3>Your Media Storage</h3>
+                        <span>
+                          {formatBytes(totalMediaBytes)} /{" "}
+                          {formatBytes(MEDIA_QUOTA_BYTES)}
+                        </span>
+                      </div>
+                      <div
+                        className="profile-media-usage-track"
+                        aria-hidden="true"
+                      >
+                        <div
+                          className="profile-media-usage-fill"
+                          style={{ width: `${mediaUsagePercent}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {loadingMedia ? (
+                    <p className="profile-feed-empty">Loading media...</p>
+                  ) : mediaError ? (
+                    <p className="profile-feed-empty">{mediaError}</p>
+                  ) : mediaItems.length === 0 ? (
+                    <p className="profile-feed-empty">No uploaded media yet.</p>
+                  ) : (
+                    <div className="profile-media-grid">
+                      {mediaItems.map((item) => {
+                        const isVideo = item.content_type?.startsWith("video/");
+                        const mediaUrl = getPublicUrl(item.key);
+
+                        return (
+                          <article key={item.id} className="profile-media-item">
+                            <div className="profile-media-preview-wrap">
+                              {isVideo ? (
+                                <video
+                                  src={mediaUrl}
+                                  className="profile-media-preview"
+                                  controls
+                                  preload="metadata"
+                                />
+                              ) : (
+                                <img
+                                  src={mediaUrl}
+                                  className="profile-media-preview"
+                                  alt={item.file_name ?? "profile media"}
+                                  loading="lazy"
+                                />
+                              )}
+                            </div>
+
+                            <div className="profile-media-meta">
+                              <p className="profile-media-name">
+                                {item.file_name || "Untitled media"}
+                              </p>
+                              <p className="profile-media-size">
+                                {formatBytes(item.size ?? 0)}
+                              </p>
+                            </div>
+
+                            {isOwnProfile && (
+                              <button
+                                type="button"
+                                className="profile-media-delete-btn"
+                                onClick={() => handleDeleteMedia(item)}
+                                disabled={deletingMediaId === item.id}
+                              >
+                                {deletingMediaId === item.id
+                                  ? "Deleting..."
+                                  : "Delete"}
+                              </button>
+                            )}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
               )}
             </main>
 

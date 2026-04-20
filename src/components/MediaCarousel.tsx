@@ -17,6 +17,7 @@ type Attachment = {
   key: string;
   content_type?: string | null;
   file_name?: string | null;
+  status?: string | null;
   position?: number | null;
 };
 
@@ -34,6 +35,7 @@ export default function MediaCarousel({ attachments, displayName }: Props) {
         id: a.id,
         url: getPublicUrl(a.key),
         isVideo: !!a.content_type && a.content_type.startsWith("video/"),
+        isDeleted: a.status === "deleted",
         fileName: a.file_name,
       }))
     : [];
@@ -76,7 +78,11 @@ export default function MediaCarousel({ attachments, displayName }: Props) {
             key={it.id}
             className={`media-carousel-item ${i === index ? "active" : ""}`}
           >
-            {it.isVideo ? (
+            {it.isDeleted ? (
+              <div className="media-carousel-deleted-placeholder">
+                This media was deleted.
+              </div>
+            ) : it.isVideo ? (
               <video
                 src={it.url}
                 controls

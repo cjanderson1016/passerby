@@ -179,7 +179,7 @@ export async function uploadFileToR2(
 /**
  * Delete a file from Cloudflare R2 using a Supabase Edge Function
  */
-export async function deleteFileFromR2(key: string) {
+export async function deleteFileFromR2(key: string, mediaId?: string) {
   if (!key) {
     throw new Error("Missing file key");
   }
@@ -204,12 +204,16 @@ export async function deleteFileFromR2(key: string) {
     throw new Error(String(data.error));
   }
 
-  // Also mark the DB row as deleted so it no longer appears in the user's library
-  try {
-    await supabase.from("user_media").update({ status: "deleted" }).eq("key", key);
-  } catch (e) {
-    // log but don't fail the whole operation if DB cleanup can't run
-    console.warn("Failed to mark user_media row deleted", e);
+  // Mark DB row as deleted so posts can render a "deleted media" placeholder.
+  // We treat this as required and surface errors to avoid silent data drift.
+  const updateQuery = supabase.from("user_media").update({ status: "deleted" });
+  const { error: updateError } = mediaId
+    ? await updateQuery.eq("id", mediaId)
+    : await updateQuery.eq("key", key);
+
+  if (updateError) {
+    console.error("Failed to mark user_media row deleted", updateError);
+    throw new Error(updateError.message || "Failed to mark media row deleted");
   }
 
   return data;
