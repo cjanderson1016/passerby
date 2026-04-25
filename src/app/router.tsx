@@ -7,6 +7,7 @@
 */
 import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
+import { ProtectedRoute } from "./ProtectedRoute";
 // import About from "../features/test/About";
 import Profile from "../features/Profile";
 import Settings from "../features/UserSettings";
@@ -28,18 +29,30 @@ export const router = createBrowserRouter([
   // cases where the username is not yet known; it renders the same component.
   {
     path: "/profile",
-    element: <Profile />,
+    element: (
+      <ProtectedRoute>
+        <Profile />
+      </ProtectedRoute>
+    ),
   },
   {
     // profile route now includes username as a dynamic segment. the component
     // can still fetch the authenticated user itself, but the URL reflects the
     // user's chosen username for bookmarking/linking.
     path: "/profile/:username",
-    element: <Profile />,
+    element: (
+      <ProtectedRoute>
+        <Profile />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/settings",
-    element: <Settings />,
+    element: (
+      <ProtectedRoute>
+        <Settings />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/reset_pass",
@@ -47,11 +60,19 @@ export const router = createBrowserRouter([
   },
   {
     path: "/messages",
-    element: <Messages />,
+    element: (
+      <ProtectedRoute>
+        <Messages />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/messages/:conversationId",
-    element: <Messages />,
+    element: (
+      <ProtectedRoute>
+        <Messages />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/recovery",
