@@ -35,6 +35,20 @@
   border-radius: 6px;
 }
 
+.media-carousel-deleted-placeholder {
+  width: 100%;
+  min-height: 220px;
+  max-height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d2d2d2;
+  border-radius: 6px;
+  background: #efefef;
+  color: #666666;
+  font-weight: 700;
+}
+
 .media-carousel-btn {
   background: rgba(255,255,255,0.9);
   border: 1px solid #ddd;

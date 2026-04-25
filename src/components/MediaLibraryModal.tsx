@@ -214,7 +214,7 @@ export default function MediaLibraryModal({
                         onClick={async () => {
                           // delete media via dataService
                           try {
-                            await deleteFileFromR2(m.key);
+                            await deleteFileFromR2(m.key, m.id);
                             await fetchList();
                             // also clear selection for deleted id
                             setSelectedOrder((s) =>

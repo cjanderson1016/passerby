@@ -7,19 +7,15 @@
 */
 
 import { useEffect, useMemo, useState, startTransition } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import "./dashboard.css";
 import type { Friend, Post, AcceptedFriendRequest, FriendUser } from "../types";
-import ProfileMenu from "../components/ProfileMenu";
+import TopBar from "../components/TopBar";
 import FriendTable from "../components/FriendTable";
 import FriendRequestList from "../components/FriendRequestList";
-import AddFriendModal from "../components/AddFriendModal";
 import { useUser } from "../hooks/useUser"; // hook wraps UserContext and provides user/profile/loading
 import { supabase } from "../lib/supabase"; // still used for fetching friends/posts
-import Modal from "../components/Modal";
 import Profile from "./Profile";
-import personAddIcon from "../assets/person_add.svg";
-import Notifications from "../components/Notifications";
 
 type FilterOption =
   | "Most Recently Updated"
@@ -77,9 +73,6 @@ export default function Dashboard() {
   const [hasLoadedFriends, setHasLoadedFriends] = useState(false);
   const [friendsRefreshTick, setFriendsRefreshTick] = useState(0); // this is a simple way to trigger a refresh of the friends feed when something changes, like accepting a friend request. We increment this tick to cause the useEffect that loads the friends feed to re-run.
   const [searchParams, setSearchParams] = useSearchParams();
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // instead of tracking currentUserId in state and querying supabase again,
   // obtain the authenticated user from our UserContext via the useUser hook.
@@ -263,50 +256,7 @@ export default function Dashboard() {
 
   return (
     <div className="dash-page">
-      {/* Top bar */}
-      <div className="dash-topbar">
-        <div className="dash-title">PASSERBY</div>
-
-        <div className="dash-top-actions">
-          <div className="dash-action-group">
-            <Link to="/messages" className="dash-icon-btn" title="Messages">
-              <span className="dash-message-icon">✉</span>
-            </Link>
-
-            <button
-              type="button"
-              className="dash-icon-btn"
-              title="Notifications"
-              aria-haspopup="dialog"
-              aria-expanded={notificationsOpen}
-              onClick={() => setNotificationsOpen(true)}
-            >
-              <span
-                className="material-symbols-outlined dash-notification-icon"
-                aria-hidden="true"
-              >
-                notifications
-              </span>
-            </button>
-
-            <button
-              type="button"
-              className="dash-icon-btn"
-              title="Add Friend"
-              onClick={() => setModalOpen(true)}
-            >
-              <img
-                src={personAddIcon}
-                alt="Add Friend"
-                className="dash-icon-img"
-              />
-            </button>
-          </div>
-
-          {/* profile button/dropdown moved into its own component */}
-          <ProfileMenu />
-        </div>
-      </div>
+      <TopBar showActions />
 
       {/* Filter row moved into left pane (see below) */}
 
@@ -377,33 +327,6 @@ export default function Dashboard() {
         </section>
       </div>
 
-      {/* Add Friend modal */}
-      {currentUserId && (
-        <Modal
-          is_open={modalOpen}
-          current_state={setModalOpen}
-          component={
-            <AddFriendModal
-              isOpen={modalOpen}
-              onClose={() => setModalOpen(false)}
-              currentUserId={currentUserId}
-            />
-          }
-          title={"Add Friend"}
-        />
-      )}
-
-      {/* Notifications modal */}
-      {currentUserId && (
-        <Modal
-          is_open={notificationsOpen}
-          current_state={setNotificationsOpen}
-          component={
-            <Notifications onClose={() => setNotificationsOpen(false)} />
-          }
-          title={"Notifications"}
-        />
-      )}
     </div>
   );
 }

@@ -18,29 +18,6 @@
   background: transparent;
 }
 
-.profile-topbar {
-  height: 64px;
-  background: #f1f1f1;
-  border-bottom: 1px solid #cdcdcd;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.profile-title {
-  font-size: clamp(1.4rem, 3vw, 1.9rem);
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  font-family: "Major Mono Display", monospace;
-  color: #111111;
-}
-
-.profile-topbar .dash-profile-wrap {
-  position: absolute;
-  right: 24px;
-}
-
 .profile-shell {
   max-width: 1320px;
   margin: 0 auto;
@@ -481,6 +458,115 @@
   color: #666666;
 }
 
+/* Media tab */
+.profile-media-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.profile-media-usage-card {
+  background: #f1f1f1;
+  border: 1px solid #cdcdcd;
+  padding: 14px 16px;
+}
+
+.profile-media-usage-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-media-usage-row h3 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.profile-media-usage-row span {
+  color: #555555;
+  font-weight: 700;
+}
+
+.profile-media-usage-track {
+  margin-top: 10px;
+  width: 100%;
+  height: 10px;
+  border: 1px solid #cdcdcd;
+  background: #e8e8e8;
+}
+
+.profile-media-usage-fill {
+  height: 100%;
+  background: #4f4f4f;
+}
+
+.profile-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.profile-media-item {
+  background: #f1f1f1;
+  border: 1px solid #cdcdcd;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-media-preview-wrap {
+  width: 100%;
+  border: 1px solid #d7d7d7;
+  background: #e3e3e3;
+}
+
+.profile-media-preview {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+}
+
+.profile-media-meta {
+  min-width: 0;
+}
+
+.profile-media-name {
+  margin: 0;
+  font-weight: 700;
+  color: #222222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-media-size {
+  margin: 2px 0 0 0;
+  color: #6b6b6b;
+  font-size: 14px;
+}
+
+.profile-media-delete-btn {
+  min-height: 38px;
+  border: 1px solid #d0a0a0;
+  background: #f5eded;
+  color: #b42318;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.profile-media-delete-btn:hover {
+  background: #edd8d8;
+}
+
+.profile-media-delete-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 /* Post cards */
 .profile-post-card {
   background: #ffffff;
@@ -898,5 +984,9 @@
     width: 100%;
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .profile-media-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
 }

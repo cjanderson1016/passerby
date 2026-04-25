@@ -53,6 +53,7 @@ type Attachment = {
   key: string;
   content_type?: string | null;
   file_name?: string | null;
+  status?: string | null;
   position?: number | null;
 };
 
@@ -66,12 +67,14 @@ type AttachmentRow = {
         key: string;
         content_type?: string | null;
         file_name?: string | null;
+        status?: string | null;
       }
     | {
         id: string;
         key: string;
         content_type?: string | null;
         file_name?: string | null;
+        status?: string | null;
       }[]
     | null;
 };
@@ -178,6 +181,7 @@ export default function PostCard({
       key: string;
       content_type?: string | null;
       file_name?: string | null;
+      status?: string | null;
       position?: number | null;
     }[]
   >([]); // this state will hold the media attachments for the post. We will load these from the database when the component mounts. Each attachment includes its position so we can render them in the correct order.
@@ -193,7 +197,7 @@ export default function PostCard({
         const { data, error } = await supabase
           .from("post_media") // query the post_media table to get attachments for this post
           .select(
-            "position, user_media:user_media_id (id, key, content_type, file_name)",
+            "position, user_media:user_media_id (id, key, content_type, file_name, status)",
           ) // we select the position from post_media and join the user_media table to get the details of each media attachment.
           .eq("post_id", post.id) // filter for attachments that belong to our post
           .order("position", { ascending: true }); // order by position so attachments are in the correct order for rendering
@@ -214,6 +218,7 @@ export default function PostCard({
                   key: um.key,
                   content_type: um.content_type,
                   file_name: um.file_name,
+                  status: um.status,
                   position: r.position,
                 }
               : null;
