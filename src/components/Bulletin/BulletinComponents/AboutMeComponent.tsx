@@ -13,6 +13,7 @@ import "../Style/EditBulletin.css"
 import { useBulletin } from "../../../hooks/useBulletin";
 import { useState } from "react";
 import { type AboutMeComponentType } from "./Data/AboutMeComponentData";
+import { MdOutlineEdit } from "react-icons/md";
 
 interface AboutMeCardProps {
   component: AboutMeComponentType
@@ -38,12 +39,12 @@ export function AboutMeComponent({
         {isOwnProfile && editMode && (
           <button
             type="button"
-            className="profile-inline-edit-btn"
+            className="specific-component-editor-button"
             onClick={onEdit}
             aria-label="Edit About Me"
             title="Edit About Me"
           >
-            ✏️
+            <MdOutlineEdit/>
           </button>
         )}
       </div>

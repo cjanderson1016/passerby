@@ -9,6 +9,7 @@ import "../Style/EditBulletin.css"
 import { useBulletin } from "../../../hooks/useBulletin";
 import { useState } from "react";
 import { type TitleComponentType } from "./Data/TitleComponentData";
+import { MdOutlineEdit } from "react-icons/md";
 
 interface titleProps {
   component: TitleComponentType;
@@ -56,12 +57,12 @@ export function TitleComponent({
       {isOwnProfile && editMode && (
         <button
           type="button"
-          className="profile-inline-edit-btn"
+          className="specific-component-editor-button"
           onClick={onEdit}
           aria-label="Edit Interests"
           title="Edit Interests"
         >
-          ✏️
+          <MdOutlineEdit/>
         </button>
       )}
     </div>

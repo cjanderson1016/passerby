@@ -7,6 +7,7 @@
 */
 
 import ProfilePictureUpload from "../ProfilePictureUpload";
+import { MdOutlineEdit } from "react-icons/md";
 
 type ProfileHeaderProps = {
   displayName: string;
@@ -34,8 +35,8 @@ export default function ProfileHeader({
   viewedProfilePictureUrl,
   initialImagePath,
   onEditBio,
-  onEditProfile,
-  onCreatePostScroll,
+  //onEditProfile,
+  //onCreatePostScroll,
   onProfileImageUploaded,
   onUnfriend,
 }: ProfileHeaderProps) {
@@ -78,14 +79,13 @@ export default function ProfileHeader({
                 aria-label="Edit description"
                 title="Edit description"
               >
-                ✏️
+                <MdOutlineEdit/>
               </button>
             )}
           </div>
         </div>
       </div>
-
-      {isOwnProfile && (
+      {/*isOwnProfile && (
         <div className="profile-header-actions">
           <button
             type="button"
@@ -103,7 +103,7 @@ export default function ProfileHeader({
             Edit Profile
           </button>
         </div>
-      )}
+      )*/}
 
       {!isOwnProfile && isFriend && onUnfriend && (
         <button

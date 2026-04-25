@@ -12,6 +12,7 @@ import * as BulletinComponents from "./BulletinComponents";
 // Style
 import "./Style/Bulletin.css";
 import { useBulletin } from "../../hooks/useBulletin.ts";
+import { FaEdit } from "react-icons/fa";
 
 interface BulletinProps {
   //Things to pass in to the bulletin component
@@ -153,54 +154,60 @@ export default function Bulletin({
           ) : (
             <></>
           )}
-          {/*
-          Render each component mapped to its respective component type
-          There may be room to make this look a little prettier
-          */}
           <div className="bulletin-content">
+            {/* Edit Menu */}
+            {isOwnProfile && (
+              <>  
+                <button 
+                  onClick={() => setEditMode(!editMode)}
+                  className="edit-bulletin-button"
+                  >
+                    <FaEdit/>
+                    Edit Bulletin
+                  </button>
+              </>
+            )}
+            {/*
+            Render each component mapped to its respective component type
+            There may be room to make this look a little prettier
+            */}
             {bulletinComponents.map((component) => (
               <div
-                key={component.position}
-                className="bulletin-components"
+              key={component.position}
+              className="bulletin-components"
               >
                 {component.child_table == "text_components" && (
                   <BulletinComponents.TextComponent
-                    key={component.position}
-                    component={component as BulletinComponents.TextComponentType}
+                  key={component.position}
+                  component={component as BulletinComponents.TextComponentType}
                   />
                 )}
                 {component.child_table == "title_card_components" && (
                   <BulletinComponents.TitleComponent
                     key={component.position}
                     component={component as BulletinComponents.TitleComponentType}
-                  />
-                )}
+                    />
+                  )}
                 {component.child_table == "about_me_components" && (
                   <BulletinComponents.AboutMeComponent
-                    key={component.position}
-                    component={component as BulletinComponents.AboutMeComponentType}
+                  key={component.position}
+                  component={component as BulletinComponents.AboutMeComponentType}
                   />
                 )}
                 {component.child_table == "interests_components" && (
                   <BulletinComponents.InterestsComponent
-                    key={component.position}
-                    component={component as BulletinComponents.InterestsComponentType}
+                  key={component.position}
+                  component={component as BulletinComponents.InterestsComponentType}
                   />
                 )}
               </div>
             ))}
           </div>
-          {/* Edit Menu */}
-          {isOwnProfile && (
-            <>  
-              <button onClick={() => setEditMode(!editMode)}>Edit Bulletin</button>
-                <EditBulletin
-                  components={bulletinComponents}
-                  profileUserId={profileUserId}
-                  loadBulletin={loadBulletin}
-                />
-            </>
-          )}
+          <EditBulletin
+            components={bulletinComponents}
+            profileUserId={profileUserId}
+            loadBulletin={loadBulletin}
+          />
         </div>
       )}
     </>

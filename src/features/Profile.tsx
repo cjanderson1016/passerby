@@ -759,26 +759,6 @@ export default function Profile({
 
               {activeTab === "bulletin" && (
                 <div className="profile-center-card">
-                  {/*
-                      <AboutMeCard
-                        aboutMe={viewedProfile.about_me}
-                        isOwnProfile={isOwnProfile}
-                        onEdit={() => openEditModal("about_me")}
-                        />
-
-                  <InterestsCard
-                    interests={interests}
-                    isOwnProfile={isOwnProfile}
-                    onEdit={() => openEditModal("interests")}
-                  />
-
-                      <RecentPostsPanel
-                        newestPost={newestPost}
-                        displayName={displayName}
-                        username={viewedProfile.username}
-                      />
-                      <PostCountCard postCount={posts.length} />*/}
-                  {/**/}
                   <BulletinProvider>
                     <Bulletin
                       show={true}
@@ -789,13 +769,6 @@ export default function Profile({
                 </div>
               )}
             </main>
-
-            {/*<aside className="profile-right-panel">
-                
-                
-                
-              </aside>*/}
-            {/*</div>*/}
           </div>
         </div>
       ) : null}
