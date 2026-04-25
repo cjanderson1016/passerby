@@ -14,7 +14,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 //import { useNavigate } from "react-router-dom";
-import ProfileMenu from "../components/ProfileMenu";
+import TopBar from "../components/TopBar";
 import "./settings.css"
 import Accordion_Component from "../components/Accordion";
 import { Privacy_Dropdown} from "../components/Accordion";
@@ -88,12 +88,7 @@ const settings_list = [
     <div>
       <div className="dash-page">
         {/* Top bar */}
-        <div className="dash-topbar">
-          <div className="dash-title">PASSERBY</div>
-
-          {/* profile button/dropdown moved into its own component */}
-          <ProfileMenu />
-        </div>
+        <TopBar showActions />
         <div className="settings-title">
           <h1>Profile Settings</h1>
         </div>

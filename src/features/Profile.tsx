@@ -9,7 +9,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useUser } from "../hooks/useUser";
-import ProfileMenu from "../components/ProfileMenu";
+import TopBar from "../components/TopBar";
 import "./Profile.css";
 //import Modal from "../components/Modal";
 import { supabase } from "../lib/supabase";
@@ -783,12 +783,7 @@ export default function Profile({
 
   return (
     <div className={`profile-page ${embedded ? "profile-page-embedded" : ""}`}>
-      {!embedded && (
-        <div className="profile-topbar">
-          <div className="profile-title">PASSERBY</div>
-          <ProfileMenu />
-        </div>
-      )}
+      {!embedded && <TopBar showActions />}
 
       {loadingProfile ? (
         <p style={{ padding: "16px" }}>Loading profile...</p>

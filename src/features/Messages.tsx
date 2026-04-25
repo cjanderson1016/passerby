@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useUser } from "../hooks/useUser";
-import ProfileMenu from "../components/ProfileMenu";
+import TopBar from "../components/TopBar";
 import ConversationThread from "../components/ConversationThread";
 import type {
   ConversationPreview,
@@ -210,13 +210,7 @@ export default function Messages() {
   return (
     <div className="msg-page">
       {/* Top bar */}
-      <div className="dash-topbar">
-        <button className="msg-back-btn" onClick={() => navigate("/")} title="Back to Dashboard">
-          &#8592;
-        </button>
-        <div className="dash-title">PASSERBY</div>
-        <ProfileMenu />
-      </div>
+      <TopBar showActions showBack />
 
       {/* Split-panel shell */}
       <div className="msg-shell">
