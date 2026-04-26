@@ -151,9 +151,10 @@ function Signup({ onSwitchToLogin }: SignupProps) {
             `Signup succeeded but updating user profile failed: ${updateError.message}`,
           );
         } else {
-          alert(
-            "Signup successful! Please check your email to confirm your account if required.",
-          );
+          // Disable sign up alert since we have disabled email confirmations for now, but we may want to re-enable it in the future if we turn email confirmations back on.
+          // alert(
+          //   "Signup successful! Please check your email to confirm your account if required.",
+          // );
         }
       } catch (updateErr) {
         setError(
@@ -284,7 +285,9 @@ function Signup({ onSwitchToLogin }: SignupProps) {
             <button
               className="signup-btn"
               type="submit"
-              disabled={loading || usernameValid !== true || usernameCheckLoading}
+              disabled={
+                loading || usernameValid !== true || usernameCheckLoading
+              }
             >
               {loading ? "Signing up..." : "Sign Up"}
             </button>
