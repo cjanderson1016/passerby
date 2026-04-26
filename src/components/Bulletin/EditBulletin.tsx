@@ -17,7 +17,7 @@ import Modal from "../Modal";
 import NewComponentModal from "./NewComponentModal";
 import { BiRename } from "react-icons/bi";
 import { MdDeleteForever } from "react-icons/md";
-import { IoIosAddCircleOutline } from "react-icons/io";
+import { IoIosAddCircleOutline, IoIosSave } from "react-icons/io";
 
 interface EditBulletinProps {
   //Things to pass in to the bulletin editor
@@ -190,22 +190,46 @@ export default function EditBulletin({components: components}: EditBulletinProps
       {editMode && (
         //Render the editor full of tools and such for changing your bulletin
         <div className = "edit-bulletin">
+          <div
+          className="edit-bulletin-title"
+          >
+            <h2>
+              Bulletin Editor
+            </h2>
+            {unsavedChanges && (
+              <button 
+                onClick={saveBulletin}
+                className="edit-bulletin-save-button"
+              > 
+                <IoIosSave/> 
+                save
+              </button>
+            )}
+          </div>
+          {unsavedChanges && (
+            <div className="edit-bulletin-unsaved-text">
+              <p>You have unsaved changes!</p>`
+            </div>
+          )}
+          <p className="edit-bulletin-components-title">
+            Bulletin Components
+          </p>
+          <button 
+          onClick={displayNewComponentModal}
+          className="add-new-component"
+          >
+            <div className="add-new-component-icon">
+              <IoIosAddCircleOutline/>
+            </div>
+            <p>
+              Create New Component
+            </p>
+          </button>
           {componentsCopy.map((component) => (
             <div key = {component.position}>
               <SpecificComponentEditor component = {component}/>
             </div>
           ))}
-          <div className="new-component-menu">
-            <button 
-            onClick={displayNewComponentModal}
-            className="add-new-component"
-            >
-              <IoIosAddCircleOutline/>
-              Create New Component
-            </button>
-          </div>
-          <button onClick={saveBulletin}>save</button>
-          {unsavedChanges && <p>You have unsaved changes!</p>}
           <Modal
             is_open={newComponentModalOpen}
             current_state={setNewComponentModalOpen}
@@ -215,10 +239,6 @@ export default function EditBulletin({components: components}: EditBulletinProps
               />}
             title={"New Component"}
           />
-
-          {/*true && (
-          )*/}
-
         </div>
       )}
     </>

@@ -1,9 +1,51 @@
 .edit-bulletin {
   width: 500px;
   height: 100%;
-  border-left: 1px solid #cdcdcd;
-  padding-left: 20px;
+  border: 1px solid #cdcdcd;
   font-family: "Handjet", "Segoe UI", Arial, sans-serif;
+}
+
+.edit-bulletin-title {
+  padding: 0 0 0 20px;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.edit-bulletin-unsaved-text {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: fit-content;
+  margin: none;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+.edit-bulletin-save-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #d7d7d7;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
+  height: 34px;
+  width: fit-content;
+  border: 1px solid #bcbcbc;
+  color: #262626;
+  font-size: 15px;
+  margin-right: 20px;
+}
+
+.edit-bulletin-save-button:hover {
+  background-color: #c6c6c6;
+}
+
+.edit-bulletin-components-title {
+  padding-left: 10px;
+  padding-bottom: 7px;
+  margin: 0px;
 }
 
 .specific-component-editor {
@@ -13,6 +55,8 @@
   border-top: 1px solid #cdcdcd;
   border-bottom: 1px solid #cdcdcd;
   justify-content: space-between;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 .component {
@@ -47,15 +91,6 @@
   font-weight: 600;
 }
 
-.new-component-menu {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  margin-top: 20px;
-  margin-bottom: 20px;
-}
-
 .specific-component-editor-button {
   display: flex;
   align-items: center;
@@ -76,7 +111,7 @@
   color: #b42318;
   font-size: 17px;
   width: 30px;
-  height: 30px
+  height: 30px;
 }
 
 .specific-component-editor-delete:hover {
@@ -106,8 +141,25 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 10px;
+  height: 52px;
+  font-family: "Handjet", "Segoe UI", Arial, sans-serif;
+  width: 100%;
+  border: none;
   border-top: 1px solid #cdcdcd;
   border-bottom: 1px solid #cdcdcd;
   justify-content: left;
+  padding-left: 10px;
+  gap: 10px;
+}
+
+.add-new-component:hover {
+  background-color: #e5e5e5;
+}
+
+.add-new-component-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
 }

@@ -29,3 +29,7 @@
   font-size: 15px;
   gap: 6px
 }
+
+.edit-bulletin-button:hover {
+  background-color: #c6c6c6;
+}
