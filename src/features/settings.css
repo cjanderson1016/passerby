@@ -114,14 +114,19 @@
 
 .change_user {
   padding: 10px;
-  width: 51%;
+  width: 40%;
   font-weight: bold;
-  background: #e4e4e4;
   border: none;
   font-family: "Handjet", "Segoe UI", Arial, sans-serif;
   font-size: 1rem;
   color: #222222;
   box-sizing: border-box;
+}
+
+.user-form{
+  display: flex;
+  gap: 5px;
+  text-align: center;
 }
 
 .change_user:focus {

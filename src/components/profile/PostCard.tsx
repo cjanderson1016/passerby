@@ -3,6 +3,7 @@ import "./PostCard.css";
 
 import { FaHeart, FaRegHeart } from "react-icons/fa"; // icons for liked/unliked heart
 import { FaRegCommentDots } from "react-icons/fa6"; // icon for comments
+import { BsPersonHeart } from "react-icons/bs"; // icon for who has liked the post
 
 import { supabase } from "../../lib/supabase";
 import { getPublicUrl } from "../../services/dataService";
@@ -11,6 +12,7 @@ import { Replies } from "../replies"; // component for handling replies.
 import MediaCarousel from "../MediaCarousel";
 import type { ProfilePost } from "./types";
 import Button from "../Button";
+import { useUser } from "../../hooks/useUser";
 // Type definition for a comment.
 type Comment = {
   id: string;
@@ -22,6 +24,27 @@ type Comment = {
   profile_pic_key?: string;
   created_at?: string | null;
   replies?: Comment[]; // replies are also comments, but nested under a parent comment.
+};
+
+// type definition for a liker of a post
+type Liker = {
+  post_id: string;
+  user_id: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  profile_pic_key?: string;
+};
+
+type rawLiker = {
+  post_id: string;
+  user_id: string;
+  users?: {
+    username: string;
+    first_name: string;
+    last_name: string;
+    profile_pic_key?: string;
+  }[];
 };
 
 type CommentRow = {
@@ -108,6 +131,7 @@ const fetchComments = async (
     return;
   }
 
+
   // converts the array of comments into a 2D array where top-level (aka parent) comments are seperated from replies. You cannot make a reply to a reply because all replies are on the same level
   const map: Record<string, Comment> = {}; // This map is used to quickly find comments by their ID when we need to attach replies to their parent comment.
   const top: Comment[] = []; // This array holds the top-level comments (parent-id = null)
@@ -139,6 +163,51 @@ const fetchComments = async (
   setComments(top);
 };
 
+  /* ---------------- FETCH THE PEOPLE WHO HAVE LIKED THE POST (When the user likes, automatically update the page) ---------------- */
+  const fetchLikers = async ( postID: string, )  =>{
+    const {data, error} = await supabase
+    .from("likes")
+    .select(
+      "user_id, post_id, users(username, profile_pic_key, first_name, last_name)"
+    )
+    .eq("post_id", postID)
+    .order("created_at", {ascending: true})
+
+    if(error){
+      console.log("error fetching likers", error);
+      return;
+    }
+  // Quick helper function to map the raw liker data from the db into an object that can be used
+    const mapLikers = (data: any[]): Liker[] => {
+      // method chain to map the raw data, return comes from the final filter.
+    return data
+
+    // map the raw data into something we can use in the UI.
+      .map((item) => {
+        const user = item.users;
+
+        if (!user) return null;
+
+        return {
+          post_id: item.post_id,
+          user_id: item.user_id,
+          username: user.username,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          profile_pic_key: user.profile_pic_key,
+        };
+      })
+      .filter(Boolean) as Liker[]; // out any "bad values" that may have come from an error
+  };
+
+    // called mapLikers to get the raw data we can use.
+    return mapLikers(data as rawLiker[]);
+
+
+    
+
+  }
+
 /* ---------------- THE POST COMPONENT ---------------- */
 
 export default function PostCard({
@@ -148,6 +217,7 @@ export default function PostCard({
   isOwnProfile,
   onOpenMenu,
 }: PostCardProps) {
+  const { user } = useUser(); // get current user from context
   const id = post.id;
   const storageKey = "isLiked_" + id; // for now we will store likes on the user's machine in local storage
 
@@ -160,6 +230,9 @@ export default function PostCard({
   // State for storing hover effects on the like and comment icons
   const [heartHover, setHeartHover] = useState(false);
   const [commentHover, setCommentHover] = useState(false);
+  const [showLikers, setShowLikers] = useState(false);
+  const [likers, setLikers] = useState<Liker[]>([]);
+  const [LikersHover, setLikersHover] = useState(false);
 
   // states for comments
   const [comments, setComments] = useState<Comment[]>([]); // stores all of the comments for the post.
@@ -244,13 +317,51 @@ export default function PostCard({
     setItem(storageKey, isLiked); // update local storage when the like state chnges
   }, [isLiked, storageKey]);
 
-  const handleLikes = () => {
-    setIsLiked((prev) => !prev); // like/unlike
-  };
+const handleLikes = async () => {
+  const newLikedState = !isLiked;
+  setIsLiked(newLikedState);
+
+  if (newLikedState) {
+    // Do a like
+    const { error } = await supabase
+      .from("likes")
+      .insert({
+        user_id: user?.id,
+        post_id: post.id,
+      });
+
+    if (error) {
+      console.error("Error liking post:", error);
+      setIsLiked(false);  // unlike it
+    }
+  } else {
+    //unlike
+    const { error } = await supabase
+      .from("likes")
+      .delete()
+      .eq("user_id", user?.id)
+      .eq("post_id", post.id);
+
+    if (error) {
+      console.error("Error unliking post:", error);
+    }
+  }
+
+  // Close and refresh likers when toggling like
+  if (showLikers) {
+    setShowLikers(false);
+    // Fetch fresh likers, then reopen
+    fetchLikers(id).then((newLikers) => {
+      setLikers(newLikers || []);
+      setShowLikers(true);
+    });
+  }
+};
 
   /* ---------------- HIDE/UNHIDE COMMENTS ---------------- */
 
   const handleShowComments = () => {
+    setShowLikers(false);
     setShowComments((prev) => {
       if (prev) {
         setComments([]);
@@ -339,6 +450,15 @@ export default function PostCard({
     fetchComments(id, setComments);
   };
 
+
+  const handleShowLikers = async (current_post: string) => {
+    const likers = await fetchLikers(current_post)
+    setLikers(likers || []); 
+    setShowLikers(!showLikers);
+    // Always turn off comments
+    setShowComments(false);
+  };
+
   return (
     <article
       className={`profile-post-card ${post.is_pinned ? "pinned" : ""}`}
@@ -409,6 +529,17 @@ export default function PostCard({
               transition: "all 0.1s ease",
             }}
           />
+        </div>
+        <div style={{cursor: "pointer"}}
+         onMouseEnter={() => setLikersHover(true)}
+          onMouseLeave={() => setLikersHover(false)}
+          onClick={() => handleShowLikers(post.id)}>
+            <BsPersonHeart
+              style={{fontSize: showLikers ? 19 : 18,
+              color: LikersHover ? "black" : "darkgrey",
+              transition: "all 0.1s ease",}}
+            
+            />
         </div>
 
         {isOwnProfile && (
@@ -597,6 +728,42 @@ export default function PostCard({
                     })}
                   </>
                 )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ---------------- LIKERS SECTION ---------------- */}
+
+      {showLikers && likers.length > 0 && (
+        <div className="likers-section">
+          <div style={{ fontWeight: "bold", marginBottom: "10px" }}>
+            Who has liked this post
+          </div>
+
+          <div>
+            {likers.map((liker) => (
+              <div className="display-liker"
+                key={liker.user_id}
+              >
+                {liker.profile_pic_key ? (
+                  <img
+                    src={getPublicUrl(liker.profile_pic_key)}
+                    alt="Profile"
+                    className="profile-avatar-comment"
+                  />
+                ) : (
+                  <div className="profile-avater-placeholder-comment">No Photo</div>
+                )}
+                <div style={{ marginLeft: "10px" }}>
+                  {liker.username === useUser().userProfile?.username ?
+
+                  <strong>You</strong> :
+                <strong>{liker.first_name} {liker.last_name}</strong>}
+
+                  <div className="display-handle">@{liker.username}</div>
+                </div>
               </div>
             ))}
           </div>

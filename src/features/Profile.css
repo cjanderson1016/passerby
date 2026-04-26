@@ -18,15 +18,7 @@
   background: transparent;
 }
 
-.profile-topbar {
-  height: 64px;
-  background: #f1f1f1;
-  border-bottom: 1px solid #cdcdcd;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
+
 
 .profile-title {
   font-size: clamp(1.4rem, 3vw, 1.9rem);
@@ -36,10 +28,7 @@
   color: #111111;
 }
 
-.profile-topbar .dash-profile-wrap {
-  position: absolute;
-  right: 24px;
-}
+
 
 .profile-shell {
   max-width: 1320px;

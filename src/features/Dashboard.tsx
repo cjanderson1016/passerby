@@ -264,49 +264,6 @@ export default function Dashboard() {
   return (
     <div className="dash-page">
       {/* Top bar */}
-      <div className="dash-topbar">
-        <div className="dash-title">PASSERBY</div>
-
-        <div className="dash-top-actions">
-          <div className="dash-action-group">
-            <Link to="/messages" className="dash-icon-btn" title="Messages">
-              <span className="dash-message-icon">✉</span>
-            </Link>
-
-            <button
-              type="button"
-              className="dash-icon-btn"
-              title="Notifications"
-              aria-haspopup="dialog"
-              aria-expanded={notificationsOpen}
-              onClick={() => setNotificationsOpen(true)}
-            >
-              <span
-                className="material-symbols-outlined dash-notification-icon"
-                aria-hidden="true"
-              >
-                notifications
-              </span>
-            </button>
-
-            <button
-              type="button"
-              className="dash-icon-btn"
-              title="Add Friend"
-              onClick={() => setModalOpen(true)}
-            >
-              <img
-                src={personAddIcon}
-                alt="Add Friend"
-                className="dash-icon-img"
-              />
-            </button>
-          </div>
-
-          {/* profile button/dropdown moved into its own component */}
-          <ProfileMenu />
-        </div>
-      </div>
 
       {/* Filter row moved into left pane (see below) */}
 
@@ -376,34 +333,6 @@ export default function Dashboard() {
           )}
         </section>
       </div>
-
-      {/* Add Friend modal */}
-      {currentUserId && (
-        <Modal
-          is_open={modalOpen}
-          current_state={setModalOpen}
-          component={
-            <AddFriendModal
-              isOpen={modalOpen}
-              onClose={() => setModalOpen(false)}
-              currentUserId={currentUserId}
-            />
-          }
-          title={"Add Friend"}
-        />
-      )}
-
-      {/* Notifications modal */}
-      {currentUserId && (
-        <Modal
-          is_open={notificationsOpen}
-          current_state={setNotificationsOpen}
-          component={
-            <Notifications onClose={() => setNotificationsOpen(false)} />
-          }
-          title={"Notifications"}
-        />
-      )}
     </div>
   );
 }

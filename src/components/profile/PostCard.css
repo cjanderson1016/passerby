@@ -10,6 +10,19 @@
 
 }
 
+
+.likers-section{
+  padding: 20px; 
+  border-top: 1px solid #eee;
+}
+
+.display-liker{
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid #eee;
+  gap: 10px;
+}
 .display-comment{
     display: flex;
 }
@@ -47,8 +60,4 @@
   font-size: 14px;
   color: #777777;
   margin-top: 2px;
-}
-
-.display-first-last{
-
 }
