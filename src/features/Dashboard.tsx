@@ -7,19 +7,15 @@
 */
 
 import { useEffect, useMemo, useState, startTransition } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import "./dashboard.css";
 import type { Friend, Post, AcceptedFriendRequest, FriendUser } from "../types";
-import ProfileMenu from "../components/ProfileMenu";
+import TopBar from "../components/TopBar";
 import FriendTable from "../components/FriendTable";
 import FriendRequestList from "../components/FriendRequestList";
-import AddFriendModal from "../components/AddFriendModal";
 import { useUser } from "../hooks/useUser"; // hook wraps UserContext and provides user/profile/loading
 import { supabase } from "../lib/supabase"; // still used for fetching friends/posts
-import Modal from "../components/Modal";
 import Profile from "./Profile";
-import personAddIcon from "../assets/person_add.svg";
-import Notifications from "../components/Notifications";
 
 type FilterOption =
   | "Most Recently Updated"
@@ -77,9 +73,6 @@ export default function Dashboard() {
   const [hasLoadedFriends, setHasLoadedFriends] = useState(false);
   const [friendsRefreshTick, setFriendsRefreshTick] = useState(0); // this is a simple way to trigger a refresh of the friends feed when something changes, like accepting a friend request. We increment this tick to cause the useEffect that loads the friends feed to re-run.
   const [searchParams, setSearchParams] = useSearchParams();
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // instead of tracking currentUserId in state and querying supabase again,
   // obtain the authenticated user from our UserContext via the useUser hook.
@@ -263,7 +256,7 @@ export default function Dashboard() {
 
   return (
     <div className="dash-page">
-      {/* Top bar */}
+      <TopBar showActions />
 
       {/* Filter row moved into left pane (see below) */}
 
@@ -333,6 +326,7 @@ export default function Dashboard() {
           )}
         </section>
       </div>
+
     </div>
   );
 }

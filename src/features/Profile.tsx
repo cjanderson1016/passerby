@@ -9,7 +9,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useUser } from "../hooks/useUser";
-import ProfileMenu from "../components/ProfileMenu";
+import TopBar from "../components/TopBar";
 import "./Profile.css";
 //import Modal from "../components/Modal";
 import { supabase } from "../lib/supabase";
@@ -196,19 +196,43 @@ export default function Profile({
           }
 
           if (isActive) {
-            setViewedProfile(data as ViewedProfile);
-
-            if (user?.id && data.id !== user.id) {
-              const { data: friendRow } = await supabase
-                .from("friend_requests")
-                .select("id")
-                .eq("status", "accepted")
-                .or(
-                  `and(requester_id.eq.${user.id},recipient_id.eq.${data.id}),and(requester_id.eq.${data.id},recipient_id.eq.${user.id})`,
-                )
-                .maybeSingle();
-              if (isActive) setIsFriend(!!friendRow);
+            // ProtectedRoute guarantees user is authenticated when accessing username routes
+            const userId = user!.id;
+            if (data.id === userId) {
+              setViewedProfile(data as ViewedProfile);
+              return;
             }
+
+            // if the profile is not the user's own, we need to check if they are friends before showing the profile data. We query the friend_requests table to see if there is an accepted friend request between the authenticated user and the profile being viewed. If there is an error with this query, we log it and show a generic error message. If there is no accepted friend request, we show a message that the profile is only available to accepted friends. If there is an accepted friend request, we set the viewed profile data and mark that they are friends.
+            const { data: friendRow, error: friendError } = await supabase
+              .from("friend_requests")
+              .select("id")
+              .eq("status", "accepted")
+              .or(
+                `and(requester_id.eq.${userId},recipient_id.eq.${data.id}),and(requester_id.eq.${data.id},recipient_id.eq.${userId})`,
+              )
+              .maybeSingle();
+
+            // handle any errors that occur while checking the friendship status. If there is an error, we log it and set a generic error message about verifying profile access. We also set the viewed profile to null since we cannot verify access to it.
+            if (friendError) {
+              console.error("Error checking friendship status:", friendError);
+              setViewedProfile(null);
+              setProfileError("Could not verify profile access.");
+              return;
+            }
+
+            // if there is no accepted friend request, we set the viewed profile to null and show a message that the profile is only available to accepted friends. This prevents unauthorized access to the profile data.
+            if (!friendRow) {
+              setViewedProfile(null);
+              setProfileError(
+                "This profile is only available to accepted friends.",
+              );
+              return;
+            }
+
+            // if we have verified that the user is a friend of the profile being viewed, we set the profile data and mark that they are friends. This allows the profile data to be displayed in the UI.
+            setViewedProfile(data as ViewedProfile);
+            setIsFriend(true);
           }
         } else if (user?.id) {
           const { data, error } = await supabase
@@ -244,7 +268,7 @@ export default function Profile({
     return () => {
       isActive = false;
     };
-  }, [username, user?.id]);
+  }, [username, user]); // we include user in the dependency array because we need to re-run this effect if the authenticated user changes, since that could affect whether we are viewing our own profile or someone else's, and also affects the access control logic for viewing other profiles.
 
   useEffect(() => {
     if (!viewedProfile?.id) {
@@ -688,7 +712,7 @@ export default function Profile({
 
     // Attempt to delete the media item from R2
     try {
-        await deleteFileFromR2(item.key, item.id); // Delete the file from R2 with media ID
+      await deleteFileFromR2(item.key, item.id); // Delete the file from R2 with media ID
       setMediaItems((prev) => prev.filter((media) => media.id !== item.id)); // Remove the media item from the state
     } catch (error) {
       // Handle any errors that occur during deletion
@@ -786,6 +810,7 @@ export default function Profile({
 
   return (
     <div className={`profile-page ${embedded ? "profile-page-embedded" : ""}`}>
+      {!embedded && <TopBar showActions />}
 
       {loadingProfile ? (
         <p style={{ padding: "16px" }}>Loading profile...</p>
