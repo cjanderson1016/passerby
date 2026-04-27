@@ -13,6 +13,7 @@ import "../Style/EditBulletin.css"
 import { useBulletin } from "../../../hooks/useBulletin";
 import { useState } from "react";
 import { type InterestsComponentType } from "./Data/InterestsComponentData";
+import { MdOutlineEdit } from "react-icons/md";
 
 interface InterestsComponentProps {
   component: InterestsComponentType
@@ -38,12 +39,12 @@ export function InterestsComponent({
         {isOwnProfile && editMode && (
           <button
             type="button"
-            className="profile-inline-edit-btn"
+            className="specific-component-editor-button"
             onClick={onEdit}
             aria-label="Edit Interests"
             title="Edit Interests"
           >
-            ✏️
+            <MdOutlineEdit/>
           </button>
         )}
       </div>

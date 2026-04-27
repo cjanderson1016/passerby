@@ -8,16 +8,16 @@
 
 import "./Style/EditBulletin.css"
 import { 
-  newTextComponent, 
-  newTitleComponent, 
-  newAboutMeComponent,
-  newInterestsComponent,
   type BulletinComponentsUnionType 
 } from "./BulletinComponents";
 import { supabase } from "../../lib/supabase";
 import { useBulletin } from "../../hooks/useBulletin";
 import { useState } from "react";
-import { useUser } from "../../hooks/useUser";
+import Modal from "../Modal";
+import NewComponentModal from "./NewComponentModal";
+import { BiRename } from "react-icons/bi";
+import { MdDeleteForever } from "react-icons/md";
+import { IoIosAddCircleOutline, IoIosSave } from "react-icons/io";
 
 interface EditBulletinProps {
   //Things to pass in to the bulletin editor
@@ -26,18 +26,12 @@ interface EditBulletinProps {
   loadBulletin: (isActive: boolean) => Promise<void>
 }
 
-type FilterOption = 
-  | "Title"
-  | "Text"
-  | "About Me"
-  | "Interests";
-
 export default function EditBulletin({components: components}: EditBulletinProps) {
   //Render the edit bulletin menu
 
   const componentsCopy = [...components] //Creates a copy so vscode doesn't yell at me
-  const [filterOption, setFilterOption] = useState<FilterOption>("Text") //default option for the create new component dropdown menu
-  const {
+  const [newComponentModalOpen, setNewComponentModalOpen] = useState(false) //Whether the new component modal is open or not
+  const { // import all the required functions and such from the useBulletin hook
     cleanAdd, 
     updatedComponents, 
     bulletinComponents,
@@ -50,8 +44,6 @@ export default function EditBulletin({components: components}: EditBulletinProps
     unsavedChanges,
     setUnsavedChanges
   } = useBulletin()
-  const {user} = useUser()
-  const user_id = user?.id
 
   interface SpecificComponentEditorProps {
     component: BulletinComponentsUnionType
@@ -74,13 +66,17 @@ export default function EditBulletin({components: components}: EditBulletinProps
             setRenaming(false)
           }
         }}/>) : (
-        <p>{component.name}</p>
+        <div className="specific-component-editor-name-rename">
+          <button className="specific-component-editor-button" onClick={() => { setRenaming(true) }}><BiRename/></button>
+          <p>{component.name}</p>
+        </div>
         )}
-        <div>
-          <button onClick={() => { setRenaming(true) }}>rename</button>
-          <button onClick={() => deleteComponent(component)}>delete</button>
-          <button onClick={() => moveComponentUp(component)}>↑</button>
-          <button onClick={() => moveComponentDown(component)}>↓</button>
+        <div className="specific-component-editor-delete-arrows">
+          <button className="specific-component-editor-delete" onClick={() => deleteComponent(component)}><MdDeleteForever/></button>
+          <div className="specific-component-editor-arrows">
+            <button className="specific-component-editor-button" onClick={() => moveComponentUp(component)}>↑</button>
+            <button className="specific-component-editor-button" onClick={() => moveComponentDown(component)}>↓</button>
+          </div>
         </div>
       </div>
     )
@@ -140,6 +136,7 @@ export default function EditBulletin({components: components}: EditBulletinProps
   }
   
   const pushNewStuffToDatabase = async () => {
+    //Pusha all the changes in updated Components to the database.
     const flatUpdate = Object.values(updatedComponents).flat() //Get just the lists of each component type, and flatten it into a single list of values
       const { error: moveComponentParentError } = await supabase
       .from("bulletin_components")
@@ -184,31 +181,8 @@ export default function EditBulletin({components: components}: EditBulletinProps
     setUnsavedChanges(false)
   }
 
-  const addComponent = () => {
-    //Add a new component to the bottom of the bulletin.
-    console.log("Adding new component of type " + filterOption)
-    if (!user_id) {
-      console.error("No user id found, cannot add component")
-      return
-    }
-    let newComponent: BulletinComponentsUnionType
-    switch(filterOption){
-      case "Title":
-        newComponent = newTitleComponent(user_id, componentsCopy.length)
-        break
-      case "Text":
-        newComponent = newTextComponent(user_id, componentsCopy.length)
-        break
-      case "About Me":
-        newComponent = newAboutMeComponent(user_id, componentsCopy.length)
-        break
-      case "Interests":
-        newComponent = newInterestsComponent(user_id, componentsCopy.length)
-        break
-    }
-    cleanAdd(newComponent)
-    setBulletinComponents([...componentsCopy, newComponent])
-    //console.log("New component created:", newComponent)
+  const displayNewComponentModal = () => {
+    setNewComponentModalOpen(true)
   }
 
   return (
@@ -216,26 +190,55 @@ export default function EditBulletin({components: components}: EditBulletinProps
       {editMode && (
         //Render the editor full of tools and such for changing your bulletin
         <div className = "edit-bulletin">
+          <div
+          className="edit-bulletin-title"
+          >
+            <h2>
+              Bulletin Editor
+            </h2>
+            {unsavedChanges && (
+              <button 
+                onClick={saveBulletin}
+                className="edit-bulletin-save-button"
+              > 
+                <IoIosSave/> 
+                save
+              </button>
+            )}
+          </div>
+          {unsavedChanges && (
+            <div className="edit-bulletin-unsaved-text">
+              <p>You have unsaved changes!</p>`
+            </div>
+          )}
+          <p className="edit-bulletin-components-title">
+            Bulletin Components
+          </p>
+          <button 
+          onClick={displayNewComponentModal}
+          className="add-new-component"
+          >
+            <div className="add-new-component-icon">
+              <IoIosAddCircleOutline/>
+            </div>
+            <p>
+              Create New Component
+            </p>
+          </button>
           {componentsCopy.map((component) => (
             <div key = {component.position}>
               <SpecificComponentEditor component = {component}/>
             </div>
           ))}
-          <div className="new-component-menu">
-            <button onClick={addComponent}>Create New Component</button>
-            <select
-              className="edit-select"
-              onChange={(e) => {setFilterOption(e.target.value as FilterOption)}}
-              value={filterOption}
-            >
-              <option value="Text">Text</option>
-              <option value="Title">Title</option>
-              <option value="About Me">About Me</option>
-              <option value="Interests">Interests</option>
-            </select>
-          </div>
-          <button onClick={saveBulletin}>save</button>
-          {unsavedChanges && <p>You have unsaved changes!</p>}
+          <Modal
+            is_open={newComponentModalOpen}
+            current_state={setNewComponentModalOpen}
+            component={<NewComponentModal 
+              componentsCopy={componentsCopy}
+              onClose={() => setNewComponentModalOpen(false)}
+              />}
+            title={"New Component"}
+          />
         </div>
       )}
     </>

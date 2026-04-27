@@ -358,7 +358,7 @@ body {
 }
 
 .dash-menu-item:hover {
-  background: #f1f1f1;
+  color: rgb(60, 60, 60);
 }
 
 .dash-menu-item:disabled {
@@ -369,6 +369,9 @@ body {
 /* Sign out is typically "danger" */
 .dash-menu-item.danger {
   color: #b42318;
+}
+.dash-menu-item.danger:hover {
+  color: #ae423a;
 }
 
 /* ============================= */

@@ -17,6 +17,7 @@ type Attachment = {
   key: string;
   content_type?: string | null;
   file_name?: string | null;
+  status?: string | null;
   position?: number | null;
 };
 
@@ -34,11 +35,15 @@ export default function MediaCarousel({ attachments, displayName }: Props) {
         id: a.id,
         url: getPublicUrl(a.key),
         isVideo: !!a.content_type && a.content_type.startsWith("video/"),
+        isDeleted: a.status === "deleted",
         fileName: a.file_name,
       }))
     : [];
 
   const [index, setIndex] = useState(0); // the index of the currently displayed item in the carousel
+  const [fullscreenImageUrl, setFullscreenImageUrl] = useState<string | null>(
+    null,
+  ); // the URL of the image currently being displayed in fullscreen mode, or null if no image is in fullscreen mode
 
   // Whenever the items array changes (e.g. if the attachments prop changes), we check if the current index is still valid.
   // If the index is greater than or equal to the length of the items array, it means we were on an item that no longer exists (e.g. if attachments were removed), so we reset the index to 0 to show the first item.
@@ -52,6 +57,21 @@ export default function MediaCarousel({ attachments, displayName }: Props) {
     }
     return undefined;
   }, [items.length, index]);
+
+  // Whenever we enter fullscreen mode for an image (i.e. when fullscreenImageUrl is set), we add an event listener for the Escape key to allow users to exit fullscreen mode by pressing Escape.
+  useEffect(() => {
+    if (!fullscreenImageUrl) return undefined; // if we don't have a fullscreen image URL, we don't need to add the event listener
+
+    // Create an event listener for the Escape key. Used so if the user presses Escape while an image is in fullscreen mode, we exit fullscreen mode.
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setFullscreenImageUrl(null);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown); // we add the event listener when we enter fullscreen mode
+    return () => window.removeEventListener("keydown", onKeyDown); // we remove the event listener when we exit fullscreen mode or when the component unmounts to avoid memory leaks and unnecessary event handling when we're not in fullscreen mode
+  }, [fullscreenImageUrl]);
 
   // If there are no items to display, we return null and render nothing. This can happen if there are no attachments and no mediaUrl, or if the attachments prop is an empty array.
   if (!items.length) return null;
@@ -76,7 +96,11 @@ export default function MediaCarousel({ attachments, displayName }: Props) {
             key={it.id}
             className={`media-carousel-item ${i === index ? "active" : ""}`}
           >
-            {it.isVideo ? (
+            {it.isDeleted ? (
+              <div className="media-carousel-deleted-placeholder">
+                This media was deleted.
+              </div>
+            ) : it.isVideo ? (
               <video
                 src={it.url}
                 controls
@@ -84,12 +108,19 @@ export default function MediaCarousel({ attachments, displayName }: Props) {
                 className="media-carousel-media"
               />
             ) : (
-              <img
-                src={it.url}
-                alt={it.fileName ?? `${displayName}'s post media`}
-                className="media-carousel-media"
-                loading="lazy"
-              />
+              <button
+                type="button"
+                className="media-carousel-image-button"
+                onClick={() => setFullscreenImageUrl(it.url)}
+                aria-label="Open image in full view"
+              >
+                <img
+                  src={it.url}
+                  alt={it.fileName ?? `${displayName}'s post media`}
+                  className="media-carousel-media"
+                  loading="lazy"
+                />
+              </button>
             )}
           </div>
         ))}
@@ -113,6 +144,29 @@ export default function MediaCarousel({ attachments, displayName }: Props) {
           />
         ))}
       </div>
+
+      {fullscreenImageUrl ? (
+        <div
+          className="media-carousel-lightbox"
+          onClick={() => setFullscreenImageUrl(null)}
+          role="presentation"
+        >
+          <button
+            type="button"
+            className="media-carousel-lightbox-close"
+            onClick={() => setFullscreenImageUrl(null)}
+            aria-label="Close full image"
+          >
+            &times;
+          </button>
+          <img
+            src={fullscreenImageUrl}
+            alt="Full size media"
+            className="media-carousel-lightbox-image"
+            onClick={(event) => event.stopPropagation()}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

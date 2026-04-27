@@ -35,6 +35,32 @@
   border-radius: 6px;
 }
 
+.media-carousel-image-button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  width: 100%;
+  cursor: zoom-in;
+}
+
+.media-carousel-image-button .media-carousel-media {
+  display: block;
+}
+
+.media-carousel-deleted-placeholder {
+  width: 100%;
+  min-height: 220px;
+  max-height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d2d2d2;
+  border-radius: 6px;
+  background: #efefef;
+  color: #666666;
+  font-weight: 700;
+}
+
 .media-carousel-btn {
   background: rgba(255,255,255,0.9);
   border: 1px solid #ddd;
@@ -72,4 +98,41 @@
 
 .media-carousel-dots .dot.active {
   background: rgba(0,0,0,0.7);
+}
+
+.media-carousel-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 24px;
+}
+
+.media-carousel-lightbox-image {
+  max-width: min(96vw, 1600px);
+  max-height: 92vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.media-carousel-lightbox-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  border: none;
+  background: transparent;
+  color: #ffffff;
+  font-size: 2.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 10px;
+}
+
+.media-carousel-lightbox-close:hover {
+  color: #d9d9d9;
 }

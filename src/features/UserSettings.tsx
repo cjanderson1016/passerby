@@ -14,14 +14,14 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 //import { useNavigate } from "react-router-dom";
-import ProfileMenu from "../components/ProfileMenu";
+import TopBar from "../components/TopBar";
 import "./settings.css"
 import Accordion_Component from "../components/Accordion";
 import { Privacy_Dropdown} from "../components/Accordion";
 import Modal from "../components/Modal";
 import ResetPass from "./ResetPassword";
 import { FaRegUser, FaUnlockAlt } from "react-icons/fa";
-import RouteButton from "../components/RouteButton";
+import { useNavigate } from "react-router-dom";
 
 
 export default function Settings(){
@@ -32,7 +32,7 @@ export default function Settings(){
     const [openModal_delete, setOpenModal_delete] = useState(false);
     const [openModal_user, setOpenModal_user] = useState(false);
 
-
+    const navigate = useNavigate();
 //List that contains the settings information for an accordion style menu. (see accordion.tsx)
 const settings_list = [
   // Container 1: Account settings --> reset password, delete account
@@ -88,20 +88,15 @@ const settings_list = [
     <div>
       <div className="dash-page">
         {/* Top bar */}
-        <div className="dash-topbar">
-          <div className="dash-title">PASSERBY</div>
-
-          {/* profile button/dropdown moved into its own component */}
-          <ProfileMenu />
-        </div>
+        <TopBar showActions />
         <div className="settings-title">
           <h1>Profile Settings</h1>
         </div>
 
         <div className="settings-body">
           <div className="change_user">
-            <form onSubmit={(e) => e.preventDefault()}>
-              Username:
+            <form onSubmit={(e) => e.preventDefault()} className="user-form">
+              <div  style={{ display: "flex", alignItems: "center" }}>Username:</div>
               <input
                 type="textbox"
                 placeholder={user}
@@ -111,7 +106,7 @@ const settings_list = [
               />
               <button
                 onClick={() => setOpenModal_user(true)}
-                style={{ marginLeft: "5px", padding: "5px", cursor: "pointer" }}
+                className="settings-btn"
               >
                 Change Username
               </button>
@@ -119,7 +114,9 @@ const settings_list = [
           </div>
           <Accordion_Component settings_list={settings_list}/>
           <br />
-          <RouteButton to="/">Back to Dashboard</RouteButton>
+          <div style={{width: "20%"}}>
+          <button onClick={() => navigate("/")} className="settings-btn">Back to Dashboard</button>
+          </div>
         </div>
         <Modal is_open={openModal_pass} current_state={setOpenModal_pass} component={<ResetPass/>} title = {"Reset Password"}/>
         <Modal is_open={openModal_user} current_state={setOpenModal_user} component={<ConfirmChangeUsername newUser={newUser}
