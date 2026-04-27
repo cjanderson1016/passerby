@@ -1,6 +1,6 @@
 # Passerby
 
-Passerby is a social web app built with React, TypeScript, and Vite, with Supabase for backend services.
+Passerby is a social web app built with React, TypeScript, and Vite, with Supabase for authentication and database storage, and Cloudflare R2 for media storage.
 
 ## Stack
 
