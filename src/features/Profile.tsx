@@ -874,145 +874,157 @@ export default function Profile({
                       </aside>*/}
 
             <main className="profile-center-panel">
-              {
-                (
-                  viewedProfile.profile_privacy === "Public" || (viewedProfile.profile_privacy === "Friends Only" && isFriend) ||isOwnProfile
-                ) ? (
-                  <>
-                    {/* BULLETI N TAB */}
-                    {activeTab === "bulletin" && (
-                      <div className="profile-center-card">
-                        <BulletinProvider>
-                          <Bulletin
-                            show={true}
-                            isOwnProfileInput={isOwnProfile}
-                            profileUserId={viewedProfile?.id}
+              {viewedProfile.profile_privacy === "Public" ||
+              (viewedProfile.profile_privacy === "Friends Only" && isFriend) ||
+              isOwnProfile ? (
+                <>
+                  {/* BULLETI N TAB */}
+                  {activeTab === "bulletin" && (
+                    <div className="profile-center-card">
+                      <BulletinProvider>
+                        <Bulletin
+                          show={true}
+                          isOwnProfileInput={isOwnProfile}
+                          profileUserId={viewedProfile?.id}
+                        />
+                      </BulletinProvider>
+                    </div>
+                  )}
+                  {viewedProfile.posts_privacy === "Public" ||
+                  (viewedProfile.posts_privacy === "Friends Only" &&
+                    isFriend) ||
+                  isOwnProfile ||
+                  activeTab === "bulletin" ? (
+                    <>
+                      {/* ACTIVITY  TAB */}
+                      {activeTab === "activity" && (
+                        <>
+                          {isOwnProfile && (
+                            <CreatePostBox
+                              value={newPostContent}
+                              posting={posting}
+                              onChange={setNewPostContent}
+                              onSubmit={handleCreatePost}
+                            />
+                          )}
+
+                          <PinnedPostsSection
+                            post={pinnedPost}
+                            displayName={displayName}
+                            username={viewedProfile.username}
+                            isOwnProfile={isOwnProfile}
+                            onOpenMenu={openPostMenu}
                           />
-                        </BulletinProvider>
-                      </div>
-                    )}
-                    {(
-                      viewedProfile.posts_privacy === "Public" ||
-                      (viewedProfile.posts_privacy === "Friends Only" && isFriend) ||
-                      isOwnProfile || activeTab === "bulletin"
-                    ) ? (
-                      <>
-                        {/* ACTIVITY  TAB */}
-                        {activeTab === "activity" && (
-                          <>
-                            {isOwnProfile && (
-                              <CreatePostBox
-                                value={newPostContent}
-                                posting={posting}
-                                onChange={setNewPostContent}
-                                onSubmit={handleCreatePost}
-                              />
-                            )}
 
-                            <PinnedPostsSection
-                              post={pinnedPost}
-                              displayName={displayName}
-                              username={viewedProfile.username}
-                              isOwnProfile={isOwnProfile}
-                              onOpenMenu={openPostMenu}
-                            />
+                          <PostFeed
+                            loadingPosts={loadingPosts}
+                            allPostsCount={posts.length}
+                            posts={feedPosts}
+                            displayName={displayName}
+                            username={viewedProfile.username}
+                            isOwnProfile={isOwnProfile}
+                            onOpenMenu={openPostMenu}
+                          />
+                        </>
+                      )}
 
-                            <PostFeed
-                              loadingPosts={loadingPosts}
-                              allPostsCount={posts.length}
-                              posts={feedPosts}
-                              displayName={displayName}
-                              username={viewedProfile.username}
-                              isOwnProfile={isOwnProfile}
-                              onOpenMenu={openPostMenu}
-                            />
-                          </>
-                        )}
-
-                        {/* MEDIA TAB */}
-                        {activeTab === "media" && (
-                          <section className="profile-media-section">
-                            {isOwnProfile && (
-                              <div className="profile-media-usage-card">
-                                <div className="profile-media-usage-row">
-                                  <h3>Your Media Storage</h3>
-                                  <span>
-                                    {formatBytes(totalMediaBytes)} /{" "}
-                                    {formatBytes(MEDIA_QUOTA_BYTES)}
-                                  </span>
-                                </div>
-
-                                <div className="profile-media-usage-track">
-                                  <div
-                                    className="profile-media-usage-fill"
-                                    style={{ width: `${mediaUsagePercent}%` }}
-                                  />
-                                </div>
+                      {/* MEDIA TAB */}
+                      {activeTab === "media" && (
+                        <section className="profile-media-section">
+                          {isOwnProfile && (
+                            <div className="profile-media-usage-card">
+                              <div className="profile-media-usage-row">
+                                <h3>Your Media Storage</h3>
+                                <span>
+                                  {formatBytes(totalMediaBytes)} /{" "}
+                                  {formatBytes(MEDIA_QUOTA_BYTES)}
+                                </span>
                               </div>
-                            )}
 
-                            {loadingMedia ? (
-                              <p className="profile-feed-empty">Loading media...</p>
-                            ) : mediaError ? (
-                              <p className="profile-feed-empty">{mediaError}</p>
-                            ) : mediaItems.length === 0 ? (
-                              <p className="profile-feed-empty">No uploaded media yet.</p>
-                            ) : (
-                              <div className="profile-media-grid">
-                                {mediaItems.map((item) => {
-                                  const isVideo = item.content_type?.startsWith("video/");
-                                  const mediaUrl = getPublicUrl(item.key);
+                              <div className="profile-media-usage-track">
+                                <div
+                                  className="profile-media-usage-fill"
+                                  style={{ width: `${mediaUsagePercent}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
 
-                                  return (
-                                    <article key={item.id} className="profile-media-item">
-                                      <div className="profile-media-preview-wrap">
-                                        {isVideo ? (
-                                          <video
-                                            src={mediaUrl}
-                                            className="profile-media-preview"
-                                            controls
-                                          />
-                                        ) : (
-                                          <img
-                                            src={mediaUrl}
-                                            className="profile-media-preview"
-                                            alt={item.file_name ?? "profile media"}
-                                          />
-                                        )}
-                                      </div>
+                          {loadingMedia ? (
+                            <p className="profile-feed-empty">
+                              Loading media...
+                            </p>
+                          ) : mediaError ? (
+                            <p className="profile-feed-empty">{mediaError}</p>
+                          ) : mediaItems.length === 0 ? (
+                            <p className="profile-feed-empty">
+                              No uploaded media yet.
+                            </p>
+                          ) : (
+                            <div className="profile-media-grid">
+                              {mediaItems.map((item) => {
+                                const isVideo =
+                                  item.content_type?.startsWith("video/");
+                                const mediaUrl = getPublicUrl(item.key);
 
-                                      <div className="profile-media-meta">
-                                        <p>{item.file_name || "Untitled media"}</p>
-                                        <p>{formatBytes(item.size ?? 0)}</p>
-                                      </div>
-
-                                      {isOwnProfile && (
-                                        <button
-                                          onClick={() => handleDeleteMedia(item)}
-                                          disabled={deletingMediaId === item.id}
-                                        >
-                                          {deletingMediaId === item.id
-                                            ? "Deleting..."
-                                            : "Delete"}
-                                        </button>
+                                return (
+                                  <article
+                                    key={item.id}
+                                    className="profile-media-item"
+                                  >
+                                    <div className="profile-media-preview-wrap">
+                                      {isVideo ? (
+                                        <video
+                                          src={mediaUrl}
+                                          className="profile-media-preview"
+                                          controls
+                                        />
+                                      ) : (
+                                        <img
+                                          src={mediaUrl}
+                                          className="profile-media-preview"
+                                          alt={
+                                            item.file_name ?? "profile media"
+                                          }
+                                        />
                                       )}
-                                    </article>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </section>
-                        )}
-                      </>
-                    ) : (
-                      <AccessDenied privacytype ={"Post"}/>
-                    )}
-                  </>
-                ) : (
-                  <AccessDenied privacytype={"Profile"} />
-                )
-              }
-          
+                                    </div>
+
+                                    <div className="profile-media-meta">
+                                      <p className="profile-media-name">
+                                        {item.file_name || "Untitled media"}
+                                      </p>
+                                      <p className="profile-media-size">
+                                        {formatBytes(item.size ?? 0)}
+                                      </p>
+                                    </div>
+
+                                    {isOwnProfile && (
+                                      <button
+                                        className="profile-media-delete-btn"
+                                        onClick={() => handleDeleteMedia(item)}
+                                        disabled={deletingMediaId === item.id}
+                                      >
+                                        {deletingMediaId === item.id
+                                          ? "Deleting..."
+                                          : "Delete"}
+                                      </button>
+                                    )}
+                                  </article>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </section>
+                      )}
+                    </>
+                  ) : (
+                    <AccessDenied privacytype={"Post"} />
+                  )}
+                </>
+              ) : (
+                <AccessDenied privacytype={"Profile"} />
+              )}
             </main>
 
             {/*<aside className="profile-right-panel">
