@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { fileDigestHex } from "../lib/media";
-import {
-  uploadFileToR2,
-  deleteFileFromR2,
-  getPublicUrl,
-} from "../services/dataService";
+import { uploadFileToR2, getPublicUrl } from "../services/dataService";
 
 type MediaRow = {
   id: string;
@@ -133,29 +129,40 @@ export default function MediaLibraryModal({
   return !open ? null : (
     <div style={overlayStyle}>
       <div style={modalStyle}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        ></div>
+        <div style={headerStyle}>
+          <h2 style={{ margin: "0 0 8px 0" }}>Select Media</h2>
+          <p style={{ margin: 0, color: "#666", fontSize: "14px" }}>
+            Choose media from your library or upload new files
+          </p>
+        </div>
 
-        <div style={{ marginTop: 12 }}>
-          <input
-            type="file"
-            onChange={handleFile}
-            accept={acceptTypes === "images" ? "image/*" : undefined}
-          />
+        <div style={uploadSectionStyle}>
+          <label style={uploadLabelStyle}>
+            <span>Upload New Media</span>
+            <input
+              type="file"
+              onChange={handleFile}
+              accept={acceptTypes === "images" ? "image/*" : undefined}
+              style={{ display: "none" }}
+            />
+          </label>
           {uploading && <div>Uploading…</div>}
           {error && <div style={{ color: "red" }}>{error}</div>}
         </div>
 
-        <div style={{ marginTop: 12 }}>
+        <div style={{ padding: "16px 20px" }}>
           {loading ? (
-            <div>Loading…</div>
+            <div
+              style={{ textAlign: "center", color: "#999", padding: "20px" }}
+            >
+              Loading…
+            </div>
           ) : items.length === 0 ? (
-            <div>No media yet.</div>
+            <div
+              style={{ textAlign: "center", color: "#999", padding: "20px" }}
+            >
+              No media yet. Start by uploading files above!
+            </div>
           ) : (
             <div style={gridStyle}>
               {items
@@ -193,43 +200,11 @@ export default function MediaLibraryModal({
                             onSelect(m);
                             onClose();
                           }}
+                          style={selectButtonStyle}
                         >
                           Select
                         </button>
                       )}
-                      <button
-                        onClick={async () => {
-                          // copy public url to clipboard
-                          const url = previewUrl(m.key);
-                          try {
-                            await navigator.clipboard.writeText(url);
-                          } catch (err: unknown) {
-                            console.debug("clipboard copy failed", err);
-                          }
-                        }}
-                      >
-                        Copy URL
-                      </button>
-                      <button
-                        onClick={async () => {
-                          // delete media via dataService
-                          try {
-                            await deleteFileFromR2(m.key, m.id);
-                            await fetchList();
-                            // also clear selection for deleted id
-                            setSelectedOrder((s) =>
-                              s.filter((id) => id !== m.id),
-                            );
-                          } catch (err: unknown) {
-                            console.error(err);
-                            const msg =
-                              err instanceof Error ? err.message : String(err);
-                            setError(msg);
-                          }
-                        }}
-                      >
-                        Delete
-                      </button>
                     </div>
                   </div>
                 ))}
@@ -237,7 +212,7 @@ export default function MediaLibraryModal({
           )}
         </div>
         {multiSelect && (
-          <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+          <div style={multiSelectButtonsStyle}>
             <button
               onClick={() => {
                 const selected = selectedItems();
@@ -246,6 +221,7 @@ export default function MediaLibraryModal({
                 clearSelection();
                 onClose();
               }}
+              style={selectButtonStyle}
             >
               Select {selectedOrder.length}
             </button>
@@ -253,6 +229,7 @@ export default function MediaLibraryModal({
               onClick={() => {
                 clearSelection();
               }}
+              style={clearButtonStyle}
             >
               Clear
             </button>
@@ -310,4 +287,68 @@ const checkboxWrap: React.CSSProperties = {
   background: "rgba(255,255,255,0.9)",
   padding: 4,
   borderRadius: 4,
+};
+
+const headerStyle: React.CSSProperties = {
+  padding: "20px 20px 12px 20px",
+  borderBottom: "1px solid #e0e0e0",
+};
+
+const uploadSectionStyle: React.CSSProperties = {
+  padding: "16px 20px",
+  background: "#f9f9f9",
+  borderBottom: "1px solid #e0e0e0",
+};
+
+const uploadLabelStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "0 16px",
+  height: "40px",
+  border: "1px solid #cdcdcd",
+  borderRadius: 0,
+  background: "#e4e4e4",
+  color: "#222222",
+  cursor: "pointer",
+  fontSize: "14px",
+  fontWeight: "600",
+  fontFamily: '"Handjet", "Segoe UI", Arial, sans-serif',
+  transition: "background 0.15s ease",
+};
+
+const selectButtonStyle: React.CSSProperties = {
+  flex: 1,
+  padding: "0 16px",
+  height: "40px",
+  border: "1px solid #cdcdcd",
+  borderRadius: 0,
+  background: "#e4e4e4",
+  color: "#222222",
+  cursor: "pointer",
+  fontSize: "14px",
+  fontWeight: "600",
+  fontFamily: '"Handjet", "Segoe UI", Arial, sans-serif',
+  transition: "background 0.15s ease",
+};
+
+const multiSelectButtonsStyle: React.CSSProperties = {
+  padding: "16px 20px",
+  borderTop: "1px solid #e0e0e0",
+  display: "flex",
+  gap: 8,
+};
+
+const clearButtonStyle: React.CSSProperties = {
+  flex: 1,
+  padding: "0 16px",
+  height: "40px",
+  border: "1px solid #cdcdcd",
+  borderRadius: 0,
+  background: "#e4e4e4",
+  color: "#222222",
+  cursor: "pointer",
+  fontSize: "14px",
+  fontWeight: "600",
+  fontFamily: '"Handjet", "Segoe UI", Arial, sans-serif',
+  transition: "background 0.15s ease",
 };
